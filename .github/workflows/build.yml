@@ -1,0 +1,46 @@
+# Compila TVWeb.ipa (sin firmar) en un Mac de GitHub. La firma la pone Impactor/Sideloadly con tu Apple ID.
+name: Compilar TVWeb.ipa
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generar proyecto de Xcode
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Compilar
+        run: |
+          xcodebuild -project TVWeb.xcodeproj -scheme TVWeb -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+
+      - name: Empaquetar .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/TVWeb.app Payload/
+          zip -qr TVWeb.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TVWeb-ipa
+          path: TVWeb.ipa
+
+      - name: Publicar en "Releases" (descarga directa)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ultima
+          name: TVWeb para iPhone (última versión)
+          files: TVWeb.ipa
+          make_latest: true
