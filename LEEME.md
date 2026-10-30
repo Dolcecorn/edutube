@@ -9,6 +9,7 @@ La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pan
 - **Sigue sonando con la pantalla bloqueada** o al cambiar de app (se puede apagar en el menú). Si iOS lo pausa, se reanuda desde el centro de control.
 - **Transmitir a la TV / Chromecast (v1.3):** botón rojo con una TV abajo a la derecha cuando hay un video abierto. Muestra los Chromecast de tu Wi-Fi (los encuentra solos; la primera vez iOS pide permiso de "Red local", hay que aceptarlo) y envía el video en el mismo segundo. También se puede vincular una TV con "Vincular con código de TV" (YouTube de la TV → Configuración).
 - **Anuncios en el Chromecast (v1.4):** el Chromecast pide sus propios anuncios, así que los bloqueos del iPhone no le llegan. Mientras edutube siga abierto (o en segundo plano), escucha a la TV: si empieza un anuncio lo silencia y lo omite apenas YouTube lo permite.
+- **Saltar anuncios a mitad del video (v1.5):** si en el Chromecast aparece un anuncio en medio del video, edutube vuelve a cargar el mismo video un segundo después de donde iba. Si YouTube insiste con el anuncio, se silencia y se omite como en la v1.4.
 - **Barra de carga (v1.4):** cuando un video carga aparece una barra roja delgada abajo, en vez del ícono grande.
 - Imagen en imagen (PiP) desde el botón del reproductor en pantalla completa.
 - **Video fluido:** revisa qué formatos decodifica tu iPhone por hardware y le oculta a YouTube los demás (AV1 en casi todos los modelos), con tope de 1080p. "Máxima fluidez" fuerza H.264 a 30 fps para iPhones antiguos.

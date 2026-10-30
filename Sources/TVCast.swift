@@ -95,13 +95,20 @@ final class TVCast {
             loungeToken = nil
             resetSession()
         }
-        var params = ["videoId": videoId, "currentTime": String(Int(time)), "currentIndex": "0",
-                      "videoIds": videoId, "listId": "", "audioOnly": "false", "params": "", "playerParams": ""]
-        if time < 1 { params["currentTime"] = "0" }
-        enqueue("setPlaylist", params: params) { result in
+        currentVideo = videoId
+        position = (time, Date())
+        playing = true
+        inAd = false
+        lastReload = Date() // el anuncio inicial de un video recién enviado no se recarga
+        enqueue("setPlaylist", params: Self.playlist(videoId, at: time)) { result in
             if case .success = result { self.startWatchingAds() }
             self.done(completion, result.map { _ in name })
         }
+    }
+
+    private static func playlist(_ videoId: String, at time: Double) -> [String: String] {
+        ["videoId": videoId, "currentTime": time < 1 ? "0" : String(Int(time)), "currentIndex": "0",
+         "videoIds": videoId, "listId": "", "audioOnly": "false", "params": "", "playerParams": ""]
     }
 
     // MARK: - Anuncios en la TV
@@ -121,6 +128,13 @@ final class TVCast {
     private var watchStarted = Date()
     private var volume = "100"
     private var mutedByUs = false
+
+    // Lo que se está viendo en la TV, para poder volver a cargarlo justo donde iba.
+    private var currentVideo: String?
+    private var position: (time: Double, at: Date)?
+    private var playing = false
+    private var inAd = false
+    private var lastReload = Date.distantPast
     private lazy var streamSession = URLSession(configuration: .default, delegate: StreamDelegate(self), delegateQueue: .main)
     private let keepAlive = KeepAlive()
 
@@ -237,8 +251,16 @@ final class TVCast {
         let str = { (key: String) in data?[key] as? String ?? "" }
         switch type {
         case "onAdStateChange", "adPlaying":
+            if !str("contentVideoId").isEmpty { currentVideo = str("contentVideoId") }
             if type == "onAdStateChange" && str("adState") == "0" && str("currentTime") != "0" {
+                inAd = false
                 mute(false) // terminó el anuncio
+                return
+            }
+            let starting = !inAd
+            inAd = true
+            if starting && reloadPastAd() {
+                mute(true) // mientras recarga, sin sonido
             } else if str("isSkipEnabled") == "true" {
                 enqueue("skipAd", params: [:]) { _ in }
                 mute(false)
@@ -246,7 +268,12 @@ final class TVCast {
                 mute(true) // anuncio que aún no se puede omitir: sin sonido
             }
         case "onStateChange", "nowPlaying":
-            if str("state") == "1" { mute(false) }
+            if !str("videoId").isEmpty { currentVideo = str("videoId") }
+            let state = str("state")
+            if state == "1" { inAd = false; mute(false) }
+            // Durante un anuncio estos avisos traen el tiempo del anuncio, no el del video.
+            if !inAd, let t = Double(str("currentTime")) { position = (t, Date()) }
+            if !inAd, !state.isEmpty { playing = state == "1" }
         case "onVolumeChanged":
             if !mutedByUs, !str("volume").isEmpty { volume = str("volume") }
         case "loungeScreenDisconnected":
@@ -255,6 +282,22 @@ final class TVCast {
         default:
             break
         }
+    }
+
+    /**
+     Anuncio a mitad del video: en vez de esperarlo, se vuelve a cargar el mismo video un segundo
+     después de donde iba, que suele saltarse esa pausa publicitaria. Si YouTube insiste y vuelve a
+     poner el anuncio enseguida, no se repite (se silencia y se omite como antes).
+     */
+    private func reloadPastAd() -> Bool {
+        guard let video = currentVideo, let pos = position else { return false }
+        let now = pos.time + (playing ? Date().timeIntervalSince(pos.at) : 0)
+        guard now > 5, Date().timeIntervalSince(lastReload) > 30 else { return false }
+        lastReload = Date()
+        position = (now + 1, Date())
+        inAd = false
+        enqueue("setPlaylist", params: Self.playlist(video, at: now + 1)) { _ in }
+        return true
     }
 
     private func mute(_ on: Bool) {
