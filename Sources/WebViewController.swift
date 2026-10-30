@@ -302,7 +302,7 @@ final class WebViewController: UIViewController {
 
     private func showMenu() {
         guard presentedViewController == nil else { return }
-        let title = "TV Web · \(codecInfo) · \(AdBlocker.shared.blockedCount) dominios bloqueados"
+        let title = "edutube · \(codecInfo) · \(AdBlocker.shared.blockedCount) dominios bloqueados"
         let sheet = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
         sheet.addAction(UIAlertAction(title: "Ir a la página fija", style: .default) { _ in self.loadHome() })
         sheet.addAction(UIAlertAction(title: "Recargar", style: .default) { _ in self.webView.reload() })

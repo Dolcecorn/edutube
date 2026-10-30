@@ -134,7 +134,7 @@ final class LoadingView: UIView {
                 .kern: 5.5,
                 .paragraphStyle: para,
             ]
-            ("TV WEB" as NSString).draw(in: CGRect(x: 0, y: cy + r + 36, width: w, height: 30), withAttributes: attrs)
+            ("EDUTUBE" as NSString).draw(in: CGRect(x: 0, y: cy + r + 36, width: w, height: 30), withAttributes: attrs)
         }
     }
 

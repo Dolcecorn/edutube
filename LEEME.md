@@ -1,4 +1,4 @@
-# TV Web para iPhone: YouTube sin anuncios
+# edutube para iPhone: YouTube sin anuncios
 
 La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pantalla completa, bloquea anuncios y recuerda tu sesión.
 
@@ -23,14 +23,14 @@ La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pan
 ## Instalar sin Mac (desde Ubuntu)
 Apple no deja instalar apps fuera de la App Store sin firmarlas. Con un Apple ID gratis la firma dura **7 días**; luego hay que volver a instalarla (se conservan la sesión y los ajustes). Con la cuenta de desarrollador pagada (USD 99/año) dura un año.
 
-1. **Compilar:** sube esta carpeta a un repositorio tuyo en GitHub. GitHub compila la app sola en un Mac de ellos (pestaña *Actions*) y deja `TVWeb.ipa` en *Releases → ultima*.
+1. **Compilar:** sube esta carpeta a un repositorio tuyo en GitHub. GitHub compila la app sola en un Mac de ellos (pestaña *Actions*) y deja `edutube.ipa` en *Releases → ultima*.
 2. **Instalar Impactor** en Ubuntu (instalador gratuito para firmar e instalar apps en el iPhone): descarga el `.AppImage` de https://github.com/claration/Impactor/releases y dale permiso de ejecución (`chmod +x`). Necesita `usbmuxd` (`sudo apt install usbmuxd`).
 3. Conecta el iPhone por cable, desbloquéalo y toca **Confiar en este computador**.
-4. En Impactor: inicia sesión con tu Apple ID, arrastra `TVWeb.ipa` e instala.
+4. En Impactor: inicia sesión con tu Apple ID, arrastra `edutube.ipa` e instala.
 5. En el iPhone:
    - **Ajustes → Privacidad y seguridad → Modo de desarrollador → Activar** (pide reiniciar).
    - **Ajustes → General → VPN y gestión de dispositivos →** tu Apple ID **→ Confiar**.
-6. Abre **TV Web**.
+6. Abre **edutube**.
 
 Con Windows se puede usar Sideloadly en vez de Impactor; con un Mac, `xcodegen generate` y abrir `TVWeb.xcodeproj` en Xcode.
 

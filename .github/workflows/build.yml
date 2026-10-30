@@ -1,5 +1,5 @@
-# Compila TVWeb.ipa (sin firmar) en un Mac de GitHub. La firma la pone Impactor/Sideloadly con tu Apple ID.
-name: Compilar TVWeb.ipa
+# Compila edutube.ipa (sin firmar) en un Mac de GitHub. La firma la pone Impactor/Sideloadly con tu Apple ID.
+name: Compilar edutube.ipa
 
 on:
   push:
@@ -30,17 +30,17 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/TVWeb.app Payload/
-          zip -qr TVWeb.ipa Payload
+          zip -qr edutube.ipa Payload
 
       - uses: actions/upload-artifact@v4
         with:
-          name: TVWeb-ipa
-          path: TVWeb.ipa
+          name: edutube-ipa
+          path: edutube.ipa
 
       - name: Publicar en "Releases" (descarga directa)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ultima
-          name: TVWeb para iPhone (última versión)
-          files: TVWeb.ipa
+          name: edutube para iPhone (última versión)
+          files: edutube.ipa
           make_latest: true

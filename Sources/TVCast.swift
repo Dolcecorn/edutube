@@ -100,7 +100,7 @@ final class TVCast {
             for (k, v) in params { body["req0_\(k)"] = v }
             self.offset += 1
             var query = [
-                "name": "iPhone (TV Web)", "loungeIdToken": token, "SID": sid, "gsessionid": gs,
+                "name": "iPhone (edutube)", "loungeIdToken": token, "SID": sid, "gsessionid": gs,
                 "device": "REMOTE_CONTROL", "app": "youtube-desktop", "VER": "8", "v": "2", "RID": String(self.offset),
             ]
             if let aid = self.lastEventId { query["AID"] = aid }
@@ -124,7 +124,7 @@ final class TVCast {
         refreshToken { ok in
             guard ok, let token = self.loungeToken else { return completion(false) }
             let body = [
-                "app": "web", "mdx-version": "3", "name": "iPhone (TV Web)", "id": self.deviceId,
+                "app": "web", "mdx-version": "3", "name": "iPhone (edutube)", "id": self.deviceId,
                 "device": "REMOTE_CONTROL", "capabilities": "que,dsdtr,atp,vsp", "magnaKey": "cloudPairedDevice",
                 "ui": "false", "theme": "cl", "loungeIdToken": token,
                 "deviceContext": "user_agent=TVWeb&window_width_points=&window_height_points=&os_name=ios&ms=",
