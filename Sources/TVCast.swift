@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /**
@@ -97,9 +98,191 @@ final class TVCast {
         var params = ["videoId": videoId, "currentTime": String(Int(time)), "currentIndex": "0",
                       "videoIds": videoId, "listId": "", "audioOnly": "false", "params": "", "playerParams": ""]
         if time < 1 { params["currentTime"] = "0" }
-        command("setPlaylist", params: params, retry: true) { result in
+        enqueue("setPlaylist", params: params) { result in
+            if case .success = result { self.startWatchingAds() }
             self.done(completion, result.map { _ in name })
         }
+    }
+
+    // MARK: - Anuncios en la TV
+
+    /*
+     Cuando el video se reproduce en el Chromecast, es el Chromecast el que pide los anuncios a YouTube,
+     así que los bloqueos del iPhone no le llegan. Lo que sí se puede hacer (igual que iSponsorBlockTV) es
+     quedarse escuchando a la TV: cuando avisa que empezó un anuncio se silencia, y apenas YouTube
+     permite "Omitir", se omite. Funciona mientras edutube siga abierto o en segundo plano.
+     */
+
+    private var watching = false
+    private var watchTask: URLSessionDataTask?
+    private var watchStatus = 0
+    private var stream = [UInt8]()
+    private var watchFailures = 0
+    private var watchStarted = Date()
+    private var volume = "100"
+    private var mutedByUs = false
+    private lazy var streamSession = URLSession(configuration: .default, delegate: StreamDelegate(self), delegateQueue: .main)
+    private let keepAlive = KeepAlive()
+
+    private func startWatchingAds() {
+        if !watching {
+            watching = true
+            watchStarted = Date()
+            watchFailures = 0
+            keepAlive.start()
+        }
+        if watchTask == nil { subscribe() }
+    }
+
+    private func stopWatchingAds() {
+        watching = false
+        watchTask?.cancel()
+        watchTask = nil
+        keepAlive.stop()
+    }
+
+    private func subscribe() {
+        guard watching else { return }
+        // Pasadas 4 horas sin parar, se deja de escuchar.
+        if Date().timeIntervalSince(watchStarted) > 4 * 3600 { return stopWatchingAds() }
+        guard let token = loungeToken, let sid = sid, let gs = gsession else { return resubscribeLater() }
+        var query = [
+            "name": "iPhone (edutube)", "loungeIdToken": token, "SID": sid, "gsessionid": gs,
+            "device": "REMOTE_CONTROL", "app": "youtube-desktop", "VER": "8", "v": "2",
+            "RID": "rpc", "CI": "0", "TYPE": "xmlhttp",
+        ]
+        if let aid = lastEventId { query["AID"] = aid }
+        var comps = URLComponents(string: Self.api + "/bc/bind")!
+        comps.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        var req = URLRequest(url: comps.url!, timeoutInterval: 600)
+        req.httpMethod = "GET"
+        stream.removeAll()
+        watchStatus = 0
+        let task = streamSession.dataTask(with: req)
+        watchTask = task
+        task.resume()
+    }
+
+    fileprivate func streamResponse(_ status: Int) {
+        watchStatus = status
+    }
+
+    fileprivate func streamData(_ data: Data) {
+        stream.append(contentsOf: data)
+        parseStream()
+    }
+
+    fileprivate func streamEnded(_ task: URLSessionTask, error: Error?) {
+        guard task === watchTask else { return }
+        watchTask = nil
+        guard watching else { return }
+        if watchStatus == 200 && error == nil {
+            watchFailures = 0
+            subscribe() // la conexión larga se corta sola cada tanto; se abre otra
+            return
+        }
+        resetSession()
+        if watchStatus == 401 { loungeToken = nil }
+        resubscribeLater()
+    }
+
+    private func resubscribeLater() {
+        watchFailures += 1
+        guard watchFailures <= 8 else { return stopWatchingAds() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(min(watchFailures * 2, 15))) {
+            guard self.watching, self.watchTask == nil else { return }
+            self.ensureConnected { ok in ok ? self.subscribe() : self.resubscribeLater() }
+        }
+    }
+
+    /// El flujo trae bloques "largo\n[[id,["evento",{...}]],...]". Se busca el fin de cada arreglo JSON.
+    private func parseStream() {
+        while true {
+            guard let newline = stream.firstIndex(of: 0x0A) else { return }
+            let start = newline + 1
+            guard start < stream.count else { return }
+            guard stream[start] == UInt8(ascii: "[") else {
+                stream.removeFirst(start) // línea con el largo del bloque
+                continue
+            }
+            var depth = 0, inString = false, escaped = false, end: Int?
+            var i = start
+            while i < stream.count {
+                let c = stream[i]
+                if inString {
+                    if escaped { escaped = false } else if c == UInt8(ascii: "\\") { escaped = true } else if c == UInt8(ascii: "\"") { inString = false }
+                } else if c == UInt8(ascii: "\"") {
+                    inString = true
+                } else if c == UInt8(ascii: "[") {
+                    depth += 1
+                } else if c == UInt8(ascii: "]") {
+                    depth -= 1
+                    if depth == 0 { end = i; break }
+                }
+                i += 1
+            }
+            guard let last = end else { return }
+            let chunk = Data(stream[start...last])
+            stream.removeFirst(last + 1)
+            if let events = (try? JSONSerialization.jsonObject(with: chunk)) as? [[Any]] {
+                for event in events { handle(event) }
+            }
+        }
+    }
+
+    private func handle(_ event: [Any]) {
+        guard event.count == 2, let body = event[1] as? [Any], let type = body.first as? String else { return }
+        if let id = event[0] as? NSNumber { lastEventId = id.stringValue }
+        let data = body.count > 1 ? body[1] as? [String: Any] : nil
+        let str = { (key: String) in data?[key] as? String ?? "" }
+        switch type {
+        case "onAdStateChange", "adPlaying":
+            if type == "onAdStateChange" && str("adState") == "0" && str("currentTime") != "0" {
+                mute(false) // terminó el anuncio
+            } else if str("isSkipEnabled") == "true" {
+                enqueue("skipAd", params: [:]) { _ in }
+                mute(false)
+            } else {
+                mute(true) // anuncio que aún no se puede omitir: sin sonido
+            }
+        case "onStateChange", "nowPlaying":
+            if str("state") == "1" { mute(false) }
+        case "onVolumeChanged":
+            if !mutedByUs, !str("volume").isEmpty { volume = str("volume") }
+        case "loungeScreenDisconnected":
+            stopWatchingAds()
+            resetSession()
+        default:
+            break
+        }
+    }
+
+    private func mute(_ on: Bool) {
+        guard on != mutedByUs else { return }
+        mutedByUs = on
+        enqueue("setVolume", params: ["volume": volume, "muted": on ? "true" : "false"]) { _ in }
+    }
+
+    // MARK: - Cola de comandos (uno a la vez, para que la numeración no se desordene)
+
+    private var pending: [() -> Void] = []
+    private var busy = false
+
+    private func enqueue(_ name: String, params: [String: String], completion: @escaping (Result<Void, Error>) -> Void) {
+        pending.append {
+            self.command(name, params: params, retry: true) { result in
+                completion(result)
+                self.busy = false
+                self.runNext()
+            }
+        }
+        runNext()
+    }
+
+    private func runNext() {
+        guard !busy, !pending.isEmpty else { return }
+        busy = true
+        pending.removeFirst()()
     }
 
     // MARK: - Protocolo
@@ -217,4 +400,61 @@ final class TVCast {
         let ns = text as NSString
         return rx.matches(in: text, range: NSRange(location: 0, length: ns.length)).map { ns.substring(with: $0.range(at: 1)) }
     }
+}
+
+/// Recibe la conexión larga con los avisos de la TV a medida que llegan.
+private final class StreamDelegate: NSObject, URLSessionDataDelegate {
+    weak var owner: TVCast?
+    init(_ owner: TVCast) { self.owner = owner }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        owner?.streamResponse((response as? HTTPURLResponse)?.statusCode ?? 0)
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        owner?.streamData(data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        owner?.streamEnded(task, error: error)
+    }
+}
+
+/**
+ Mantiene edutube despierto en segundo plano mientras escucha los anuncios de la TV:
+ iOS suspende las apps que no están sonando, así que se reproduce silencio (sin cortar otra música).
+ */
+private final class KeepAlive {
+    private var player: AVAudioPlayer?
+
+    func start() {
+        guard player == nil else { return }
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
+        player = try? AVAudioPlayer(data: Self.silence)
+        player?.numberOfLoops = -1
+        player?.volume = 0
+        player?.play()
+    }
+
+    func stop() {
+        player?.stop()
+        player = nil
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+    }
+
+    /// Un segundo de silencio en WAV (8 kHz, 8 bits, mono).
+    private static let silence: Data = {
+        let samples = 8000
+        var d = Data()
+        func u32(_ v: UInt32) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
+        func u16(_ v: UInt16) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
+        d.append(contentsOf: Array("RIFF".utf8)); u32(UInt32(36 + samples))
+        d.append(contentsOf: Array("WAVEfmt ".utf8)); u32(16); u16(1); u16(1); u32(8000); u32(8000); u16(1); u16(8)
+        d.append(contentsOf: Array("data".utf8)); u32(UInt32(samples))
+        d.append(Data(repeating: 128, count: samples))
+        return d
+    }()
 }

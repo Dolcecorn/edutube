@@ -14,6 +14,7 @@ final class WebViewController: UIViewController {
     private let prefs = UserDefaults.standard
     private var webView: WKWebView!
     private let loading = LoadingView()
+    private let loadingBar = LoadingBar()
     private var splashDone = false
     private var codecInfo = ""
     private var bufferingWork: DispatchWorkItem?
@@ -42,6 +43,16 @@ final class WebViewController: UIViewController {
         view.backgroundColor = .black
         setupWebView()
         setupCastButton()
+
+        // Al cargar un video: barra delgada abajo en vez de la animación grande.
+        loadingBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(loadingBar)
+        NSLayoutConstraint.activate([
+            loadingBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            loadingBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            loadingBar.heightAnchor.constraint(equalToConstant: 3),
+        ])
 
         loading.frame = view.bounds
         loading.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -345,11 +356,11 @@ final class WebViewController: UIViewController {
         bufferingWork?.cancel()
         guard splashDone else { return }
         if on {
-            let work = DispatchWorkItem { [weak self] in self?.loading.show(splash: false) }
+            let work = DispatchWorkItem { [weak self] in self?.loadingBar.show() }
             bufferingWork = work
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work) // cargas breves no muestran nada
         } else {
-            loading.hide()
+            loadingBar.hide()
         }
     }
 
