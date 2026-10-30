@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.2"
-    CURRENT_PROJECT_VERSION: "3"
+    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: "4"
 targets:
   TVWeb:
     type: application
@@ -35,6 +35,8 @@ targets:
         UIViewControllerBasedStatusBarAppearance: true
         UIRequiresFullScreen: false
         UIBackgroundModes: [audio]
+        NSLocalNetworkUsageDescription: edutube busca tu Chromecast en la red Wi-Fi para enviarle videos.
+        NSBonjourServices: [_googlecast._tcp]
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

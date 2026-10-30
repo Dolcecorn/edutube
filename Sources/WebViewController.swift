@@ -168,6 +168,8 @@ final class WebViewController: UIViewController {
 
     private func updateCastButton() {
         castButton.isHidden = currentVideoId() == nil
+        // Empieza a buscar Chromecast apenas se abre un video, para tenerlos listos al tocar el botón.
+        if !castButton.isHidden { Chromecast.shared.startDiscovery() }
     }
 
     /// Id del video abierto (youtube.com/watch?v=ID o /shorts/ID).
@@ -182,26 +184,89 @@ final class WebViewController: UIViewController {
     }
 
     @objc private func castTapped() {
-        guard let id = currentVideoId() else { return toast("Abre un video para enviarlo a la TV") }
-        guard TVCast.shared.isPaired else {
-            return askPairing { [weak self] in self?.castTapped() }
+        guard currentVideoId() != nil else { return toast("Abre un video para enviarlo a la TV") }
+        Chromecast.shared.startDiscovery()
+        if Chromecast.shared.devices.isEmpty {
+            // Recién empezó a buscar: se da un momento para que aparezcan los Chromecast.
+            toast("Buscando Chromecast en tu Wi-Fi…")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.showCastPicker() }
+        } else {
+            showCastPicker()
         }
-        castButton.isEnabled = false
-        castButton.alpha = 0.6
-        webView.evaluateJavaScript("(function(){var v=document.querySelector('video');return v?v.currentTime:0;})()") { [weak self] r, _ in
-            let time = (r as? NSNumber)?.doubleValue ?? 0
-            TVCast.shared.cast(videoId: id, at: time) { result in
-                guard let self = self else { return }
-                self.castButton.isEnabled = true
-                self.castButton.alpha = 1
+    }
+
+    private func showCastPicker() {
+        guard presentedViewController == nil else { return }
+        let devices = Chromecast.shared.devices
+        let sheet = UIAlertController(
+            title: "Transmitir a",
+            message: devices.isEmpty ? "No encontré ningún Chromecast. Revisa que el iPhone y el Chromecast estén en el mismo Wi-Fi "
+                + "y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
+            preferredStyle: .actionSheet)
+        for device in devices {
+            sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in self.castToChromecast(device) })
+        }
+        if TVCast.shared.isPaired {
+            let name = TVCast.shared.screenName ?? "TV"
+            sheet.addAction(UIAlertAction(title: "\(name) (vinculada con código)", style: .default) { _ in
+                self.castToPairedTV()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Vincular con código de TV…", style: .default) { _ in
+            self.askPairing { [weak self] in self?.castToPairedTV() }
+        })
+        sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        if let pop = sheet.popoverPresentationController {
+            pop.sourceView = castButton
+            pop.sourceRect = castButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func castToChromecast(_ device: Chromecast.Device) {
+        guard let id = currentVideoId() else { return }
+        castStarted()
+        toast("Conectando con \(device.name)…")
+        currentTime { [weak self] time in
+            Chromecast.shared.openYouTube(on: device) { result in
                 switch result {
-                case .success(let name):
-                    self.webView.evaluateJavaScript("var v=document.querySelector('video');if(v)v.pause();")
-                    self.toast("Reproduciendo en \(name)")
+                case .success(let screenId):
+                    TVCast.shared.cast(videoId: id, at: time, screenId: screenId, name: device.name) { self?.castFinished($0) }
                 case .failure(let error):
-                    self.showError(error.localizedDescription)
+                    self?.castFinished(.failure(error))
                 }
             }
+        }
+    }
+
+    private func castToPairedTV() {
+        guard let id = currentVideoId() else { return }
+        castStarted()
+        currentTime { [weak self] time in
+            TVCast.shared.cast(videoId: id, at: time) { self?.castFinished($0) }
+        }
+    }
+
+    private func currentTime(_ completion: @escaping (Double) -> Void) {
+        webView.evaluateJavaScript("(function(){var v=document.querySelector('video');return v?v.currentTime:0;})()") { r, _ in
+            completion((r as? NSNumber)?.doubleValue ?? 0)
+        }
+    }
+
+    private func castStarted() {
+        castButton.isEnabled = false
+        castButton.alpha = 0.6
+    }
+
+    private func castFinished(_ result: Result<String, Error>) {
+        castButton.isEnabled = true
+        castButton.alpha = 1
+        switch result {
+        case .success(let name):
+            webView.evaluateJavaScript("var v=document.querySelector('video');if(v)v.pause();")
+            toast("Reproduciendo en \(name)")
+        case .failure(let error):
+            showError(error.localizedDescription)
         }
     }
 

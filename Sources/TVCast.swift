@@ -17,6 +17,8 @@ final class TVCast {
     private var gsession: String?
     private var lastEventId: String?
     private var offset = 1
+    /// Pantalla con la que está abierta la sesión (la TV vinculada por código o un Chromecast).
+    private var activeScreen: String?
 
     var screenName: String? { prefs.string(forKey: "cast.name") }
     var isPaired: Bool { prefs.string(forKey: "cast.screen") != nil }
@@ -61,6 +63,7 @@ final class TVCast {
             let name = screen["name"] as? String ?? "TV"
             self.screenId = id
             self.prefs.set(name, forKey: "cast.name")
+            self.activeScreen = id
             self.loungeToken = token
             self.resetSession()
             self.done(completion, .success(name))
@@ -68,6 +71,7 @@ final class TVCast {
     }
 
     func unpair() {
+        if activeScreen == screenId { activeScreen = nil }
         prefs.removeObject(forKey: "cast.screen")
         prefs.removeObject(forKey: "cast.name")
         loungeToken = nil
@@ -78,12 +82,23 @@ final class TVCast {
 
     /// Reproduce el video en la TV desde el segundo indicado.
     func cast(videoId: String, at time: Double, completion: @escaping (Result<String, Error>) -> Void) {
-        guard isPaired else { return done(completion, .failure(CastError.notPaired)) }
+        guard let id = screenId else { return done(completion, .failure(CastError.notPaired)) }
+        cast(videoId: videoId, at: time, screenId: id, name: screenName ?? "TV", completion: completion)
+    }
+
+    /// Igual, pero a una pantalla concreta (por ejemplo, la de un Chromecast recién encontrado).
+    func cast(videoId: String, at time: Double, screenId: String, name: String,
+              completion: @escaping (Result<String, Error>) -> Void) {
+        if activeScreen != screenId {
+            activeScreen = screenId
+            loungeToken = nil
+            resetSession()
+        }
         var params = ["videoId": videoId, "currentTime": String(Int(time)), "currentIndex": "0",
                       "videoIds": videoId, "listId": "", "audioOnly": "false", "params": "", "playerParams": ""]
         if time < 1 { params["currentTime"] = "0" }
         command("setPlaylist", params: params, retry: true) { result in
-            self.done(completion, result.map { _ in self.screenName ?? "TV" })
+            self.done(completion, result.map { _ in name })
         }
     }
 
@@ -146,7 +161,7 @@ final class TVCast {
 
     private func refreshToken(_ completion: @escaping (Bool) -> Void) {
         if loungeToken != nil { return completion(true) }
-        guard let id = screenId else { return completion(false) }
+        guard let id = activeScreen else { return completion(false) }
         post("/pairing/get_lounge_token_batch", form: ["screen_ids": id]) { data, _ in
             guard let json = data.flatMap({ try? JSONSerialization.jsonObject(with: $0) }) as? [String: Any],
                   let screen = (json["screens"] as? [[String: Any]])?.first,
