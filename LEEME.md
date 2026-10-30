@@ -7,6 +7,7 @@ La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pan
 - Bloquea ~76.000 dominios de anuncios y rastreo (lista StevenBlack) más las redes de anuncios de video (Google IMA/DoubleClick, etc.). La primera vez que se abre, el iPhone tarda unos segundos en preparar la lista completa; después queda guardada.
 - **YouTube:** quita los anuncios de las respuestas de YouTube antes de que el reproductor los lea (antes, durante y después del video, y los promocionados de la portada y la búsqueda). Si alguno se cuela, lo adelanta y presiona "Omitir".
 - **Sigue sonando con la pantalla bloqueada** o al cambiar de app (se puede apagar en el menú). Si iOS lo pausa, se reanuda desde el centro de control.
+- **Transmitir a la TV (v1.2):** botón rojo con una TV abajo a la derecha cuando hay un video abierto. Envía el video a la TV en el mismo segundo. Funciona con TV Web en la TV, con la app de YouTube de la TV o con Chromecast. La primera vez pide vincular: en la TV, YouTube → Configuración → "Vincular con código de TV", y escribes ese código en el iPhone. Mantener presionado el botón: vincular otra TV o desvincular.
 - Imagen en imagen (PiP) desde el botón del reproductor en pantalla completa.
 - **Video fluido:** revisa qué formatos decodifica tu iPhone por hardware y le oculta a YouTube los demás (AV1 en casi todos los modelos), con tope de 1080p. "Máxima fluidez" fuerza H.264 a 30 fps para iPhones antiguos.
 - Bloquea ventanas emergentes y los saltos a la app oficial de YouTube o a la App Store.
