@@ -1,11 +1,11 @@
-# Genera la publicación del día (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
+# Genera las publicaciones del día siguiente (09:00 y 18:30) (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
 # Modo revisión (por defecto): abre un PR con la publicación; al aceptarlo (merge) entra a la cola.
 # Modo automático: variable AUTO_PUBLICAR = true; la deja directo en la cola, sin intervención.
 name: Generar publicación de Instagram
 
 on:
   schedule:
-    - cron: "0 13 * * *"   # todos los días ~10:00 de Chile (verano) / 09:00 (invierno); prepara la publicación del día siguiente
+    - cron: "0 13 * * *"   # todos los días ~10:00 de Chile (verano) / 09:00 (invierno); prepara las publicaciones del día siguiente
   workflow_dispatch:
     inputs:
       tipo:
@@ -19,6 +19,10 @@ on:
         default: ""
       fecha:
         description: "Día de publicación AAAA-MM-DD (vacío = mañana)"
+        type: string
+        default: ""
+      horarios:
+        description: "Horas, separadas por coma (vacío = las de marca.json: 09:00,18:30)"
         type: string
         default: ""
 
@@ -50,51 +54,59 @@ jobs:
           TIPO: ${{ inputs.tipo }}
           TEMA: ${{ inputs.tema }}
           FECHA: ${{ inputs.fecha }}
-        run: python3 instagram/generar.py ${FECHA:+--fecha "$FECHA"}
+          HORARIOS: ${{ inputs.horarios }}
+        run: python3 instagram/generar.py ${FECHA:+--fecha "$FECHA"} ${HORARIOS:+--horarios "$HORARIOS"}
 
       - name: Guardar (automático)
         if: vars.AUTO_PUBLICAR == 'true'
+        env:
+          RESUMEN: ${{ steps.gen.outputs.resumen }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git add instagram
-          git commit -m "Instagram: ${{ steps.gen.outputs.tipo }} ${{ steps.gen.outputs.tema }}"
+          git commit -m "Instagram: $RESUMEN"
           git push
 
       - name: Abrir PR para revisar
         if: vars.AUTO_PUBLICAR != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          CARPETA: ${{ steps.gen.outputs.carpeta }}
-          TIPO: ${{ steps.gen.outputs.tipo }}
-          TEMA: ${{ steps.gen.outputs.tema }}
+          CARPETAS: ${{ steps.gen.outputs.carpetas }}
+          DIA: ${{ steps.gen.outputs.dia }}
+          RESUMEN: ${{ steps.gen.outputs.resumen }}
         run: |
-          rama="instagram/$(basename "$CARPETA")"
+          rama="instagram/$DIA-$(date +%H%M%S)"
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$rama"
           git add instagram
-          git commit -m "Instagram: $TIPO $TEMA"
+          git commit -m "Instagram: $RESUMEN"
           git push -u origin "$rama"
-          base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/$(git rev-parse HEAD)/${CARPETA}"
+          sha=$(git rev-parse HEAD)
           {
-            echo "**$TIPO:** $TEMA"
-            echo
-            for f in "$CARPETA"/*.jpg "$CARPETA"/vista-previa.png; do
-              [ -e "$f" ] && echo "<img src=\"$base/$(basename "$f")\" width=\"270\">"
+            for CARPETA in $CARPETAS; do
+              base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/$sha/${CARPETA}"
+              echo "## $(cat "$CARPETA/fecha.txt") · $(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['tema'])" "$CARPETA/contenido.json")"
+              echo
+              for f in "$CARPETA"/*.jpg "$CARPETA"/vista-previa.png; do
+                [ -e "$f" ] && echo "<img src=\"$base/$(basename "$f")\" width=\"230\">"
+              done
+              [ -e "$CARPETA/video.mp4" ] && echo && echo "[Ver el reel]($base/video.mp4)"
+              echo
+              echo "<details><summary>Descripción</summary>"
+              echo
+              cat "$CARPETA/texto.txt"
+              echo
+              echo "</details>"
+              echo
             done
-            [ -e "$CARPETA/video.mp4" ] && echo && echo "[Ver el reel]($base/video.mp4)"
-            echo
-            echo "### Descripción"
-            echo
-            cat "$CARPETA/texto.txt"
-            echo
             echo "---"
-            echo "Para publicarla: **Merge**. Para descartarla: **Close**. Sale a las $(cat "$CARPETA/fecha.txt")."
+            echo "Para publicarlas: **Merge**. Para descartarlas: **Close** (o pídele a Claude que cambie una)."
           } > cuerpo.md
           # GitHub a veces falla al crear el PR justo después del push: reintentar
           for i in 1 2 3 4 5; do
-            gh pr create --base main --head "$rama" --title "Instagram: $TIPO · $TEMA" --body-file cuerpo.md && exit 0
+            gh pr create --base main --head "$rama" --title "Instagram $DIA: $RESUMEN" --body-file cuerpo.md && exit 0
             sleep $((i * 10))
           done
           exit 1

@@ -20,6 +20,7 @@ import datetime as dt
 import json
 import os
 import shutil
+import subprocess
 import sys
 import time
 import urllib.error
@@ -72,7 +73,12 @@ def subir_video(ruta_video, caption):
 def url_publica(ruta):
     base = os.environ.get("MEDIA_BASE_URL")
     if not base:
-        repo, sha = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_SHA")
+        repo = os.environ.get("GITHUB_REPOSITORY")
+        try:  # el commit que realmente está descargado (puede ser más nuevo que GITHUB_SHA)
+            sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=RAIZ, capture_output=True, text=True,
+                                 check=True).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            sha = os.environ.get("GITHUB_SHA")
         if not (repo and sha):
             sys.exit("Falta MEDIA_BASE_URL para publicar imagenes")
         base = f"https://raw.githubusercontent.com/{repo}/{sha}"
@@ -137,7 +143,8 @@ def main():
         sys.exit("Faltan IG_USER_ID o IG_ACCESS_TOKEN")
     ahora = dt.datetime.now(ZONA)
     maximo = int(os.environ.get("MAX_POR_PASADA", "1"))
-    pendientes = [c for c in sorted(COLA.iterdir()) if c.is_dir() and (fecha_de(c) or ahora) <= ahora]
+    pendientes = sorted((c for c in COLA.iterdir() if c.is_dir() and (fecha_de(c) or ahora) <= ahora),
+                        key=lambda c: (fecha_de(c) or ahora, c.name))  # primero la de hora más temprana
     if not pendientes:
         print("Nada que publicar ahora.")
         return
