@@ -46,27 +46,26 @@ Súbela a la rama `main` (desde la web de GitHub: *Add file → Upload files*, o
 Requisitos de Instagram: imágenes **JPG**, proporción entre 4:5 y 1,91:1, hasta 8 MB. Reels en **MP4 (H.264 + AAC)**, vertical 9:16 recomendado, de 3 s a 15 min.
 
 ## Configuración (una vez)
-1. **Cuenta profesional:** en la app de Instagram, *Configuración → Tipo de cuenta y herramientas → Cambiar a cuenta profesional* **Empresa** (es lo que corresponde para @ambulanciasahp). Gratis y reversible.
-2. **App de Meta:** en https://developers.facebook.com/apps crea una app → caso de uso *"Administrar mensajes y contenido en Instagram"* (API de Instagram con inicio de sesión de Instagram). No hace falta página de Facebook.
-3. En la app: *Roles → Evaluadores de Instagram*, agrega tu cuenta y acepta la invitación en Instagram (*Configuración → Apps y sitios web → Invitaciones de evaluador*).
-4. En *Configuración de la API con inicio de sesión de Instagram → Generar tokens de acceso*, conecta la cuenta con los permisos `instagram_business_basic` e `instagram_business_content_publish`. Copia el **token** y el **id de usuario** que muestra.
+1. **Cuenta profesional** (@ambulanciasahp ya lo es) **vinculada a una página de Facebook** de la empresa. Se revisa en Instagram → Perfil → Editar perfil → Página.
+2. **App de Meta:** en https://developers.facebook.com/apps → *Crear app* → caso de uso *"Administrar mensajes y contenido en Instagram"*, sin portfolio comercial. Dentro del caso de uso, usar *"Configuración de la API con inicio de sesión con Facebook"* (Meta ya no ofrece el inicio de sesión de Instagram en apps nuevas).
+3. **Token corto:** abre el [Explorador de la API Graph](https://developers.facebook.com/tools/explorer/), elige la app, en *Permisos* agrega `instagram_basic`, `instagram_content_publishing`, `pages_show_list`, `pages_read_engagement` y `business_management`, y toca *Generate Access Token*. En la ventana, elige la página de AHP y la cuenta de Instagram.
+4. **Token que no vence:** en tu computador corre `python3 instagram/obtener_token.py`. Pide el identificador y la clave secreta de la app (*Configuración de la app → Básica*) y el token corto, y muestra `IG_USER_ID` e `IG_ACCESS_TOKEN`.
 5. **Clave de Claude:** crea una en https://console.anthropic.com (*API Keys*) y carga saldo (cada publicación cuesta centavos de dólar).
 6. En este repo de GitHub: *Settings → Secrets and variables → Actions → New repository secret*:
-   - `IG_USER_ID` = el id
-   - `IG_ACCESS_TOKEN` = el token
-   - `ANTHROPIC_API_KEY` = la clave de Claude
+   - `IG_USER_ID`
+   - `IG_ACCESS_TOKEN`
+   - `ANTHROPIC_API_KEY`
 7. Para que la generación pueda abrir los PR de revisión: *Settings → Actions → General → Workflow permissions* → marca **"Allow GitHub Actions to create and approve pull requests"**.
 8. Prueba: *Actions → Publicar en Instagram → Run workflow* con "Solo probar" marcado.
 
 La app puede quedarse en modo desarrollo: así funciona para tus propias cuentas sin revisión de Meta.
 
 ## Cosas a tener en cuenta
-- **El token dura 60 días.** Hay que generarlo de nuevo (paso 4) y reemplazar el secreto antes de que venza. Se puede automatizar más adelante.
+- **El token de página no vence**, salvo que cambies la contraseña de Facebook, quites la app o pierdas el acceso a la página. En ese caso, repite los pasos 3 y 4.
 - **Fotos y repo público:** Instagram descarga las imágenes desde una URL pública; como este repo es público, se usa la de GitHub automáticamente (y todo lo generado queda visible en GitHub). Si algún día se hace privado, hay que definir la variable `MEDIA_BASE_URL` con otro lugar público. Los reels no tienen este problema: se suben directo desde el archivo.
 - Videos pesados: GitHub acepta archivos de hasta 100 MB por archivo.
 - Instagram permite hasta 100 publicaciones por API cada 24 horas.
 - Si una publicación falla, la carpeta queda en la cola, la ejecución sale en rojo en *Actions* con el motivo, y se reintenta a la hora siguiente.
-- Si usas una cuenta de Empresa vinculada a una página de Facebook y un token de Facebook, crea la variable `IG_API_HOST` = `graph.facebook.com`.
 
 ## Probar desde Ubuntu
 ```

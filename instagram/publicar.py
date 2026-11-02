@@ -10,7 +10,7 @@ Se publica en orden alfabetico de carpeta. Al publicarse, la carpeta pasa a inst
 Variables de entorno:
   IG_USER_ID       id de la cuenta de Instagram (profesional)
   IG_ACCESS_TOKEN  token de acceso
-  IG_API_HOST      graph.instagram.com (Login con Instagram, por defecto) o graph.facebook.com
+  IG_API_HOST      graph.facebook.com (inicio de sesión con Facebook, por defecto) o graph.instagram.com
   MEDIA_BASE_URL   URL publica donde se ven los archivos del repo (para imagenes);
                    por defecto https://raw.githubusercontent.com/<repo>/<commit>
   MAX_POR_PASADA   cuantos publicar como maximo en cada ejecucion (por defecto 1)
@@ -36,7 +36,7 @@ PUBLICADOS = RAIZ / "publicados"
 VIDEO = {".mp4", ".mov"}
 IMAGEN = {".jpg", ".jpeg"}
 
-HOST = os.environ.get("IG_API_HOST", "graph.instagram.com")
+HOST = os.environ.get("IG_API_HOST", "graph.facebook.com")
 USER = os.environ.get("IG_USER_ID", "")
 TOKEN = os.environ.get("IG_ACCESS_TOKEN", "")
 DRY = os.environ.get("DRY_RUN") == "1"
