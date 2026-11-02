@@ -87,4 +87,9 @@ jobs:
             echo "---"
             echo "Para publicarla: **Merge**. Para descartarla: **Close**. Sale a las $(cat "$CARPETA/fecha.txt")."
           } > cuerpo.md
-          gh pr create --base main --head "$rama" --title "Instagram: $TIPO · $TEMA" --body-file cuerpo.md
+          # GitHub a veces falla al crear el PR justo después del push: reintentar
+          for i in 1 2 3 4 5; do
+            gh pr create --base main --head "$rama" --title "Instagram: $TIPO · $TEMA" --body-file cuerpo.md && exit 0
+            sleep $((i * 10))
+          done
+          exit 1
