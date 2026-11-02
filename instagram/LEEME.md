@@ -2,7 +2,7 @@
 
 Pipeline completo, sin intervención humana una vez afinado:
 
-1. **Generar** (todos los días ~09:00, `instagram-generar.yml`): Claude escribe el contenido del día con la marca y los temas de `marca/marca.json`, sin repetir temas recientes. `diseno.py` dibuja las láminas (Pillow) o arma el reel 9:16 con zoom suave y fundidos (ffmpeg). Alterna **post → reel → carrusel**.
+1. **Generar** (todos los días ~09:00, `instagram-generar.yml`): la IA (OpenAI o Claude) escribe el contenido del día con la marca y los temas de `marca/marca.json`, sin repetir temas recientes. `diseno.py` dibuja las láminas (Pillow) o arma el reel 9:16 con zoom suave y fundidos (ffmpeg). Alterna **post → reel → carrusel**.
 2. **Revisar** (mientras se afina): la generación abre un PR con las imágenes y el texto. **Merge** = se publica; **Close** = se descarta. Cuando el resultado ya sea confiable, crea la variable `AUTO_PUBLICAR` = `true` y la publicación entra directo a la cola.
 3. **Publicar** (cada hora, `instagram.yml`): sube a Instagram lo que esté en la cola y ya haya llegado a su hora (19:00 por defecto), con la **API oficial de Meta**, así que no hay riesgo de bloqueo como con los bots.
 
@@ -18,7 +18,7 @@ Pipeline completo, sin intervención humana una vez afinado:
 ```
 sudo apt install ffmpeg
 pip install -r instagram/requirements.txt
-export ANTHROPIC_API_KEY=...
+export OPENAI_API_KEY=...   # o ANTHROPIC_API_KEY
 python3 instagram/generar.py --salida /tmp/prueba   # deja la publicación en /tmp/prueba
 ```
 Ojo: también avanza `estado.json` (el turno y el historial de temas); descarta ese cambio si solo era una prueba (`git checkout instagram/estado.json`).
@@ -50,11 +50,11 @@ Requisitos de Instagram: imágenes **JPG**, proporción entre 4:5 y 1,91:1, hast
 2. **App de Meta:** en https://developers.facebook.com/apps → *Crear app* → caso de uso *"Administrar mensajes y contenido en Instagram"*, sin portfolio comercial. Dentro del caso de uso, usar *"Configuración de la API con inicio de sesión con Facebook"* (Meta ya no ofrece el inicio de sesión de Instagram en apps nuevas).
 3. **Token corto:** abre el [Explorador de la API Graph](https://developers.facebook.com/tools/explorer/), elige la app, en *Permisos* agrega `instagram_basic`, `instagram_content_publishing`, `pages_show_list`, `pages_read_engagement` y `business_management`, y toca *Generate Access Token*. En la ventana, elige la página de AHP y la cuenta de Instagram.
 4. **Token que no vence:** en tu computador corre `python3 instagram/obtener_token.py`. Pide el identificador y la clave secreta de la app (*Configuración de la app → Básica*) y el token corto, y muestra `IG_USER_ID` e `IG_ACCESS_TOKEN`.
-5. **Clave de Claude:** crea una en https://console.anthropic.com (*API Keys*) y carga saldo (cada publicación cuesta centavos de dólar).
+5. **Clave de IA:** una de OpenAI (https://platform.openai.com/api-keys) o de Claude (https://console.anthropic.com, *API Keys*), con saldo. Cada publicación cuesta centavos de dólar. El modelo se cambia en `marca.json` (`modelo_openai` o `modelo`).
 6. En este repo de GitHub: *Settings → Secrets and variables → Actions → New repository secret*:
    - `IG_USER_ID`
    - `IG_ACCESS_TOKEN`
-   - `ANTHROPIC_API_KEY`
+   - `OPENAI_API_KEY` (o `ANTHROPIC_API_KEY` para usar Claude; si están las dos, se usa OpenAI)
 7. Para que la generación pueda abrir los PR de revisión: *Settings → Actions → General → Workflow permissions* → marca **"Allow GitHub Actions to create and approve pull requests"**.
 8. Prueba: *Actions → Publicar en Instagram → Run workflow* con "Solo probar" marcado.
 

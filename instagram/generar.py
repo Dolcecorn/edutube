@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Genera la publicación del día: Claude escribe el contenido y diseno.py dibuja las gráficas o el reel.
+"""Genera la publicación del día: un modelo de IA (OpenAI o Claude) escribe el contenido y diseno.py dibuja las gráficas o el reel.
 
 Alterna post -> reel -> carrusel. Deja la carpeta lista en instagram/cola/ (o en la carpeta que se indique
 con --salida) con fecha.txt para la hora de publicación de marca.json.
 
-Variables: ANTHROPIC_API_KEY. Opcional: TIPO=post|reel|carrusel para forzar el tipo.
+Variables: OPENAI_API_KEY (usa OpenAI) o ANTHROPIC_API_KEY (usa Claude); si están las dos, se usa OpenAI.
+Opcional: TIPO=post|reel|carrusel para forzar el tipo. Los modelos se eligen en marca.json.
 """
 import argparse
 import datetime as dt
@@ -17,7 +18,6 @@ from pathlib import Path
 from typing import List
 from zoneinfo import ZoneInfo
 
-import anthropic
 from pydantic import BaseModel, Field
 
 import diseno
@@ -75,8 +75,20 @@ Temas posibles (elige uno o un ángulo nuevo dentro de ellos): {'; '.join(m['tem
 No repitas los temas de estas publicaciones recientes:
 {recientes}"""
 
-    cliente = anthropic.Anthropic()
-    r = cliente.messages.parse(
+    if os.environ.get("OPENAI_API_KEY"):
+        from openai import OpenAI
+        r = OpenAI().responses.parse(
+            model=m.get("modelo_openai", "gpt-5"),
+            instructions=sistema,
+            input=pedido,
+            text_format=Contenido,
+        )
+        if r.output_parsed is None:
+            sys.exit(f"OpenAI no generó contenido (estado={r.status})")
+        return r.output_parsed
+
+    import anthropic
+    r = anthropic.Anthropic().messages.parse(
         model=m.get("modelo", "claude-opus-5-5"),
         max_tokens=16000,
         thinking={"type": "adaptive"},
