@@ -33,6 +33,6 @@
   ],
   "hashtags_fijos": ["#AmbulanciasAHP", "#PrimerosAuxilios"],
   "hora_publicacion": "19:00",
-  "modelo_openai": "gpt-5",
+  "modelo_openai": "gpt-5.6-luna",
   "modelo": "claude-opus-5-5"
 }

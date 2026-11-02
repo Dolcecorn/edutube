@@ -78,7 +78,7 @@ No repitas los temas de estas publicaciones recientes:
     if os.environ.get("OPENAI_API_KEY"):
         from openai import OpenAI
         r = OpenAI().responses.parse(
-            model=m.get("modelo_openai", "gpt-5"),
+            model=os.environ.get("LLM_MODEL") or m.get("modelo_openai", "gpt-5.6-luna"),
             instructions=sistema,
             input=pedido,
             text_format=Contenido,

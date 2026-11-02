@@ -50,7 +50,7 @@ Requisitos de Instagram: imágenes **JPG**, proporción entre 4:5 y 1,91:1, hast
 2. **App de Meta:** en https://developers.facebook.com/apps → *Crear app* → caso de uso *"Administrar mensajes y contenido en Instagram"*, sin portfolio comercial. Dentro del caso de uso, usar *"Configuración de la API con inicio de sesión con Facebook"* (Meta ya no ofrece el inicio de sesión de Instagram en apps nuevas).
 3. **Token corto:** abre el [Explorador de la API Graph](https://developers.facebook.com/tools/explorer/), elige la app, en *Permisos* agrega `instagram_basic`, `instagram_content_publishing`, `pages_show_list`, `pages_read_engagement` y `business_management`, y toca *Generate Access Token*. En la ventana, elige la página de AHP y la cuenta de Instagram.
 4. **Token que no vence:** en tu computador corre `python3 instagram/obtener_token.py`. Pide el identificador y la clave secreta de la app (*Configuración de la app → Básica*) y el token corto, y muestra `IG_USER_ID` e `IG_ACCESS_TOKEN`.
-5. **Clave de IA:** una de OpenAI (https://platform.openai.com/api-keys) o de Claude (https://console.anthropic.com, *API Keys*), con saldo. Cada publicación cuesta centavos de dólar. El modelo se cambia en `marca.json` (`modelo_openai` o `modelo`).
+5. **Clave de IA:** una de OpenAI (https://platform.openai.com/api-keys) o de Claude (https://console.anthropic.com, *API Keys*), con saldo. Cada publicación cuesta centavos de dólar. El modelo de OpenAI se cambia en `marca.json` (`modelo_openai`, hoy `gpt-5.6-luna`) o con la variable de GitHub `LLM_MODEL`; el de Claude, en `modelo`.
 6. En este repo de GitHub: *Settings → Secrets and variables → Actions → New repository secret*:
    - `IG_USER_ID`
    - `IG_ACCESS_TOKEN`

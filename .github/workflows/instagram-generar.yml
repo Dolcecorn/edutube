@@ -37,6 +37,7 @@ jobs:
         id: gen
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TIPO: ${{ inputs.tipo }}
         run: python3 instagram/generar.py
