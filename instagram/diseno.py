@@ -152,7 +152,10 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     tam_pie = 38 if not reel else 44
     f_pie = _fuente(True, tam_pie)
     izquierda = m.get("telefono") or m["usuario"]
-    derecha = f"{numero}/{total}" if numero and total else (m["usuario"] if m.get("telefono") else "")
+    derecha = f"{numero}/{total}" if numero and total else ((m.get("web") or m["usuario"]) if m.get("telefono") else "")
+    while derecha and d.textlength(f"{izquierda}   {derecha}", font=f_pie) > W - 2 * margen and tam_pie > 30:
+        tam_pie -= 2
+        f_pie = _fuente(True, tam_pie)
     if derecha and d.textlength(f"{izquierda}   {derecha}", font=f_pie) > W - 2 * margen:
         derecha = f"{numero}/{total}" if numero and total else ""
     y_txt = y_pie + (alto_pie - tam_pie) // 2 - 4

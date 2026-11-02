@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 import diseno
+import video
 
 RAIZ = Path(__file__).resolve().parent
 ESTADO = RAIZ / "estado.json"
@@ -64,12 +65,14 @@ def pedir_contenido(m, tipo, historial):
     recientes = "\n".join(f"- {h['fecha']}: {h['tema']}" for h in historial[-30:]) or "(ninguna todavía)"
     sistema = f"""Eres el community manager de {m['nombre']} ({m['usuario']}), empresa de ambulancias en {m['pais']}.
 Servicios: {', '.join(m['servicios'])}.
+Contacto: teléfono {m['telefono']}; sitio web {m.get('web') or '(no tiene)'}.
 Tono: {m['tono']}
 
 Reglas de contenido:
 - La información de salud debe ser correcta, prudente y alineada con recomendaciones oficiales vigentes
   (MINSAL, Cruz Roja, AHA/ERC). Ante la duda, sé conservador y no des dosis de medicamentos ni diagnósticos.
 - Cuando sea una emergencia, indica llamar al {m['numero_emergencia']}.
+- En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
     tema = os.environ.get("TEMA", "").strip()
@@ -132,7 +135,7 @@ def crear(m, estado, tipo, dia, hora, salida):
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
 
     if tipo == "reel":
-        diseno.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4")
+        video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4")
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
                       diseno.REEL, portada=True, foto=c.laminas[0].foto or None)
@@ -145,7 +148,10 @@ def crear(m, estado, tipo, dia, hora, salida):
                           portada=(i == 1 and total > 1), foto=l.foto or None)
 
     fijos = [h for h in m.get("hashtags_fijos", []) if h not in c.hashtags]
-    (carpeta / "texto.txt").write_text(f"{c.descripcion.strip()}\n\n{' '.join(fijos + c.hashtags)}\n", encoding="utf-8")
+    descripcion = c.descripcion.strip()
+    if m.get("web") and m["web"].lower() not in descripcion.lower():
+        descripcion += f"\n\nContacto: {m['telefono']} · {m['web']}"
+    (carpeta / "texto.txt").write_text(f"{descripcion}\n\n{' '.join(fijos + c.hashtags)}\n", encoding="utf-8")
     (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
     (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
 
