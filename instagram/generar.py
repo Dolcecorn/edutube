@@ -113,13 +113,14 @@ def slug(texto):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--salida", default=str(RAIZ / "cola"), help="carpeta donde dejar la publicación")
-    ap.add_argument("--fecha", help="día de publicación AAAA-MM-DD (por defecto hoy)")
+    ap.add_argument("--fecha", help="día de publicación AAAA-MM-DD (por defecto mañana)")
     args = ap.parse_args()
 
     m = diseno.marca()
     estado = cargar_estado()
     tipo = siguiente_tipo(estado)
-    dia = args.fecha or dt.datetime.now(ZONA).strftime("%Y-%m-%d")
+    # Se genera el día anterior: así queda tiempo para revisarla antes de la hora de publicación
+    dia = args.fecha or (dt.datetime.now(ZONA) + dt.timedelta(days=1)).strftime("%Y-%m-%d")
 
     c = pedir_contenido(m, tipo, estado["historial"])
     carpeta = Path(args.salida) / f"{dia}-{tipo}-{slug(c.tema)}"

@@ -5,7 +5,7 @@ name: Generar publicación de Instagram
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # todos los días ~09:00 de Chile (verano) / 08:00 (invierno)
+    - cron: "0 13 * * *"   # todos los días ~10:00 de Chile (verano) / 09:00 (invierno); prepara la publicación del día siguiente
   workflow_dispatch:
     inputs:
       tipo:
@@ -15,6 +15,10 @@ on:
         default: ""
       tema:
         description: "Tema (vacío = lo elige la IA)"
+        type: string
+        default: ""
+      fecha:
+        description: "Día de publicación AAAA-MM-DD (vacío = mañana)"
         type: string
         default: ""
 
@@ -45,7 +49,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TIPO: ${{ inputs.tipo }}
           TEMA: ${{ inputs.tema }}
-        run: python3 instagram/generar.py
+          FECHA: ${{ inputs.fecha }}
+        run: python3 instagram/generar.py ${FECHA:+--fecha "$FECHA"}
 
       - name: Guardar (automático)
         if: vars.AUTO_PUBLICAR == 'true'
