@@ -13,6 +13,10 @@ on:
         type: choice
         options: ["", post, reel, carrusel]
         default: ""
+      tema:
+        description: "Tema (vacío = lo elige la IA)"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -40,6 +44,7 @@ jobs:
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TIPO: ${{ inputs.tipo }}
+          TEMA: ${{ inputs.tema }}
         run: python3 instagram/generar.py
 
       - name: Guardar (automático)

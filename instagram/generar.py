@@ -5,7 +5,7 @@ Alterna post -> reel -> carrusel. Deja la carpeta lista en instagram/cola/ (o en
 con --salida) con fecha.txt para la hora de publicación de marca.json.
 
 Variables: OPENAI_API_KEY (usa OpenAI) o ANTHROPIC_API_KEY (usa Claude); si están las dos, se usa OpenAI.
-Opcional: TIPO=post|reel|carrusel para forzar el tipo. Los modelos se eligen en marca.json.
+Opcional: TIPO=post|reel|carrusel para forzar el tipo; TEMA=... para pedir un tema. Los modelos se eligen en marca.json.
 """
 import argparse
 import datetime as dt
@@ -70,8 +70,11 @@ Reglas de contenido:
 - Cuando sea una emergencia, indica llamar al {m['numero_emergencia']}.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
+    tema = os.environ.get("TEMA", "").strip()
+    eleccion = (f"Tema pedido: {tema}." if tema else
+                f"Temas posibles (elige uno o un ángulo nuevo dentro de ellos): {'; '.join(m['temas'])}.")
     pedido = f"""Crea la publicación de hoy: un {tipo.upper()} con {LAMINAS[tipo]}.
-Temas posibles (elige uno o un ángulo nuevo dentro de ellos): {'; '.join(m['temas'])}.
+{eleccion}
 No repitas los temas de estas publicaciones recientes:
 {recientes}"""
 

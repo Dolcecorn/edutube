@@ -8,11 +8,11 @@ Pipeline completo, sin intervención humana una vez afinado:
 
 ## Afinar las gráficas y el contenido
 - `marca/marca.json`: nombre, colores, teléfono, web, tono, servicios, lista de temas, hashtags fijos, hora de publicación.
-- `marca/logo.png` (opcional, fondo transparente): aparece en la franja superior.
+- `marca/logo.png` y `marca/logo-blanco.png` (fondo transparente): el logo en rojo para las láminas blancas y en blanco para las portadas rojas. `logo-original.png` es el archivo entregado.
 - `marca/fuentes/` (opcional): pon ahí la tipografía de la marca (`.ttf`; la primera en orden alfabético es la negrita, la segunda la normal). Sin ella se usa DejaVu Sans.
 - `marca/musica.mp3` (opcional, música libre de derechos): fondo de los reels. Sin ella, los reels van sin sonido.
 - `diseno.py`: el diseño de las láminas en sí (márgenes, tamaños, franjas).
-- Probar sin publicar: *Actions → Generar publicación de Instagram → Run workflow* (puedes forzar el tipo). Abre un PR que puedes cerrar.
+- Probar sin publicar: *Actions → Generar publicación de Instagram → Run workflow* (puedes forzar el tipo y pedir un tema). Abre un PR que puedes cerrar.
 
 ### Probar el diseño en Ubuntu
 ```

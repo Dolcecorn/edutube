@@ -59,50 +59,67 @@ def _ajustar(draw, texto, negrita, tam_max, tam_min, ancho, alto_max, interlinea
         tam -= 4
 
 
+def _logo(blanco, ancho_max, alto_max):
+    ruta = MARCA_DIR / ("logo-blanco.png" if blanco else "logo.png")
+    if not ruta.exists():
+        return None
+    lg = Image.open(ruta).convert("RGBA")
+    lg.thumbnail((ancho_max, alto_max), Image.LANCZOS)
+    return lg
+
+
 def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada=False):
-    """Una lámina: franja superior con marca, título grande, texto y pie con la cuenta."""
+    """Una lámina. Normal: fondo blanco, logo arriba, título rojo, detalle cyan, pie rojo con teléfono.
+    Portada: fondo rojo, logo y textos en blanco, detalle cyan."""
     m = marca()
     c = m["colores"]
     W, H = tamano
-    img = Image.new("RGB", tamano, c["claro"] if not portada else c["principal"])
+    reel = H >= 1600
+    esc = 1.35 if reel else 1.0
+    fondo = c["principal"] if portada else c["claro"]
+    img = Image.new("RGB", tamano, fondo)
     d = ImageDraw.Draw(img)
     margen = 90
-    fondo_txt = c["claro"] if portada else c["oscuro"]
 
-    # Franja superior
-    alto_franja = 150 if H < 1600 else 260
-    d.rectangle([0, 0, W, alto_franja], fill=c["oscuro"] if portada else c["principal"])
-    logo = MARCA_DIR / "logo.png"
-    x_nombre = margen
-    if logo.exists():
-        lg = Image.open(logo).convert("RGBA")
-        lg.thumbnail((alto_franja - 50, alto_franja - 50))
-        img.paste(lg, (margen, (alto_franja - lg.height) // 2 + (0 if H < 1600 else 40)), lg)
-        x_nombre = margen + lg.width + 30
-    f_nombre = _fuente(True, 46 if H < 1600 else 56)
-    y_nombre = (alto_franja - 46) // 2 + (0 if H < 1600 else 40)
-    d.text((x_nombre, y_nombre), m["nombre"].upper(), font=f_nombre, fill=c["claro"])
-    # Cruz de vida simple a la derecha
-    cx, cy, r = W - margen - 40, alto_franja // 2 + (0 if H < 1600 else 40), 40
-    d.rectangle([cx - r // 3, cy - r, cx + r // 3, cy + r], fill=c["claro"])
-    d.rectangle([cx - r, cy - r // 3, cx + r, cy + r // 3], fill=c["claro"])
+    # Encabezado: logo (en el reel se deja espacio arriba para la interfaz de Instagram)
+    y_logo = 230 if reel else 70
+    lg = _logo(portada, int(W * (0.62 if not reel else 0.8)), 120 if not reel else 200)
+    if lg:
+        img.paste(lg, (margen, y_logo), lg)
+        alto_logo = lg.height
+    else:
+        f = _fuente(True, 56)
+        d.text((margen, y_logo), m["nombre"].upper(), font=f, fill=c["claro"] if portada else c["principal"])
+        alto_logo = 60
+    y_linea = y_logo + alto_logo + 40
+    if not portada:
+        d.rectangle([margen, y_linea, W - margen, y_linea + 4], fill=c["acento"])
 
-    # Pie
-    alto_pie = 120 if H < 1600 else 300
-    y_pie = H - alto_pie
-    pie = m["usuario"] + (f"  ·  {m['telefono']}" if m.get("telefono") else "")
-    f_pie = _fuente(True, 38 if H < 1600 else 48)
-    d.text((margen, y_pie + 30), pie, font=f_pie, fill=fondo_txt)
-    if numero and total:
-        t = f"{numero}/{total}"
-        d.text((W - margen - d.textlength(t, font=f_pie), y_pie + 30), t, font=f_pie, fill=fondo_txt)
+    # Pie: franja con teléfono y cuenta
+    alto_pie = 110 if not reel else 130
+    y_pie = H - alto_pie - (300 if reel else 0)
+    color_pie = c["claro"] if portada else c["principal"]
+    texto_pie_color = c["principal"] if portada else c["claro"]
+    d.rectangle([0, y_pie, W, y_pie + alto_pie], fill=color_pie)
+    tam_pie = 38 if not reel else 44
+    f_pie = _fuente(True, tam_pie)
+    izquierda = m.get("telefono") or m["usuario"]
+    derecha = f"{numero}/{total}" if numero and total else (m["usuario"] if m.get("telefono") else "")
+    if derecha and d.textlength(f"{izquierda}   {derecha}", font=f_pie) > W - 2 * margen:
+        derecha = f"{numero}/{total}" if numero and total else ""
+    y_txt = y_pie + (alto_pie - tam_pie) // 2 - 4
+    d.text((margen, y_txt), izquierda, font=f_pie, fill=texto_pie_color)
+    if derecha:
+        d.text((W - margen - d.textlength(derecha, font=f_pie), y_txt), derecha, font=f_pie, fill=texto_pie_color)
+    if reel:  # fondo bajo el pie, con el mismo color de la lámina
+        d.rectangle([0, y_pie + alto_pie, W, H], fill=fondo)
 
-    # Zona de contenido
-    arriba = alto_franja + 90
-    disponible = y_pie - arriba - 60
+    # Contenido
+    arriba = y_linea + 80
+    disponible = y_pie - arriba - 70
     ancho = W - 2 * margen
     color_tit = c["claro"] if portada else c["principal"]
-    esc = 1.35 if H >= 1600 else 1.0   # letras más grandes en el reel
+    color_txt = c["claro"] if portada else c["oscuro"]
     f_t, l_t, tam_t, alto_t = _ajustar(d, titulo, True, int((104 if portada else 84) * esc), 48, ancho,
                                        disponible * (0.8 if portada or not texto else 0.45))
     alto_x, l_x, f_x, tam_x = 0, [], None, 0
@@ -110,8 +127,7 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
         f_x, l_x, tam_x, alto_x = _ajustar(d, texto, False, int(56 * esc), 30, ancho,
                                            disponible - alto_t - 120, 1.4)
     alto_total = alto_t + 85 + alto_x
-    # Centrado vertical en portadas, láminas sin texto y reels; arriba en el resto
-    centrar = portada or not texto or H >= 1600
+    centrar = portada or not texto or reel
     y = arriba + (max(0, (disponible - alto_total) // 2) if centrar else 0)
     for linea in l_t:
         d.text((margen, y), linea, font=f_t, fill=color_tit)
@@ -120,9 +136,10 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     d.rectangle([margen, y, margen + 160, y + 12], fill=c["acento"])
     y += 60
     for linea in l_x:
-        d.text((margen, y), linea, font=f_x, fill=fondo_txt)
+        d.text((margen, y), linea, font=f_x, fill=color_txt)
         y += int(tam_x * 1.4)
 
+    destino.parent.mkdir(parents=True, exist_ok=True)
     if destino.suffix.lower() == ".png":
         img.save(destino, "PNG")
     else:
