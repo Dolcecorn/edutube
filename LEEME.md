@@ -50,3 +50,6 @@ open TVWeb.xcodeproj
 - `Sources/Scripts.swift`: código que quita anuncios de YouTube, formatos de video y segundo plano.
 - `Sources/LoadingView.swift`: la animación de carga.
 - `Resources/adhosts.txt`, `Resources/extra_hosts.txt`: las mismas listas que la app de la TV.
+
+## Otras herramientas en este repo
+- [`instagram/`](instagram/LEEME.md): publicación automática de posts y reels en Instagram.
