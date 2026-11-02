@@ -211,7 +211,7 @@ def reel(escenas, destino, voz=None):
                                  radius=int(bh / 2), fill=(255, 255, 255, int(255 * e2)))
             dc.text((W / 2 - tw / 2, 1080 + (bh - 86) / 2 + 30 * (1 - e2)), tel, font=f_tel,
                     fill=rojo + (int(255 * e2),))
-            us = m.get("usuario", "")
+            us = "   ·   ".join(x for x in (m.get("web"), m.get("usuario")) if x)
             tw = d.textlength(us, font=f_user)
             e3 = _ease((tl - 0.9) / 0.6)
             dc.text((W / 2 - tw / 2, 1270), us, font=f_user, fill=(255, 255, 255, int(230 * e3)))
