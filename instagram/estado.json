@@ -1,10 +1,15 @@
 {
-  "ultimo_tipo": "carrusel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
       "tipo": "carrusel",
       "tema": "Presentación de Ambulancias AHP y nuestros servicios"
+    },
+    {
+      "fecha": "2026-11-02 18:35",
+      "tipo": "post",
+      "tema": "Cuándo llamar a una ambulancia y qué información entregar"
     }
   ]
 }
