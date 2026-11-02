@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 import diseno
+import video
 
 RAIZ = Path(__file__).resolve().parent
 ESTADO = RAIZ / "estado.json"
@@ -132,7 +133,7 @@ def crear(m, estado, tipo, dia, hora, salida):
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
 
     if tipo == "reel":
-        diseno.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4")
+        video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4")
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
                       diseno.REEL, portada=True, foto=c.laminas[0].foto or None)
