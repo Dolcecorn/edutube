@@ -1,10 +1,15 @@
 {
-  "ultimo_tipo": "carrusel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
       "tipo": "carrusel",
       "tema": "Presentación de Ambulancias AHP y nuestros servicios"
+    },
+    {
+      "fecha": "2026-11-03",
+      "tipo": "post",
+      "tema": "Reconocer un ACV a tiempo"
     }
   ]
 }
