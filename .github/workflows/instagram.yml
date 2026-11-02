@@ -3,7 +3,7 @@ name: Publicar en Instagram
 
 on:
   schedule:
-    - cron: "2 * * * *"   # cada hora; la de las 9:00 sale ~9:02 (GitHub puede atrasarse algunos minutos)
+    - cron: "2,32 * * * *"   # cada media hora: la de 9:00 sale ~9:02 y la de 18:30 ~18:32 (GitHub puede atrasarse)
   workflow_dispatch:
     inputs:
       dry_run:
@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # lo último de main al empezar (no el commit del disparo), para no publicar dos veces
 
       - name: Publicar
         env:
@@ -39,4 +41,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git add -A instagram
-          git diff --cached --quiet || { git commit -m "Instagram: publicado $(date -u +%F)"; git push; }
+          git diff --cached --quiet || {
+            git commit -m "Instagram: publicado $(date -u +%F)"
+            for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push && break; sleep 5; done
+          }

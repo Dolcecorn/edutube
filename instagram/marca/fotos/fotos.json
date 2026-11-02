@@ -1,0 +1,9 @@
+[
+  {"archivo": "clinica-dia-dos-ambulancias.jpg", "descripcion": "Dos ambulancias AHP estacionadas frente a una clínica moderna, día soleado, vista amplia", "orientacion": "horizontal"},
+  {"archivo": "clinica-dia-angulo-bajo.jpg", "descripcion": "Dos ambulancias frente a una clínica, foto desde abajo, ambulancia en primer plano, día soleado", "orientacion": "horizontal"},
+  {"archivo": "clinica-dia-vertical.jpg", "descripcion": "Dos ambulancias llegando a una clínica, día soleado, vista vertical", "orientacion": "vertical"},
+  {"archivo": "clinica-atardecer-balizas.jpg", "descripcion": "Dos ambulancias AHP con balizas encendidas frente a una clínica al atardecer, ambiente de servicio activo", "orientacion": "horizontal"},
+  {"archivo": "clinica-dia-dos-ambulancias-palmeras.jpg", "descripcion": "Dos ambulancias AHP frente a una clínica con palmeras, de día, flota lista para servicio", "orientacion": "horizontal"},
+  {"archivo": "noche-frente-balizas-vertical.jpg", "descripcion": "Ambulancia de frente en la noche con balizas rojas y azules encendidas, sensación de urgencia", "orientacion": "vertical"},
+  {"archivo": "urgencias-noche-vertical.jpg", "descripcion": "Ambulancia AHP frente a la entrada de Urgencias de un hospital, de noche, piso mojado y balizas", "orientacion": "vertical"}
+]
