@@ -3,7 +3,7 @@ name: Publicar en Instagram
 
 on:
   schedule:
-    - cron: "7 * * * *"   # cada hora (GitHub puede atrasarse algunos minutos)
+    - cron: "2 * * * *"   # cada hora; la de las 9:00 sale ~9:02 (GitHub puede atrasarse algunos minutos)
   workflow_dispatch:
     inputs:
       dry_run:

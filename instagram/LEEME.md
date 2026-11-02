@@ -2,9 +2,9 @@
 
 Pipeline completo, sin intervención humana una vez afinado:
 
-1. **Generar** (todos los días ~09:00, `instagram-generar.yml`): la IA (OpenAI o Claude) escribe el contenido del día con la marca y los temas de `marca/marca.json`, sin repetir temas recientes. `diseno.py` dibuja las láminas (Pillow) o arma el reel 9:16 con zoom suave y fundidos (ffmpeg). Alterna **post → reel → carrusel**.
-2. **Revisar** (mientras se afina): la generación abre un PR con las imágenes y el texto. **Merge** = se publica; **Close** = se descarta. Cuando el resultado ya sea confiable, crea la variable `AUTO_PUBLICAR` = `true` y la publicación entra directo a la cola.
-3. **Publicar** (cada hora, `instagram.yml`): sube a Instagram lo que esté en la cola y ya haya llegado a su hora (19:00 por defecto), con la **API oficial de Meta**, así que no hay riesgo de bloqueo como con los bots.
+1. **Generar** (todos los días ~10:00, `instagram-generar.yml`, para el día siguiente): la IA (OpenAI o Claude) escribe el contenido del día con la marca y los temas de `marca/marca.json`, sin repetir temas recientes. `diseno.py` dibuja las láminas (Pillow) o arma el reel 9:16 con zoom suave y fundidos (ffmpeg). Alterna **post → reel → carrusel**.
+2. **Revisar** (mientras se afina): la generación abre un PR con las imágenes y el texto. **Merge** = se publica al día siguiente a las 9:00 (o en la próxima hora si se aprueba tarde); **Close** = se descarta. Cuando el resultado ya sea confiable, crea la variable `AUTO_PUBLICAR` = `true` y la publicación entra directo a la cola.
+3. **Publicar** (cada hora, `instagram.yml`): sube a Instagram lo que esté en la cola y ya haya llegado a su hora (**9:00 todos los días**, fines de semana y feriados incluidos), con la **API oficial de Meta**, así que no hay riesgo de bloqueo como con los bots.
 
 ## Afinar las gráficas y el contenido
 - `marca/marca.json`: nombre, colores, teléfono, web, tono, servicios, lista de temas, hashtags fijos, hora de publicación.
