@@ -4,7 +4,7 @@ name: Compilar edutube.ipa
 on:
   push:
     branches: [main]
-    paths-ignore: ['instagram/**', '.github/workflows/instagram.yml']
+    paths-ignore: ['instagram/**', '.github/workflows/instagram*.yml']
   workflow_dispatch:
 
 permissions:

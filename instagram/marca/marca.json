@@ -1,0 +1,37 @@
+{
+  "nombre": "Ambulancias AHP",
+  "usuario": "@ambulanciasahp",
+  "pais": "Chile",
+  "telefono": "",
+  "web": "",
+  "numero_emergencia": "131 (SAMU)",
+  "colores": {
+    "principal": "#C8102E",
+    "oscuro": "#14213D",
+    "claro": "#FFFFFF",
+    "acento": "#FFC300"
+  },
+  "tono": "Cercano, claro y tranquilizador. Profesional de la salud que educa sin alarmar. Español de Chile, sin modismos exagerados.",
+  "servicios": [
+    "Traslados de pacientes en ambulancia",
+    "Cobertura de eventos",
+    "Atención de urgencias"
+  ],
+  "temas": [
+    "Primeros auxilios básicos (heridas, quemaduras, cortes)",
+    "Qué hacer ante un atragantamiento (adultos y niños)",
+    "Reconocer un ataque cardíaco o un ACV a tiempo",
+    "RCP: cuándo y cómo pedir ayuda",
+    "Cuándo llamar a una ambulancia y qué datos dar",
+    "Botiquín de primeros auxilios para la casa, el auto y el trabajo",
+    "Seguridad en el hogar para niños y adultos mayores",
+    "Golpes de calor, hipotermia y cuidados por estación",
+    "Detrás de escena: cómo trabaja un equipo de ambulancia",
+    "Servicios de la empresa: traslados, eventos y urgencias",
+    "Mitos y verdades de los primeros auxilios",
+    "Prevención de accidentes en la ruta"
+  ],
+  "hashtags_fijos": ["#AmbulanciasAHP", "#PrimerosAuxilios"],
+  "hora_publicacion": "19:00",
+  "modelo": "claude-opus-5-5"
+}
