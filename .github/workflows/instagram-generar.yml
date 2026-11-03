@@ -96,7 +96,7 @@ jobs:
               echo
               echo "<details><summary>Descripción</summary>"
               echo
-              cat "$CARPETA/texto.txt"
+              if [ -e "$CARPETA/texto.txt" ]; then cat "$CARPETA/texto.txt"; else echo "(historia: sin descripción)"; fi
               echo
               echo "</details>"
               echo
