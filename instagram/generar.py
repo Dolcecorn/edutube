@@ -160,15 +160,18 @@ def fotos_recientes(historial):
     return vistas
 
 
-def rotar_foto(elegida, historial, vertical=False, evitar=3):
+def rotar_foto(elegida, historial, vertical=False, evitar=None):
     """Si la foto elegida para la portada o la historia se usó en las últimas publicaciones (o viene vacía),
-    la cambia por la menos usada recientemente (vertical si se pide)."""
+    la cambia por la menos usada recientemente (vertical si se pide). Por defecto evita todas las fotos
+    usadas recientemente salvo la más antigua, así las portadas rotan por todo el banco de fotos."""
     disponibles = diseno.fotos()
     if not disponibles:
         return elegida
     candidatas = [f["archivo"] for f in disponibles if not vertical or f["orientacion"] == "vertical"] or \
         [f["archivo"] for f in disponibles]
     recientes = fotos_recientes(historial)
+    if evitar is None:
+        evitar = max(1, len(candidatas) - 1)
     if elegida in candidatas and elegida not in recientes[:evitar]:
         return elegida
     # la menos usada: primero las nunca usadas, luego la que se usó hace más tiempo
@@ -187,8 +190,8 @@ def crear(m, estado, tipo, dia, hora, salida):
     if tipo == "historia":
         if c.foto not in validas:
             c.foto = ""
-        # las historias van en vertical: con pocas fotos verticales, se evita solo la última usada
-        c.foto = rotar_foto(c.foto, estado["historial"], vertical=True, evitar=1)
+        # las historias van en vertical y rotan entre todas las fotos verticales
+        c.foto = rotar_foto(c.foto, estado["historial"], vertical=True)
         carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
@@ -207,8 +210,8 @@ def crear(m, estado, tipo, dia, hora, salida):
         if l.foto not in validas:
             l.foto = ""
     if c.laminas:  # portada distinta a las de las últimas publicaciones
-        nueva = rotar_foto(c.laminas[0].foto, estado["historial"], vertical=(tipo == "reel"),
-                           evitar=1 if tipo == "reel" else 3)
+        # portadas (también de reels, que recortan la foto a 9:16) rotan por todo el banco de fotos
+        nueva = rotar_foto(c.laminas[0].foto, estado["historial"])
         if nueva != c.laminas[0].foto:
             for l in c.laminas[1:]:  # si la nueva ya estaba en otra lámina, intercambiarlas
                 if l.foto == nueva:
