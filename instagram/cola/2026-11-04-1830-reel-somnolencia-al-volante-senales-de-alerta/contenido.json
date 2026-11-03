@@ -1,0 +1,48 @@
+{
+  "tema": "Somnolencia al volante: señales de alerta y prevención",
+  "laminas": [
+    {
+      "titulo": "¿Te cuesta mantenerte despierto? Detén el viaje",
+      "texto": "La somnolencia reduce la atención y aumenta el riesgo de accidentes. Reconoce las señales antes de continuar conduciendo.",
+      "foto": "noche-autopista-trasera.mp4+noche-autopista-frente.mp4",
+      "locucion": "Si notas sueño al volante, no intentes llegar rápido. La decisión más segura es detenerte."
+    },
+    {
+      "titulo": "Estas señales indican que necesitas parar",
+      "texto": "Bostezos frecuentes, párpados pesados, desconcentración o desviarte del carril son señales de alerta.",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "locucion": "A veces el cansancio aparece antes de que te des cuenta. Presta atención a estos cambios."
+    },
+    {
+      "titulo": "Pausa segura: detente y descansa",
+      "texto": "Estaciona en un lugar seguro, cambia de conductor o toma una pausa real antes de retomar la ruta.",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "locucion": "Busca un lugar habilitado para detenerte. Si es posible, que otra persona continúe conduciendo."
+    },
+    {
+      "titulo": "Si ocurre un accidente, pide ayuda",
+      "texto": "Evalúa la seguridad del lugar y llama al 131 ante personas lesionadas, atrapadas o en riesgo vital.",
+      "foto": "noche-frente-balizas-vertical.jpg",
+      "locucion": "Después de un accidente, evita exponerte al tránsito. Llama al uno tres uno y sigue las indicaciones."
+    },
+    {
+      "titulo": "Conduce atento. Cuenta con apoyo",
+      "texto": "Sigue a Ambulancias AHP para más orientación. Para coordinar servicios, visita www.ambulanciasahp.cl o llama al +56 9 8748 2705.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": "Sigue nuestra cuenta para aprender a prevenir. Si necesitas coordinar un servicio, contáctanos."
+    }
+  ],
+  "descripcion": "El sueño también puede convertirse en un riesgo vial.\n\nBostezar seguido, perder concentración, sentir los párpados pesados o desviarte del carril son señales para detener el trayecto.\n\nEstaciona en un lugar seguro, descansa o cambia de conductor. La cafeína por sí sola no reemplaza un descanso adecuado.\n\nSi ocurre un accidente con personas lesionadas o en riesgo vital, llama al 131. Para coordinar servicios de Ambulancias AHP, visita www.ambulanciasahp.cl o llama al +56 9 8748 2705.",
+  "hashtags": [
+    "#Prevención",
+    "#SeguridadVial",
+    "#ConducciónSegura",
+    "#Somnolencia",
+    "#PrimerosAuxilios",
+    "#Emergencias",
+    "#AmbulanciasAHP",
+    "#Salud",
+    "#RegiónDeValparaíso",
+    "#RegiónMetropolitana"
+  ]
+}
