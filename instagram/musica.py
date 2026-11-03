@@ -5,8 +5,12 @@
 de sidechain, bajo sub sincopado, bombo redondo en negras, hi-hat abierto a contratiempo, shaker
 muy bajo y una palma lejana. Sin samples externos: todo se sintetiza aquí.
 
-Uso: python3 instagram/musica.py [salida.mp3] [segundos]
+Cada publicación usa una variante distinta (tonalidad, tempo, progresión, ritmo de acordes y bajo),
+elegida a partir del nombre de su carpeta; sin semilla se obtiene la pista base aprobada.
+
+Uso: python3 instagram/musica.py [salida.mp3] [segundos] [semilla]
 """
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -21,12 +25,35 @@ BEAT = 60 / BPM
 BAR = 4 * BEAT
 rng = np.random.default_rng(11)
 
-# voicings (MIDI): raíz para el bajo + acorde en registro medio
-ACORDES = [
-    (45, [57, 60, 64, 67, 71]),   # Lam9  (La Do Mi Sol Si)
-    (50, [57, 60, 62, 65, 69]),   # Rem9  (La Do Re Fa La) - voicing cerrado
-    (41, [57, 60, 64, 65, 69]),   # Fa maj7 (La Do Mi Fa La)
-    (40, [55, 59, 62, 64, 67]),   # Mim7 (Sol Si Re Mi Sol)
+# voicings (MIDI, en La menor): raíz para el bajo + acorde en registro medio
+LAm9 = (45, [57, 60, 64, 67, 71])
+REm9 = (50, [57, 60, 62, 65, 69])
+FAmaj7 = (41, [57, 60, 64, 65, 69])
+MIm7 = (40, [55, 59, 62, 64, 67])
+DOmaj9 = (48, [55, 59, 62, 64, 67])
+SOL69 = (43, [55, 57, 59, 62, 64])
+FAmaj9 = (41, [57, 60, 64, 67])
+REm9b = (38, [57, 60, 62, 65, 69])
+PROGRESIONES = [
+    [LAm9, REm9, FAmaj7, MIm7],      # la aprobada por Eleva (variante 0)
+    [LAm9, FAmaj7, DOmaj9, SOL69],
+    [LAm9, REm9, LAm9, MIm7],
+    [FAmaj9, MIm7, REm9b, LAm9],
+    [REm9, LAm9, FAmaj7, SOL69],
+]
+ACORDES = PROGRESIONES[0]
+# ritmo de acordes por compás: (inicio en tiempos, duración en tiempos, volumen)
+RITMOS_ACORDES = [
+    [(0, 3.8, 0.9), (1.5, 1.4, 0.45)],
+    [(0, 1.4, 0.8), (1.5, 1.0, 0.5), (2.5, 1.4, 0.6)],
+    [(0, 7.6, 0.85)],                       # acorde largo (dura dos compases si se repite)
+    [(0.5, 1.2, 0.6), (2.5, 1.2, 0.6), (3.5, 0.45, 0.4)],
+]
+# bajo en semicorcheas: (posición, duración, octava)
+PATRONES_BAJO = [
+    [(0, 3, 0), (3, 1, 0), (6, 2, 12), (10, 2, 0), (14, 2, 0)],
+    [(2, 2, 0), (6, 2, 0), (10, 2, 0), (14, 2, 12)],          # bajo a contratiempo, muy house
+    [(0, 2, 0), (4, 1, 0), (7, 2, 0), (11, 1, 12), (12, 3, 0)],
 ]
 
 
@@ -76,13 +103,34 @@ def ruido_filtrado(dur, alto, caida, bajo=None):
 
 def poner(pista, sonido, t, vol=1.0):
     i = int(round(t * SR))
+    if i < 0:
+        sonido, i = sonido[-i:], 0
     if i >= len(pista):
         return
     f = min(len(pista), i + len(sonido))
     pista[i:f] += sonido[: f - i] * vol
 
 
-def componer(segundos=60.0):
+def variante(semilla):
+    """Parámetros de una variante. semilla=None da la pista base aprobada; otra semilla da otra
+    canción del mismo estilo (tonalidad, tempo, progresión, ritmo de acordes y bajo distintos)."""
+    if semilla is None:
+        return dict(bpm=121, transp=0, prog=0, ritmo=0, bajo=0, hat=True, palma=True)
+    r = np.random.default_rng(int(hashlib.sha256(str(semilla).encode()).hexdigest()[:8], 16))
+    return dict(bpm=int(r.choice([118, 119, 120, 121, 122, 123, 124])), transp=int(r.integers(-4, 4)),
+                prog=int(r.integers(0, len(PROGRESIONES))), ritmo=int(r.integers(0, len(RITMOS_ACORDES))),
+                bajo=int(r.integers(0, len(PATRONES_BAJO))), hat=bool(r.random() < 0.8),
+                palma=bool(r.random() < 0.6))
+
+
+def componer(segundos=60.0, semilla=None):
+    global BPM, BEAT, BAR, rng
+    v = variante(semilla)
+    BPM = v["bpm"]
+    BEAT = 60 / BPM
+    BAR = 4 * BEAT
+    rng = np.random.default_rng(11 if semilla is None else v["bpm"] * 1000 + v["prog"] * 100 + v["ritmo"])
+    prog = [(raiz + v["transp"], [x + v["transp"] for x in voces]) for raiz, voces in PROGRESIONES[v["prog"]]]
     compases = int(np.ceil(segundos / BAR)) + 1
     n = int(compases * BAR * SR)
     acordes, bajo, bat, perc = (np.zeros(n) for _ in range(4))
@@ -91,15 +139,18 @@ def componer(segundos=60.0):
     shk = ruido_filtrado(0.06, alto=5000, caida=0.018, bajo=11000)
     palma = ruido_filtrado(0.35, alto=1200, caida=0.09, bajo=5000)
     # patrón de bajo sincopado (en semicorcheas): (posición, duración en semicorcheas, octava)
-    patron_bajo = [(0, 3, 0), (3, 1, 0), (6, 2, 12), (10, 2, 0), (14, 2, 0)]
+    patron_bajo = PATRONES_BAJO[v["bajo"]]
+    ritmo = RITMOS_ACORDES[v["ritmo"]]
     semi = BEAT / 4
     for c in range(compases):
-        raiz, voces = ACORDES[c % 4]
+        raiz, voces = prog[c % 4]
         t0 = c * BAR
-        # acordes: un golpe largo en el 1 y otro corto anticipando el 3 ("y" del 2), muy al estilo deep house
-        for tt, dur, vol in ((0.0, BAR * 0.95, 0.9), (BEAT * 1.5, BEAT * 1.4, 0.45)):
-            for v in voces:
-                poner(acordes, rhodes(hz(v), dur), t0 + tt + rng.uniform(0, 0.006), vol)
+        # acordes con el ritmo de la variante (por defecto: golpe largo en el 1 y otro anticipando el 3)
+        for tt, dur, vol in ritmo:
+            if dur > 4 and c % 2:  # acorde largo: se toca cada dos compases
+                continue
+            for nv in voces:
+                poner(acordes, rhodes(hz(nv), dur * BEAT), t0 + tt * BEAT + rng.uniform(0, 0.006), vol)
         for pos, d, octv in patron_bajo:
             nn = int(d * semi * SR * 0.92)
             tb = np.arange(nn) / SR
@@ -112,8 +163,9 @@ def componer(segundos=60.0):
             tb = t0 + b * BEAT
             if not intro:
                 poner(bat, k, tb, 1.0)
-                poner(perc, hat, tb + BEAT / 2, 0.22)               # hi-hat abierto a contratiempo
-                if b in (1, 3):
+                if v["hat"]:
+                    poner(perc, hat, tb + BEAT / 2, 0.22)           # hi-hat abierto a contratiempo
+                if b in (1, 3) and v["palma"]:
                     poner(perc, palma, tb, 0.16)                     # palma lejana
             for s16 in range(4):
                 poner(perc, shk, tb + s16 * semi + rng.uniform(-0.004, 0.004),
@@ -165,7 +217,14 @@ def guardar(audio, destino):
     return destino
 
 
+def pista(semilla, segundos, destino):
+    """Compone y guarda la variante de una publicación (cada carpeta usa su nombre como semilla)."""
+    return guardar(componer(segundos, semilla), destino)
+
+
 if __name__ == "__main__":
     salida = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).resolve().parent / "marca" / "musica.mp3")
     seg = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
-    print(guardar(componer(seg), salida))
+    semilla = sys.argv[3] if len(sys.argv) > 3 else None
+    print(semilla, variante(semilla))
+    print(guardar(componer(seg, semilla), salida))

@@ -77,5 +77,5 @@ Solo usa Python 3.9+ (viene con Ubuntu 24), sin instalar nada más.
 
 ## Música
 
-`marca/musica.mp3` es una pista original (sin derechos de autor) compuesta por `musica.py`: deep house suave y sobrio a 121 BPM. Se usa en los reels y en las historias, que se publican como video de 15 s con animación (`historias_video` en `marca.json`; con `false` vuelven a ser imagen). Para cambiarla, reemplaza `marca/musica.mp3` por otra pista libre de derechos (por ejemplo, de la biblioteca de audio de YouTube) o vuelve a generarla con `python3 instagram/musica.py`. La API de Instagram no permite usar la biblioteca de música de la app.
+`marca/musica.mp3` es la pista base (aprobada); cada publicación lleva su propia variante del mismo estilo (tonalidad, tempo, progresión y ritmo distintos, elegidos a partir del nombre de la carpeta). Es una pista original (sin derechos de autor) compuesta por `musica.py`: deep house suave y sobrio a 121 BPM. Se usa en los reels y en las historias, que se publican como video de 15 s con animación (`historias_video` en `marca.json`; con `false` vuelven a ser imagen). Para cambiarla, reemplaza `marca/musica.mp3` por otra pista libre de derechos (por ejemplo, de la biblioteca de audio de YouTube) o vuelve a generarla con `python3 instagram/musica.py`. La API de Instagram no permite usar la biblioteca de música de la app.
 

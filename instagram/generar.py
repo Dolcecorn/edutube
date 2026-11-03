@@ -13,6 +13,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import List
@@ -21,6 +22,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 import diseno
+import musica
 import video
 
 RAIZ = Path(__file__).resolve().parent
@@ -160,7 +162,10 @@ def crear(m, estado, tipo, dia, hora, salida):
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
         diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None)
         if m.get("historias_video", True):  # video de 15 s con animación y música; la imagen queda de respaldo
-            video.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "video.mp4", foto=c.foto or None)
+            with tempfile.TemporaryDirectory() as tmp:
+                pista = musica.pista(carpeta.name, 16, Path(tmp) / "m.mp3")  # variante propia de la publicación
+                video.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "video.mp4",
+                               foto=c.foto or None, musica=pista)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
         (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
         estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema})
@@ -174,7 +179,10 @@ def crear(m, estado, tipo, dia, hora, salida):
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
 
     if tipo == "reel":
-        video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4")
+        with tempfile.TemporaryDirectory() as tmp:
+            pista = musica.pista(carpeta.name, 75, Path(tmp) / "m.mp3")  # variante propia de la publicación
+            video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
+                       musica=pista)
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
                       diseno.REEL, portada=True, foto=c.laminas[0].foto or None)
