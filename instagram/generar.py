@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 import calendario
+import locucion
 import diseno
 import musica
 import video
@@ -40,6 +41,8 @@ class Lamina(BaseModel):
     texto: str = Field(description="Texto de apoyo, máximo 35 palabras. Vacío en la portada si no hace falta")
     foto: str = Field(description="Nombre exacto de una foto de la lista disponible que calce con la lámina, "
                                   "o vacío para una lámina sin foto")
+    locucion: str = Field(description="Solo en reels: lo que dice la voz en off en esta escena, 1 o 2 frases "
+                                      "naturales, máximo 22 palabras. Vacío en posts y carruseles")
 
 
 class Contenido(BaseModel):
@@ -102,7 +105,15 @@ Usa foto en la portada, en el post y en las escenas del reel (prefiere las verti
 interiores del carrusel, usa foto solo en algunas (las de datos o pasos van mejor sin foto, con "foto" vacío).
 Varía las fotos dentro de la misma publicación. Las fotos muestran ambulancias y clínicas: no las uses como si
 mostraran algo que no muestran.{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
-    pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.
+    voz = ""
+    if tipo == "reel":
+        voz = """
+Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
+profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
+palabra por palabra; frases cortas y fáciles de decir. No dictes números de teléfono ni direcciones web
+(aparecen en pantalla); en la última escena invita a seguir la cuenta o a contactar. Cuando corresponda,
+nombra el 131 diciendo "ciento treinta y uno"."""
+    pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
 {eleccion}
 {guia_fotos}
 No repitas los temas de estas publicaciones recientes:
@@ -244,8 +255,18 @@ def crear(m, estado, tipo, dia, hora, salida):
     if tipo == "reel":
         with tempfile.TemporaryDirectory() as tmp:
             pista = lambda seg, golpe: musica.pista(carpeta.name, seg, Path(tmp) / "m.mp3", golpe)  # variante propia
+            locs = None
+            if locucion.disponible() and any(l.locucion.strip() for l in c.laminas):
+                locs = []
+                for i, l in enumerate(c.laminas):
+                    if l.locucion.strip():
+                        ruta = Path(tmp) / f"voz{i}.wav"
+                        locucion.decir(l.locucion.strip(), ruta)
+                        locs.append(ruta)
+                    else:
+                        locs.append(None)
             video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
-                       musica=pista)
+                       musica=pista, locuciones=locs)
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         foto_previa = next((l.foto for l in c.laminas if l.foto and not l.foto.endswith(".mp4")), None)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",

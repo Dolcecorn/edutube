@@ -45,6 +45,20 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
           pip install -q -r instagram/requirements.txt
 
+      # Locución con voz clonada: solo si existe la grabación de referencia (marca/voz/referencia.wav)
+      - name: Caché del modelo de voz
+        if: hashFiles('instagram/marca/voz/referencia.wav') != ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: chatterbox-mtl-v1
+
+      - name: Instalar motor de voz (CPU)
+        if: hashFiles('instagram/marca/voz/referencia.wav') != ''
+        run: |
+          pip install -q torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q chatterbox-tts
+
       - name: Generar contenido
         id: gen
         env:

@@ -129,6 +129,15 @@ class Fondo:
         return rec.resize((W, H), Image.BILINEAR)
 
 
+RETRASO_VOZ = 0.35  # la voz entra un poco después del corte de escena
+
+
+def _duracion(ruta):
+    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(ruta)],
+                       capture_output=True, text=True)
+    return float(r.stdout or 0)
+
+
 class Clip:
     """Clip de video real como fondo de una escena: se recorta a 9:16, se oscurece igual que las fotos y,
     si es más corto que la escena, se ralentiza un poco para cubrirla (sin saltos de bucle)."""
@@ -179,8 +188,9 @@ def _degradados():
     return g
 
 
-def reel(escenas, destino, voz=None, musica=None):
-    """escenas: [(titulo, texto[, foto])]. Devuelve la ruta del MP4 (1080x1920, 30 fps)."""
+def reel(escenas, destino, voz=None, musica=None, locuciones=None):
+    """escenas: [(titulo, texto[, foto])]. locuciones: lista paralela de wav (o None) con la voz en off de
+    cada escena; la escena dura lo necesario para que se escuche completa. Devuelve la ruta del MP4."""
     m = diseno.marca()
     rojo, cyan = _hex(m["colores"]["principal"]), _hex(m["colores"]["acento"])
     blanco = (255, 255, 255)
@@ -210,6 +220,9 @@ def reel(escenas, destino, voz=None, musica=None):
         y0 = max(y0, ZONA_SUP + 330)
         palabras = len(f"{titulo} {texto}".split())
         dur = max(3.8, min(8.0, 2.0 + palabras * 0.30))
+        loc = locuciones[i] if locuciones and i < len(locuciones) else None
+        if loc:
+            dur = max(dur, _duracion(loc) + RETRASO_VOZ + 0.6)
         preparadas.append(dict(
             fondo=(Clip(ruta, 70, dur) if es_clip else
                    Fondo(ruta, 70, desenfoque=foto is None, dir_paneo=1 if i % 2 == 0 else -1)) if ruta else None,
@@ -322,6 +335,15 @@ def reel(escenas, destino, voz=None, musica=None):
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
     fin_escenas = total - dur_cierre
+    if locuciones and any(locuciones):  # una sola pista de voz alineada con el inicio de cada escena
+        import locucion
+        acc0, partes = 0.0, []
+        for p, loc in zip(preparadas, locuciones):
+            if loc:
+                partes.append((acc0 + RETRASO_VOZ, loc))
+            acc0 += p["dur"]
+        import tempfile
+        voz = locucion.pista(partes, total, Path(tempfile.mkdtemp()) / "voz.wav")
     # musica puede ser una función (segundos, golpe) -> ruta: compone la pista con el golpe final justo
     # cuando aparece el logo del cierre
     musica = Path(musica(total, fin_escenas) if callable(musica) else musica or diseno.MARCA_DIR / "musica.mp3")
@@ -331,8 +353,13 @@ def reel(escenas, destino, voz=None, musica=None):
     if musica.exists():
         entradas += ["-stream_loop", "-1", "-i", str(musica)]
     if voz and musica.exists():
-        filtros = ["-filter_complex", "[2:a]volume=0.18[m];[1:a][m]amix=inputs=2:duration=longest[a]", "-map", "0:v",
-                   "-map", "[a]"]
+        # la música baja sola cuando habla la voz (sidechain) y vuelve a subir en las pausas
+        filtros = ["-filter_complex",
+                   "[1:a]aformat=channel_layouts=stereo,asplit=2[v][sc];"
+                   "[2:a]volume=0.8[m];[m][sc]sidechaincompress=threshold=0.02:ratio=10:attack=15:release=450[md];"
+                   f"[md][v]amix=inputs=2:duration=first:normalize=0,"
+                   f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4[a]",
+                   "-map", "0:v", "-map", "[a]"]
     elif voz or musica.exists():
         filtros = ["-map", "0:v", "-map", "1:a"]
         if musica.exists():
@@ -378,6 +405,8 @@ def reel(escenas, destino, voz=None, musica=None):
     proc.stdin.close()
     if proc.wait() != 0:
         raise RuntimeError("ffmpeg falló al codificar el reel")
+    if locuciones and voz and Path(voz).name == "voz.wav":
+        Path(voz).unlink(missing_ok=True)
     return destino
 
 
