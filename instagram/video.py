@@ -10,6 +10,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import numpy as np
+
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
 import diseno
@@ -127,6 +129,46 @@ class Fondo:
         return rec.resize((W, H), Image.BILINEAR)
 
 
+class Clip:
+    """Clip de video real como fondo de una escena: se recorta a 9:16, se oscurece igual que las fotos y,
+    si es más corto que la escena, se ralentiza un poco para cubrirla (sin saltos de bucle)."""
+
+    def __init__(self, ruta, oscuro, dur):
+        self.ruta, self.dur, self.factor = ruta, dur, 1 - oscuro / 255
+        largo = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                      str(ruta)], capture_output=True, text=True).stdout or 0) or dur
+        self.lento = max(1.0, dur / max(0.5, largo - 0.1))
+        self.proc, self.i, self.ultimo = None, -1, None
+
+    def _abrir(self):
+        vf = (f"setpts={self.lento:.3f}*PTS,fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,"
+              f"crop={W}:{H}")
+        self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", str(self.ruta), "-an", "-vf", vf,
+                                      "-t", f"{self.dur + 0.5:.2f}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                                     stdout=subprocess.PIPE)
+
+    def cuadro(self, t):  # t en 0..1, siempre hacia adelante
+        if self.proc is None:
+            self._abrir()
+        objetivo = int(t * self.dur * FPS)
+        while self.i < objetivo:
+            datos = self.proc.stdout.read(W * H * 3)
+            if len(datos) < W * H * 3:   # se acabó el clip: se queda en el último cuadro
+                break
+            self.ultimo, self.i = datos, self.i + 1
+        if self.ultimo is None:
+            return Image.new("RGB", (W, H), (20, 20, 20))
+        a = np.frombuffer(self.ultimo, np.uint8).reshape(H, W, 3)
+        return Image.fromarray((a * self.factor).astype(np.uint8))
+
+    def cerrar(self):
+        if self.proc:
+            self.proc.stdout.close()
+            self.proc.kill()
+            self.proc.wait()
+            self.proc = None
+
+
 def _degradados():
     g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(g)
@@ -154,7 +196,9 @@ def reel(escenas, destino, voz=None, musica=None):
     for i, esc in enumerate(escenas):
         titulo, texto = esc[0], esc[1]
         foto = esc[2] if len(esc) > 2 and esc[2] else None
-        ruta = diseno.FOTOS_DIR / foto if foto else (fotos[i % len(fotos)] if fotos else None)
+        es_clip = bool(foto) and foto.lower().endswith(".mp4") and (diseno.VIDEOS_DIR / foto).exists()
+        ruta = diseno.VIDEOS_DIR / foto if es_clip else \
+            (diseno.FOTOS_DIR / foto if foto else (fotos[i % len(fotos)] if fotos else None))
         portada = i == 0
         f_tit, _, tam_t, _ = diseno._ajustar(d0, titulo, True, 84 if portada else 72, 52, ANCHO_TEXTO, 420)
         f_txt, lin_txt, tam_c, _ = diseno._ajustar(d0, texto, False, 50, 40, ANCHO_TEXTO, 440, 1.35)
@@ -167,7 +211,8 @@ def reel(escenas, destino, voz=None, musica=None):
         palabras = len(f"{titulo} {texto}".split())
         dur = max(3.8, min(8.0, 2.0 + palabras * 0.30))
         preparadas.append(dict(
-            fondo=Fondo(ruta, 70, desenfoque=foto is None, dir_paneo=1 if i % 2 == 0 else -1) if ruta else None,
+            fondo=(Clip(ruta, 70, dur) if es_clip else
+                   Fondo(ruta, 70, desenfoque=foto is None, dir_paneo=1 if i % 2 == 0 else -1)) if ruta else None,
             pal=pal, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, portada=portada))
 
     # --- cierre de marca ---
@@ -327,6 +372,9 @@ def reel(escenas, destino, voz=None, musica=None):
                     # franja cyan fina siguiendo el borde
                     d.polygon([(x0 - 24, 0), (x0, 0), (x0 - 300, H), (x0 - 324, H)], fill=cyan + (255,))
         proc.stdin.write(img.convert("RGB").tobytes())
+    for p in preparadas:
+        if isinstance(p["fondo"], Clip):
+            p["fondo"].cerrar()
     proc.stdin.close()
     if proc.wait() != 0:
         raise RuntimeError("ffmpeg falló al codificar el reel")
