@@ -1,0 +1,41 @@
+# Prueba temporal: renderiza un reel con locución clonada y lo deja en instagram/pruebas/ de esta rama.
+name: Prueba de locución
+on:
+  push:
+    branches: [instagram/prueba-voz]
+    paths: [instagram/pruebas/reel-voz.json, .github/workflows/instagram-prueba-voz.yml]
+permissions:
+  contents: write
+jobs:
+  prueba:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+          pip install -q -r instagram/requirements.txt
+          pip install -q torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q chatterbox-tts
+      - name: Renderizar
+        run: |
+          cd instagram
+          python3 - <<'PY'
+          import json, time, tempfile
+          from pathlib import Path
+          import locucion, video, musica
+          d = json.loads(Path("pruebas/reel-voz.json").read_text())
+          tmp = Path(tempfile.mkdtemp())
+          t0 = time.time(); locs = []
+          for i, l in enumerate(d["laminas"]):
+              r = tmp / f"v{i}.wav"; print(i, locucion.decir(l["locucion"], r), "s"); locs.append(r)
+          print("voz:", round(time.time() - t0), "s")
+          video.reel([(l["titulo"], l["texto"], l["foto"]) for l in d["laminas"]], Path("pruebas/reel-voz.mp4"),
+                     musica=lambda s, g: musica.pista("prueba-voz", s, tmp / "m.mp3", g), locuciones=locs)
+          locucion.pista([(0, locs[0])], 8, Path("pruebas/voz-escena1.wav"))
+          PY
+      - name: Guardar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add instagram/pruebas && git commit -m "Prueba de locución" && git push
