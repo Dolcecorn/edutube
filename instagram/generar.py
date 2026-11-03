@@ -192,6 +192,9 @@ def crear(m, estado, tipo, dia, hora, salida):
             c.foto = ""
         # las historias van en vertical y rotan entre todas las fotos verticales
         c.foto = rotar_foto(c.foto, estado["historial"], vertical=True)
+        # la tarjeta ya muestra teléfono y web: el llamado no los repite
+        if re.search(r"\d{4}|www\.|\.cl", c.llamado):
+            c.llamado = "Coordina tu servicio con nosotros"
         carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
