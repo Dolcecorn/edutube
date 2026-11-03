@@ -1,9 +1,5 @@
 [
-<<<<<<< HEAD
   {"archivo": "noche-ciudad-frente.mp4", "descripcion": "Ambulancia AHP (Hyundai) de frente circulando por la ciudad de noche, balizas encendidas", "recorte": "720:1120:0:80"},
-=======
-  {"archivo": "noche-ciudad-frente.mp4", "descripcion": "Ambulancia AHP (Hyundai) de frente circulando por la ciudad de noche, balizas encendidas"},
->>>>>>> origin/main
   {"archivo": "noche-autopista-trasera.mp4", "descripcion": "Ambulancia AHP vista desde atrás circulando por una autopista de noche"},
   {"archivo": "noche-autopista-frente.mp4", "descripcion": "Ambulancia AHP de frente por autopista de noche con balizas encendidas"}
 ]

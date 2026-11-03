@@ -191,7 +191,6 @@ def rotar_foto(elegida, historial, vertical=False, evitar=None):
     return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
 
 
-<<<<<<< HEAD
 def uso_fotos(historial):
     """Todas las fotos usadas (portadas e interiores), de la más reciente a la más antigua, sin repetir."""
     vistas = []
@@ -216,8 +215,6 @@ def refrescar_interiores(laminas, historial, recientes_max=6):
             l.foto = libres.pop(0)
 
 
-=======
->>>>>>> origin/main
 def elegir_clips(historial, n):
     """Los n clips de video usados hace más tiempo (primero los nunca usados)."""
     disponibles = [v["archivo"] for v in diseno.videos()]
@@ -272,7 +269,6 @@ def crear(m, estado, tipo, dia, hora, salida):
                 if l.foto == nueva:
                     l.foto = c.laminas[0].foto
             c.laminas[0].foto = nueva
-<<<<<<< HEAD
     if c.laminas:  # láminas interiores: cambiar fotos usadas recientemente por las menos usadas del banco
         refrescar_interiores(c.laminas, estado["historial"])
     clips = []
@@ -284,13 +280,6 @@ def crear(m, estado, tipo, dia, hora, salida):
             c.laminas[0].foto = "+".join(dict.fromkeys([otro(0), otro(1)]))
             if len(c.laminas) >= 3:
                 c.laminas[len(c.laminas) // 2].foto = "+".join(dict.fromkeys([otro(2), otro(0)]))
-=======
-    clips = []
-    if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
-        clips = elegir_clips(estado["historial"], 1 if len(c.laminas) < 3 else 2)
-        for clip, i in zip(clips, (0, len(c.laminas) // 2)):
-            c.laminas[i].foto = clip
->>>>>>> origin/main
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
@@ -332,13 +321,9 @@ def crear(m, estado, tipo, dia, hora, salida):
 
     estado["ultimo_tipo"] = tipo
     estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
-<<<<<<< HEAD
                                 "foto": c.laminas[0].foto if c.laminas else "",
                                 "fotos": [l.foto for l in c.laminas[1:] if l.foto and not l.foto.endswith(".mp4")],
                                 **({"clips": clips} if clips else {})})
-=======
-                                "foto": c.laminas[0].foto if c.laminas else "", **({"clips": clips} if clips else {})})
->>>>>>> origin/main
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 
