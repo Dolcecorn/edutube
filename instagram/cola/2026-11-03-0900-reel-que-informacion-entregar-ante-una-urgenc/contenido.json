@@ -1,0 +1,44 @@
+{
+  "tema": "Qué información entregar ante una urgencia para coordinar ayuda",
+  "laminas": [
+    {
+      "titulo": "En una urgencia, cada dato importa",
+      "texto": "La información clara ayuda a coordinar la atención y orientar correctamente la llegada del equipo.",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "titulo": "Indica ubicación y referencias visibles",
+      "texto": "Entrega comuna, dirección exacta, número, acceso disponible y una referencia clara del lugar.",
+      "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "titulo": "Explica qué ocurrió y cuándo",
+      "texto": "Describe brevemente la situación, cuándo comenzó y cuántas personas necesitan atención.",
+      "foto": "clinica-dia-angulo-bajo.jpg"
+    },
+    {
+      "titulo": "Si es vital, llama primero al 131",
+      "texto": "Ante una emergencia grave o riesgo vital, contacta al SAMU. Luego sigue las instrucciones del operador.",
+      "foto": "clinica-atardecer-balizas.jpg"
+    },
+    {
+      "titulo": "Cuenta con apoyo cuando lo necesites",
+      "texto": "Sigue a @ambulanciasahp o contáctanos para conocer nuestros servicios en la Región de Valparaíso.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
+    }
+  ],
+  "descripcion": "En una urgencia, entregar información clara puede ayudar a coordinar mejor la respuesta.\n\nIndica la ubicación exacta, referencias visibles, accesos disponibles y qué ocurrió. También señala cuándo comenzó y cuántas personas necesitan atención.\n\nSi existe riesgo vital, llama de inmediato al 131 (SAMU) y sigue las instrucciones del operador.\n\nAmbulancias AHP ofrece atención de urgencias, traslados de pacientes y cobertura de eventos en Casablanca, Valparaíso, Viña del Mar y alrededores.\n\nConoce nuestros servicios en www.ambulanciasahp.cl o llama al +56 9 8748 2705.",
+  "hashtags": [
+    "#AmbulanciasAHP",
+    "#Urgencias",
+    "#SAMU131",
+    "#PrimerosAuxilios",
+    "#SeguridadYPrevención",
+    "#Salud",
+    "#Valparaíso",
+    "#ViñaDelMar",
+    "#Casablanca",
+    "#AtenciónPrehospitalaria",
+    "#Chile"
+  ]
+}

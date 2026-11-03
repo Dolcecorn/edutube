@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "post",
+  "ultimo_tipo": "carrusel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -22,6 +22,30 @@
       "fecha": "2026-11-02 23:30",
       "tipo": "historia",
       "tema": "Primeros auxilios ante un desmayo",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-03 09:00",
+      "tipo": "reel",
+      "tema": "Qué información entregar ante una urgencia para coordinar ayuda",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-03 18:30",
+      "tipo": "carrusel",
+      "tema": "Diabetes y calor: apoyo sanitario para trasladarse con seguridad",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
+    },
+    {
+      "fecha": "2026-11-03 12:00",
+      "tipo": "historia",
+      "tema": "Atención de urgencias con apoyo seguro en la Región de Valparaíso",
+      "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-03 20:30",
+      "tipo": "historia",
+      "tema": "Traslados coordinados para controles y altas médicas",
       "foto": "clinica-dia-vertical.jpg"
     }
   ]
