@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "carrusel",
+  "ultimo_tipo": "reel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -47,6 +47,30 @@
       "tipo": "historia",
       "tema": "Traslados coordinados para controles y altas médicas",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 09:00",
+      "tipo": "post",
+      "tema": "Prevención y apoyo seguro en comunidad",
+      "foto": "clinica-dia-angulo-bajo.jpg"
+    },
+    {
+      "fecha": "2026-11-04 18:30",
+      "tipo": "reel",
+      "tema": "Golpe de calor: señales de alerta y qué hacer",
+      "foto": "clinica-dia-dos-ambulancias.jpg"
+    },
+    {
+      "fecha": "2026-11-04 12:00",
+      "tipo": "historia",
+      "tema": "Teletón 2026: inclusión y rehabilitación",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 20:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: inclusión y traslados seguros",
+      "foto": "urgencias-noche-vertical.jpg"
     }
   ]
 }
