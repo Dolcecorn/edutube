@@ -276,7 +276,10 @@ def reel(escenas, destino, voz=None, musica=None):
 
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    musica = Path(musica) if musica else diseno.MARCA_DIR / "musica.mp3"
+    fin_escenas = total - dur_cierre
+    # musica puede ser una función (segundos, golpe) -> ruta: compone la pista con el golpe final justo
+    # cuando aparece el logo del cierre
+    musica = Path(musica(total, fin_escenas) if callable(musica) else musica or diseno.MARCA_DIR / "musica.mp3")
     entradas, filtros = [], []
     if voz:
         entradas += ["-i", str(voz)]
@@ -288,7 +291,7 @@ def reel(escenas, destino, voz=None, musica=None):
     elif voz or musica.exists():
         filtros = ["-map", "0:v", "-map", "1:a"]
         if musica.exists():
-            filtros += ["-af", f"afade=t=out:st={max(0, total - 2):.2f}:d=2"]
+            filtros += ["-af", f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4"]
     else:
         entradas += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
         filtros = ["-map", "0:v", "-map", "1:a"]
@@ -345,12 +348,12 @@ def historia(etiqueta, gancho, texto, llamado, destino, foto=None, duracion=15.0
         k = vistos.get(nombre, 0)
         vistos[nombre] = k + 1
         plan.append((im, pos, t0 + 0.14 * k, desp))
-    musica = Path(musica) if musica else diseno.MARCA_DIR / "musica.mp3"
+    musica = Path(musica(duracion, duracion - 3.0) if callable(musica) else musica or diseno.MARCA_DIR / "musica.mp3")
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
     audio = ["-stream_loop", "-1", "-i", str(musica)] if musica.exists() else \
         ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
-    filtro = ["-af", f"afade=t=out:st={duracion - 1.5:.2f}:d=1.5"] if musica.exists() else []
+    filtro = ["-af", f"afade=t=out:st={duracion - 0.4:.2f}:d=0.4"] if musica.exists() else []
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", *audio, "-map", "0:v", "-map", "1:a", *filtro, "-t", f"{duracion:.2f}",
            "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
