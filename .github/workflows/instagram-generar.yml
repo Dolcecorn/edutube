@@ -1,4 +1,4 @@
-# Genera las publicaciones del día siguiente (09:00 y 18:30) (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
+# Genera las publicaciones del día siguiente (09:00 y 18:30) y las historias (12:00 y 20:30) (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
 # Modo revisión (por defecto): abre un PR con la publicación; al aceptarlo (merge) entra a la cola.
 # Modo automático: variable AUTO_PUBLICAR = true; la deja directo en la cola, sin intervención.
 name: Generar publicación de Instagram
@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       tipo:
-        description: "Forzar tipo (vacío = alternar)"
+        description: "Forzar tipo (vacío = alternar; historia = solo historias)"
         type: choice
-        options: ["", post, reel, carrusel]
+        options: ["", post, reel, carrusel, historia]
         default: ""
       tema:
         description: "Tema (vacío = lo elige la IA)"

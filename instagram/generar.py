@@ -46,6 +46,15 @@ class Contenido(BaseModel):
     hashtags: List[str] = Field(description="Entre 8 y 15 hashtags relevantes, con #")
 
 
+class Historia(BaseModel):
+    tema: str
+    etiqueta: str = Field(description="Categoría corta en mayúsculas, 1 a 3 palabras (ej. ¿SABÍAS QUE?, TIP, SERVICIO)")
+    gancho: str = Field(description="Frase principal que detiene el scroll, máximo 8 palabras")
+    texto: str = Field(description="Texto de apoyo, máximo 28 palabras")
+    llamado: str = Field(description="Llamado a la acción, máximo 6 palabras (ej. Cotiza tu traslado)")
+    foto: str = Field(description="Nombre exacto de una foto vertical de la lista disponible, o vacío")
+
+
 def cargar_estado():
     if ESTADO.exists():
         return json.loads(ESTADO.read_text(encoding="utf-8"))
@@ -90,6 +99,20 @@ mostraran algo que no muestran.""" if lista_fotos else 'No hay fotos: deja el ca
 {guia_fotos}
 No repitas los temas de estas publicaciones recientes:
 {recientes}"""
+    formato = Contenido
+    if tipo == "historia":
+        formato = Historia
+        pedido = f"""Crea una HISTORIA de Instagram (formato vertical 9:16, una sola imagen, dura 24 horas).
+Objetivo: ganar seguidores y generar clientes para {m['nombre']}. Alterna entre:
+- dato útil o "¿sabías que?" de primeros auxilios que invite a seguir la cuenta para aprender más,
+- servicio de la empresa ({', '.join(m['servicios'])}) con un beneficio claro y un llamado a cotizar o llamar,
+- recordatorio práctico de la temporada o del día a día en Chile.
+El llamado a la acción debe ser concreto (llamar, cotizar, visitar el sitio web o seguir la cuenta).
+No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else ''}
+{guia_fotos}
+Usa siempre una foto vertical si hay.
+No repitas los temas de estas publicaciones recientes:
+{recientes}"""
 
     if os.environ.get("OPENAI_API_KEY"):
         from openai import OpenAI
@@ -97,7 +120,7 @@ No repitas los temas de estas publicaciones recientes:
             model=os.environ.get("LLM_MODEL") or m.get("modelo_openai", "gpt-5.6-luna"),
             instructions=sistema,
             input=pedido,
-            text_format=Contenido,
+            text_format=formato,
         )
         if r.output_parsed is None:
             sys.exit(f"OpenAI no generó contenido (estado={r.status})")
@@ -111,7 +134,7 @@ No repitas los temas de estas publicaciones recientes:
         output_config={"effort": "medium"},
         system=sistema,
         messages=[{"role": "user", "content": pedido}],
-        output_format=Contenido,
+        output_format=formato,
     )
     if r.stop_reason == "refusal" or r.parsed_output is None:
         sys.exit(f"Claude no generó contenido (stop_reason={r.stop_reason})")
@@ -127,6 +150,18 @@ def crear(m, estado, tipo, dia, hora, salida):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
     c = pedir_contenido(m, tipo, estado["historial"])
     validas = {f["archivo"] for f in diseno.fotos()}
+    if tipo == "historia":
+        if c.foto not in validas:
+            c.foto = ""
+        carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
+        carpeta.mkdir(parents=True, exist_ok=False)
+        print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
+        diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None)
+        (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
+        (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
+        estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema})
+        estado["historial"] = estado["historial"][-120:]
+        return carpeta, c
     for l in c.laminas:
         if l.foto not in validas:
             l.foto = ""
@@ -175,9 +210,16 @@ def main():
     horarios = [h.strip() for h in args.horarios.split(",")] if args.horarios else \
         m.get("horarios") or [m.get("hora_publicacion", "09:00")]
 
+    forzado = os.environ.get("TIPO", "")
+    hist = m.get("horarios_historias", [])
+    if forzado == "historia":  # solo historias
+        plan = [(h, "historia") for h in (horarios if args.horarios else hist)]
+    else:  # publicaciones del feed (alternando tipo) y, si no se pidieron horas específicas, las historias
+        plan = [(h, None) for h in horarios] + ([] if args.horarios else [(h, "historia") for h in hist])
+
     hechas = []
-    for hora in horarios:
-        tipo = siguiente_tipo(estado)
+    for hora, tipo in plan:
+        tipo = tipo or siguiente_tipo(estado)
         carpeta, c = crear(m, estado, tipo, dia, hora, args.salida)
         hechas.append((carpeta, tipo, c.tema, hora))
         ESTADO.write_text(json.dumps(estado, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -5,6 +5,7 @@ Cola: instagram/cola/<carpeta>/ con:
   - texto.txt            -> descripcion (caption) con hashtags
   - fecha.txt (opcional) -> "2026-11-05 18:00" hora de Chile; sin el, se publica en la proxima pasada
   - los archivos:        1 video (.mp4/.mov) = reel | 1 imagen (.jpg) = post | 2 a 10 = carrusel
+  Si el nombre de la carpeta contiene "-historia-", el archivo (imagen o video) se publica como historia.
 Se publica en orden alfabetico de carpeta. Al publicarse, la carpeta pasa a instagram/publicados/.
 
 Variables de entorno:
@@ -58,10 +59,10 @@ def api(metodo, ruta, **params):
         raise RuntimeError(f"{metodo} {ruta}: {e.code} {e.read().decode(errors='replace')}") from None
 
 
-def subir_video(ruta_video, caption):
-    """Reel subido directo desde el archivo (subida reanudable), sin necesitar URL publica."""
-    cont = api("POST", f"{USER}/media", media_type="REELS", upload_type="resumable",
-               caption=caption, share_to_feed="true")
+def subir_video(ruta_video, caption, media_type="REELS"):
+    """Video subido directo desde el archivo (subida reanudable), sin necesitar URL publica."""
+    extra = {"caption": caption, "share_to_feed": "true"} if media_type == "REELS" else {}
+    cont = api("POST", f"{USER}/media", media_type=media_type, upload_type="resumable", **extra)
     tam = ruta_video.stat().st_size
     req = urllib.request.Request(cont["uri"], data=ruta_video.read_bytes(), method="POST", headers={
         "Authorization": f"OAuth {TOKEN}", "offset": "0", "file_size": str(tam)})
@@ -109,11 +110,18 @@ def publicar(carpeta):
 
     tipo = "reel" if len(archivos) == 1 and archivos[0].suffix.lower() in VIDEO else (
         "post" if len(archivos) == 1 else "carrusel")
+    if "-historia-" in carpeta.name:
+        tipo = "historia"
     print(f"-> {carpeta.name}: {tipo} con {len(archivos)} archivo(s)")
     if DRY:
         return None
 
-    if tipo == "reel":
+    if tipo == "historia":  # las historias no llevan descripción
+        if archivos[0].suffix.lower() in VIDEO:
+            cont = subir_video(archivos[0], "", media_type="STORIES")
+        else:
+            cont = api("POST", f"{USER}/media", image_url=url_publica(archivos[0]), media_type="STORIES")["id"]
+    elif tipo == "reel":
         cont = subir_video(archivos[0], caption)
     elif tipo == "post":
         cont = api("POST", f"{USER}/media", image_url=url_publica(archivos[0]), caption=caption)["id"]
