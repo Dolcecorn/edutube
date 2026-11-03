@@ -237,10 +237,11 @@ def reel(escenas, destino):
     return destino
 
 
-def historia(etiqueta, gancho, texto, llamado, destino, foto=None):
+def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=False):
     """Historia 9:16: foto de fondo oscurecida, etiqueta cyan, gancho grande, texto y tarjeta blanca con
     el llamado a la acción, teléfono y sitio web. Deja libres las zonas de la interfaz de Instagram
-    (~250 px arriba y ~300 px abajo)."""
+    (~250 px arriba y ~300 px abajo).
+    capas=True: no guarda; devuelve (fondo RGB, [(nombre, imagen RGBA recortada, (x, y))]) para animarla."""
     m = marca()
     c = m["colores"]
     W, H = REEL
@@ -248,26 +249,34 @@ def historia(etiqueta, gancho, texto, llamado, destino, foto=None):
     ancho = W - 2 * margen
     ruta = FOTOS_DIR / foto if foto and (FOTOS_DIR / foto).exists() else None
     if ruta:
-        img = _cubrir(ruta, W, H)
-        img = _degradado(img, 0, H, 70, 70)            # oscurece parejo
-        img = _degradado(img, 0, 520, 140, 0)          # arriba, para el logo
-        img = _degradado(img, 520, H, 0, 230)          # abajo, para el texto
+        fondo = _cubrir(ruta, W, H)
+        fondo = _degradado(fondo, 0, H, 70, 70)            # oscurece parejo
+        fondo = _degradado(fondo, 0, 520, 140, 0)          # arriba, para el logo
+        fondo = _degradado(fondo, 520, H, 0, 230)          # abajo, para el texto
     else:
-        img = Image.new("RGB", (W, H), c["principal"])
-    d = ImageDraw.Draw(img)
+        fondo = Image.new("RGB", (W, H), c["principal"])
+    medir = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    elementos = []
+
+    def capa(nombre):
+        im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        elementos.append((nombre, im))
+        return ImageDraw.Draw(im), im
 
     lg = _logo(True, 470, 150)
     if lg:
-        img.paste(lg, (margen, 250), lg)
+        _, im = capa("logo")
+        im.paste(lg, (margen, 250), lg)
 
     # Tarjeta del llamado a la acción (de abajo hacia arriba)
     f_cta = _fuente(True, 50)
     f_tel = _fuente(True, 66)
     f_web = _fuente(False, 38)
     tel, web = m.get("telefono", ""), m.get("web") or m.get("usuario", "")
-    lin_cta = _envolver(d, llamado, f_cta, ancho - 100)
+    lin_cta = _envolver(medir, llamado, f_cta, ancho - 100)
     alto_card = 50 + len(lin_cta) * 62 + 20 + 80 + 56 + 45
     y_card = H - 320 - alto_card
+    d, _ = capa("tarjeta")
     d.rounded_rectangle([margen, y_card, W - margen, y_card + alto_card], radius=36, fill=c["claro"])
     d.rectangle([margen, y_card + 36, margen + 14, y_card + alto_card - 36], fill=c["acento"])
     y = y_card + 50
@@ -275,35 +284,49 @@ def historia(etiqueta, gancho, texto, llamado, destino, foto=None):
         d.text((margen + 50, y), ln, font=f_cta, fill=c["oscuro"])
         y += 62
     y += 20
-    d.text((margen + 50, y), "☎ " + tel, font=f_tel, fill=c["principal"])
+    d.text((margen + 50, y), "\u260E " + tel, font=f_tel, fill=c["principal"])
     y += 80
     d.text((margen + 50, y), web, font=f_web, fill=c["acento"])
 
     # Gancho y texto (encima de la tarjeta)
-    f_txt, lin_txt, tam_c, alto_txt = _ajustar(d, texto, False, 50, 38, ancho, 330, 1.35)
+    f_txt, lin_txt, tam_c, alto_txt = _ajustar(medir, texto, False, 50, 38, ancho, 330, 1.35)
     f_tag = _fuente(True, 36)
     y_txt = y_card - 60 - alto_txt
     y_bar = y_txt - 40
     tope = 250 + (lg.height if lg else 60) + 60 + 92   # bajo el logo y la etiqueta
-    f_gan, lin_gan, tam_g, alto_gan = _ajustar(d, gancho, True, 104, 56, ancho, max(150, y_bar - 26 - tope), 1.12)
+    f_gan, lin_gan, tam_g, alto_gan = _ajustar(medir, gancho, True, 104, 56, ancho, max(150, y_bar - 26 - tope), 1.12)
     y_gan = y_bar - 26 - alto_gan
     y_tag = y_gan - 92
     if etiqueta:
+        d, _ = capa("etiqueta")
         tw = d.textlength(etiqueta.upper(), font=f_tag)
         d.rounded_rectangle([margen, y_tag, margen + tw + 44, y_tag + 62], radius=31, fill=c["acento"])
         d.text((margen + 22, y_tag + 11), etiqueta.upper(), font=f_tag, fill=c["claro"])
     y = y_gan
     for ln in lin_gan:
+        d, _ = capa("gancho")
         d.text((margen + 3, y + 3), ln, font=f_gan, fill=(0, 0, 0))
         d.text((margen, y), ln, font=f_gan, fill=c["claro"])
         y += int(tam_g * 1.12)
+    d, _ = capa("barra")
     d.rectangle([margen, y_bar, margen + 120, y_bar + 10], fill=c["acento"])
     y = y_txt
     for ln in lin_txt:
+        d, _ = capa("texto")
         d.text((margen, y), ln, font=f_txt, fill=c["claro"])
         y += int(tam_c * 1.35)
 
+    if capas:
+        res = []
+        for nombre, im in elementos:
+            caja = im.getbbox()
+            if caja:
+                res.append((nombre, im.crop(caja), (caja[0], caja[1])))
+        return fondo, res
+    img = fondo.convert("RGBA")
+    for _, im in elementos:
+        img.alpha_composite(im)
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    img.save(destino, "JPEG", quality=92)
+    img.convert("RGB").save(destino, "JPEG", quality=92)
     return destino

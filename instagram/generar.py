@@ -159,6 +159,8 @@ def crear(m, estado, tipo, dia, hora, salida):
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
         diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None)
+        if m.get("historias_video", True):  # video de 15 s con animación y música; la imagen queda de respaldo
+            video.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "video.mp4", foto=c.foto or None)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
         (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
         estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema})
