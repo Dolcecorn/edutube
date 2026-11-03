@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -23,30 +23,6 @@
       "tipo": "historia",
       "tema": "Primeros auxilios ante un desmayo",
       "foto": "clinica-dia-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 09:00",
-      "tipo": "reel",
-      "tema": "Qué hacer ante un atragantamiento",
-      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
-    },
-    {
-      "fecha": "2026-11-03 12:00",
-      "tipo": "historia",
-      "tema": "Primeros auxilios ante quemaduras leves",
-      "foto": "noche-frente-balizas-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 18:30",
-      "tipo": "post",
-      "tema": "Cuándo llamar a una ambulancia y qué información entregar",
-      "foto": "clinica-atardecer-balizas.jpg"
-    },
-    {
-      "fecha": "2026-11-03 20:30",
-      "tipo": "historia",
-      "tema": "Atención de urgencias",
-      "foto": "urgencias-noche-vertical.jpg"
     }
   ]
 }
