@@ -25,6 +25,16 @@
       "fecha": "2026-11-02 22:55",
       "tipo": "historia",
       "tema": "Cobertura de eventos"
+    },
+    {
+      "fecha": "2026-11-03 12:00",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante quemaduras leves"
+    },
+    {
+      "fecha": "2026-11-03 20:30",
+      "tipo": "historia",
+      "tema": "Atención de urgencias"
     }
   ]
 }
