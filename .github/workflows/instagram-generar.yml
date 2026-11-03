@@ -5,7 +5,7 @@ name: Generar publicación de Instagram
 
 on:
   schedule:
-    - cron: "0 13 * * *"   # todos los días ~10:00 de Chile (verano) / 09:00 (invierno); prepara las publicaciones del día siguiente
+    - cron: "17 13 * * *"   # todos los días ~10:17 de Chile (verano) / 09:17 (invierno); prepara las publicaciones del día siguiente
   workflow_dispatch:
     inputs:
       tipo:
