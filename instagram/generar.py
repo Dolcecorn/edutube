@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
 
+import calendario
 import diseno
 import musica
 import video
@@ -73,7 +74,7 @@ def siguiente_tipo(estado):
     return ORDEN[(ORDEN.index(estado["ultimo_tipo"]) + 1) % len(ORDEN)]
 
 
-def pedir_contenido(m, tipo, historial):
+def pedir_contenido(m, tipo, historial, dia=None, hora=""):
     recientes = "\n".join(f"- {h['fecha']}: {h['tema']}" for h in historial[-30:]) or "(ninguna todavía)"
     sistema = f"""Eres el community manager de {m['nombre']} ({m['usuario']}), empresa de ambulancias en {m['pais']}.
 Servicios: {', '.join(m['servicios'])}.
@@ -88,15 +89,19 @@ Reglas de contenido:
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
     tema = os.environ.get("TEMA", "").strip()
+    planificacion = calendario.texto_para_prompt(dia, hora, tipo) if dia else ""
     eleccion = (f"Tema pedido: {tema}." if tema else
-                f"Temas posibles (elige uno o un ángulo nuevo dentro de ellos): {'; '.join(m['temas'])}.")
+                f"{planificacion}\nTemas de referencia de la cuenta: {'; '.join(m['temas'])}.")
+    usadas = fotos_recientes(historial)[:4]
+    aviso_fotos = (f"\nPara variar, NO uses en la portada ni en la historia estas fotos usadas recientemente: "
+                   f"{', '.join(usadas)}." if usadas else "")
     lista_fotos = "\n".join(f"- {f['archivo']}: {f['descripcion']} ({f['orientacion']})" for f in diseno.fotos())
     guia_fotos = (f"""Fotos reales de la empresa disponibles (campo "foto" de cada lámina):
 {lista_fotos}
 Usa foto en la portada, en el post y en las escenas del reel (prefiere las verticales en el reel); en las láminas
 interiores del carrusel, usa foto solo en algunas (las de datos o pasos van mejor sin foto, con "foto" vacío).
 Varía las fotos dentro de la misma publicación. Las fotos muestran ambulancias y clínicas: no las uses como si
-mostraran algo que no muestran.""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
+mostraran algo que no muestran.{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
     pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.
 {eleccion}
 {guia_fotos}
@@ -112,7 +117,7 @@ Objetivo: ganar seguidores y generar clientes para {m['nombre']}. Alterna entre:
 - recordatorio práctico de la temporada o del día a día en Chile.
 El llamado a la acción debe ser concreto (llamar, cotizar, visitar el sitio web o seguir la cuenta).
 El teléfono y el sitio web ya aparecen en la tarjeta del diseño: no los repitas en el gancho ni en el texto.
-No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else ''}
+No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else planificacion}
 {guia_fotos}
 Usa siempre una foto vertical si hay.
 No repitas los temas de estas publicaciones recientes:
@@ -145,6 +150,31 @@ No repitas los temas de estas publicaciones recientes:
     return r.parsed_output
 
 
+def fotos_recientes(historial):
+    """Fotos de portada/historia usadas, de la más reciente a la más antigua (sin repetir)."""
+    vistas = []
+    for h in reversed(historial):
+        f = h.get("foto")
+        if f and f not in vistas:
+            vistas.append(f)
+    return vistas
+
+
+def rotar_foto(elegida, historial, vertical=False, evitar=3):
+    """Si la foto elegida para la portada o la historia se usó en las últimas publicaciones (o viene vacía),
+    la cambia por la menos usada recientemente (vertical si se pide)."""
+    disponibles = diseno.fotos()
+    if not disponibles:
+        return elegida
+    candidatas = [f["archivo"] for f in disponibles if not vertical or f["orientacion"] == "vertical"] or \
+        [f["archivo"] for f in disponibles]
+    recientes = fotos_recientes(historial)
+    if elegida in candidatas and elegida not in recientes[:evitar]:
+        return elegida
+    # la menos usada: primero las nunca usadas, luego la que se usó hace más tiempo
+    return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
+
+
 def slug(texto):
     t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40]
@@ -152,11 +182,13 @@ def slug(texto):
 
 def crear(m, estado, tipo, dia, hora, salida):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
-    c = pedir_contenido(m, tipo, estado["historial"])
+    c = pedir_contenido(m, tipo, estado["historial"], dia, hora)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
         if c.foto not in validas:
             c.foto = ""
+        # las historias van en vertical: con pocas fotos verticales, se evita solo la última usada
+        c.foto = rotar_foto(c.foto, estado["historial"], vertical=True, evitar=1)
         carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
@@ -168,12 +200,20 @@ def crear(m, estado, tipo, dia, hora, salida):
                                foto=c.foto or None, musica=pista)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
         (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
-        estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema})
+        estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema, "foto": c.foto})
         estado["historial"] = estado["historial"][-120:]
         return carpeta, c
     for l in c.laminas:
         if l.foto not in validas:
             l.foto = ""
+    if c.laminas:  # portada distinta a las de las últimas publicaciones
+        nueva = rotar_foto(c.laminas[0].foto, estado["historial"], vertical=(tipo == "reel"),
+                           evitar=1 if tipo == "reel" else 3)
+        if nueva != c.laminas[0].foto:
+            for l in c.laminas[1:]:  # si la nueva ya estaba en otra lámina, intercambiarlas
+                if l.foto == nueva:
+                    l.foto = c.laminas[0].foto
+            c.laminas[0].foto = nueva
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
@@ -203,7 +243,8 @@ def crear(m, estado, tipo, dia, hora, salida):
     (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
 
     estado["ultimo_tipo"] = tipo
-    estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema})
+    estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
+                                "foto": c.laminas[0].foto if c.laminas else ""})
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 
