@@ -31,7 +31,7 @@
       "foto": "noche-frente-balizas-vertical.jpg"
     },
     {
-      "fecha": "2026-11-03 18:30",
+      "fecha": "2026-11-04 18:30",
       "tipo": "carrusel",
       "tema": "Diabetes y calor: apoyo sanitario para trasladarse con seguridad",
       "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
@@ -47,6 +47,22 @@
       "tipo": "historia",
       "tema": "Traslados coordinados para controles y altas médicas",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-03 18:30",
+      "tipo": "reel",
+      "tema": "Golpe de calor: señales de alerta y qué hacer",
+      "foto": "noche-ciudad-frente.mp4",
+      "fotos": [
+        "noche-clinica-las-condes-vertical.jpg",
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
     }
   ]
 }

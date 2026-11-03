@@ -129,6 +129,7 @@ class Fondo:
         return rec.resize((W, H), Image.BILINEAR)
 
 
+<<<<<<< HEAD
 RETRASO_VOZ = 0.35  # la voz entra un poco después del corte de escena
 
 
@@ -212,6 +213,46 @@ class Clip:
         for f in self.fuentes:
             f.cerrar()
         self.fuentes = []
+=======
+class Clip:
+    """Clip de video real como fondo de una escena: se recorta a 9:16, se oscurece igual que las fotos y,
+    si es más corto que la escena, se ralentiza un poco para cubrirla (sin saltos de bucle)."""
+
+    def __init__(self, ruta, oscuro, dur):
+        self.ruta, self.dur, self.factor = ruta, dur, 1 - oscuro / 255
+        largo = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                      str(ruta)], capture_output=True, text=True).stdout or 0) or dur
+        self.lento = max(1.0, dur / max(0.5, largo - 0.1))
+        self.proc, self.i, self.ultimo = None, -1, None
+
+    def _abrir(self):
+        vf = (f"setpts={self.lento:.3f}*PTS,fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,"
+              f"crop={W}:{H}")
+        self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", str(self.ruta), "-an", "-vf", vf,
+                                      "-t", f"{self.dur + 0.5:.2f}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                                     stdout=subprocess.PIPE)
+
+    def cuadro(self, t):  # t en 0..1, siempre hacia adelante
+        if self.proc is None:
+            self._abrir()
+        objetivo = int(t * self.dur * FPS)
+        while self.i < objetivo:
+            datos = self.proc.stdout.read(W * H * 3)
+            if len(datos) < W * H * 3:   # se acabó el clip: se queda en el último cuadro
+                break
+            self.ultimo, self.i = datos, self.i + 1
+        if self.ultimo is None:
+            return Image.new("RGB", (W, H), (20, 20, 20))
+        a = np.frombuffer(self.ultimo, np.uint8).reshape(H, W, 3)
+        return Image.fromarray((a * self.factor).astype(np.uint8))
+
+    def cerrar(self):
+        if self.proc:
+            self.proc.stdout.close()
+            self.proc.kill()
+            self.proc.wait()
+            self.proc = None
+>>>>>>> origin/main
 
 
 def _degradados():
@@ -242,10 +283,15 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     for i, esc in enumerate(escenas):
         titulo, texto = esc[0], esc[1]
         foto = esc[2] if len(esc) > 2 and esc[2] else None
+<<<<<<< HEAD
         partes = foto.split("+") if foto else []
         es_clip = bool(partes) and all(x.lower().endswith(".mp4") and (diseno.VIDEOS_DIR / x).exists()
                                        for x in partes)
         ruta = [diseno.VIDEOS_DIR / x for x in partes] if es_clip else \
+=======
+        es_clip = bool(foto) and foto.lower().endswith(".mp4") and (diseno.VIDEOS_DIR / foto).exists()
+        ruta = diseno.VIDEOS_DIR / foto if es_clip else \
+>>>>>>> origin/main
             (diseno.FOTOS_DIR / foto if foto else (fotos[i % len(fotos)] if fotos else None))
         portada = i == 0
         f_tit, _, tam_t, _ = diseno._ajustar(d0, titulo, True, 84 if portada else 72, 52, ANCHO_TEXTO, 420)
