@@ -37,7 +37,13 @@ def _cargar():
         import torch
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
         torch.set_num_threads(max(1, torch.get_num_threads()))
-        _modelo = ChatterboxMultilingualTTS.from_pretrained(device=torch.device("cpu"))
+        # algunos pesos se guardaron en GPU: en CPU hay que mapearlos al cargar
+        cargar_original = torch.load
+        torch.load = lambda *a, **k: cargar_original(*a, **{**k, "map_location": torch.device("cpu")})
+        try:
+            _modelo = ChatterboxMultilingualTTS.from_pretrained(device=torch.device("cpu"))
+        finally:
+            torch.load = cargar_original
     return _modelo
 
 
