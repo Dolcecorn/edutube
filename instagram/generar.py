@@ -112,7 +112,9 @@ Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno
 profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
 palabra por palabra; frases cortas y fáciles de decir. No dictes números de teléfono ni direcciones web
 (aparecen en pantalla); en la última escena invita a seguir la cuenta o a contactar. Cuando corresponda,
-nombra el 131 diciendo "ciento treinta y uno"."""
+nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
+palabra en una frase o entre frases seguidas (por ejemplo, no "con este calor, un golpe de calor"); usa
+sinónimos."""
     pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
 {eleccion}
 {guia_fotos}
@@ -189,6 +191,30 @@ def rotar_foto(elegida, historial, vertical=False, evitar=None):
     return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
 
 
+def uso_fotos(historial):
+    """Todas las fotos usadas (portadas e interiores), de la más reciente a la más antigua, sin repetir."""
+    vistas = []
+    for h in reversed(historial):
+        for f in [h.get("foto")] + h.get("fotos", []):
+            if f and f not in vistas:
+                vistas.append(f)
+    return vistas
+
+
+def refrescar_interiores(laminas, historial, recientes_max=6):
+    """Las láminas interiores con una foto muy usada pasan a una foto poco o nunca usada (sin repetir dentro
+    de la publicación). Así las fotos nuevas del banco entran rápido en rotación."""
+    banco = [f["archivo"] for f in diseno.fotos()]
+    uso = uso_fotos(historial)
+    recientes = set(uso[:recientes_max])
+    en_uso = {l.foto for l in laminas if l.foto}
+    libres = sorted((f for f in banco if f not in en_uso),
+                    key=lambda a: (a in uso, -uso.index(a) if a in uso else 0))
+    for l in laminas[1:]:
+        if l.foto and l.foto in recientes and not l.foto.endswith(".mp4") and libres:
+            l.foto = libres.pop(0)
+
+
 def elegir_clips(historial, n):
     """Los n clips de video usados hace más tiempo (primero los nunca usados)."""
     disponibles = [v["archivo"] for v in diseno.videos()]
@@ -243,6 +269,8 @@ def crear(m, estado, tipo, dia, hora, salida):
                 if l.foto == nueva:
                     l.foto = c.laminas[0].foto
             c.laminas[0].foto = nueva
+    if c.laminas:  # láminas interiores: cambiar fotos usadas recientemente por las menos usadas del banco
+        refrescar_interiores(c.laminas, estado["historial"])
     clips = []
     if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
         clips = elegir_clips(estado["historial"], 1 if len(c.laminas) < 3 else 2)
@@ -289,7 +317,9 @@ def crear(m, estado, tipo, dia, hora, salida):
 
     estado["ultimo_tipo"] = tipo
     estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
-                                "foto": c.laminas[0].foto if c.laminas else "", **({"clips": clips} if clips else {})})
+                                "foto": c.laminas[0].foto if c.laminas else "",
+                                "fotos": [l.foto for l in c.laminas[1:] if l.foto and not l.foto.endswith(".mp4")],
+                                **({"clips": clips} if clips else {})})
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 

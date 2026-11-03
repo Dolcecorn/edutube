@@ -150,8 +150,11 @@ class Clip:
         self.proc, self.i, self.ultimo = None, -1, None
 
     def _abrir(self):
-        vf = (f"setpts={self.lento:.3f}*PTS,fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,"
-              f"crop={W}:{H}")
+        # cámara lenta fluida: si hay que estirar el clip, se interpolan cuadros nuevos por movimiento
+        # (en vez de repetir cuadros, que se ve entrecortado)
+        lento = (f"setpts={self.lento:.3f}*PTS,minterpolate=fps={FPS}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:"
+                 f"vsbmc=1," if self.lento > 1.02 else "")
+        vf = f"{lento}fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}"
         self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", str(self.ruta), "-an", "-vf", vf,
                                       "-t", f"{self.dur + 0.5:.2f}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
                                      stdout=subprocess.PIPE)
