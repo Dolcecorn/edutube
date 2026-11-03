@@ -28,6 +28,7 @@ ESTADO = RAIZ / "estado.json"
 ZONA = ZoneInfo("America/Santiago")
 ORDEN = ["post", "reel", "carrusel"]
 LAMINAS = {"post": "exactamente 1 lámina", "carrusel": "entre 5 y 7 láminas (la primera es la portada)",
+           "historia": "1 imagen vertical",
            "reel": "entre 4 y 6 escenas (la primera es el gancho; la última invita a seguir la cuenta o a contactar)"}
 
 
