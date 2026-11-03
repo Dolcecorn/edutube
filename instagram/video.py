@@ -326,3 +326,48 @@ def reel(escenas, destino, voz=None):
     if proc.wait() != 0:
         raise RuntimeError("ffmpeg falló al codificar el reel")
     return destino
+
+
+def historia(etiqueta, gancho, texto, llamado, destino, foto=None, duracion=15.0, musica=None):
+    """Historia en video (9:16): la foto se acerca lentamente y los elementos entran animados;
+    lleva la pista de música (marca/musica.mp3 por defecto) con fundido al final."""
+    fondo, capas = diseno.historia(etiqueta, gancho, texto, llamado, foto=foto, capas=True)
+    base = fondo.resize((int(W * 1.10), int(H * 1.10)), Image.LANCZOS)
+    # momento de entrada de cada elemento (s) y desplazamiento inicial (dx, dy)
+    orden = {"logo": (0.2, (0, -30)), "etiqueta": (0.6, (-60, 0)), "gancho": (0.85, (0, 50)),
+             "barra": (1.6, (-120, 0)), "texto": (1.8, (0, 30)), "tarjeta": (2.6, (0, 140))}
+    vistos = {}
+    plan = []
+    for nombre, im, pos in capas:
+        t0, desp = orden.get(nombre, (1.0, (0, 30)))
+        k = vistos.get(nombre, 0)
+        vistos[nombre] = k + 1
+        plan.append((im, pos, t0 + 0.14 * k, desp))
+    musica = Path(musica) if musica else diseno.MARCA_DIR / "musica.mp3"
+    destino = Path(destino)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    audio = ["-stream_loop", "-1", "-i", str(musica)] if musica.exists() else \
+        ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+    filtro = ["-af", f"afade=t=out:st={duracion - 1.5:.2f}:d=1.5"] if musica.exists() else []
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
+           "-r", str(FPS), "-i", "-", *audio, "-map", "0:v", "-map", "1:a", *filtro, "-t", f"{duracion:.2f}",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+           "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(destino)]
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    bw, bh = base.size
+    for f in range(int(duracion * FPS)):
+        t = f / FPS
+        z = 1.10 - 0.10 * _ease_io(t / duracion)          # se acerca suavemente
+        cw, ch = int(W * z), int(H * z)
+        x, y = (bw - cw) // 2, (bh - ch) // 2
+        img = base.crop((x, y, x + cw, y + ch)).resize((W, H), Image.BILINEAR).convert("RGBA")
+        for im, (px, py), t0, (dx, dy) in plan:
+            e = _ease((t - t0) / 0.6)
+            if e <= 0:
+                continue
+            img.alpha_composite(_con_alfa(im, e), (int(px + dx * (1 - e)), int(py + dy * (1 - e))))
+        proc.stdin.write(img.convert("RGB").tobytes())
+    proc.stdin.close()
+    if proc.wait() != 0:
+        raise RuntimeError("ffmpeg falló al codificar la historia")
+    return destino

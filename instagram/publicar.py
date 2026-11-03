@@ -103,7 +103,7 @@ def publicar(carpeta):
     archivos = sorted(p for p in carpeta.iterdir() if p.suffix.lower() in VIDEO | IMAGEN)
     if not archivos:
         raise RuntimeError("no hay imagen (.jpg) ni video (.mp4/.mov)")
-    if len(archivos) > 10:
+    if len(archivos) > 10 and "-historia-" not in carpeta.name:
         raise RuntimeError("un carrusel admite maximo 10 archivos")
     if len(caption) > 2200:
         raise RuntimeError("el texto supera 2200 caracteres")
@@ -116,11 +116,28 @@ def publicar(carpeta):
     if DRY:
         return None
 
-    if tipo == "historia":  # las historias no llevan descripción
-        if archivos[0].suffix.lower() in VIDEO:
-            cont = subir_video(archivos[0], "", media_type="STORIES")
+    if tipo == "historia":  # las historias no llevan descripción; video (con música) o, si falla, la imagen
+        videos = [a for a in archivos if a.suffix.lower() in VIDEO]
+        imagenes = [a for a in archivos if a.suffix.lower() in IMAGEN]
+        intentos = []
+        if videos:
+            intentos += [lambda: subir_video(videos[0], "", media_type="STORIES"),
+                         lambda: api("POST", f"{USER}/media", video_url=url_publica(videos[0]),
+                                     media_type="STORIES")["id"]]
+        if imagenes:
+            intentos.append(lambda: api("POST", f"{USER}/media", image_url=url_publica(imagenes[0]),
+                                        media_type="STORIES")["id"])
+        ultimo = None
+        for intento in intentos:
+            try:
+                cont = intento()
+                esperar_listo(cont)
+                break
+            except Exception as e:  # prueba la siguiente forma
+                ultimo = e
+                print(f"   aviso: {e}", file=sys.stderr)
         else:
-            cont = api("POST", f"{USER}/media", image_url=url_publica(archivos[0]), media_type="STORIES")["id"]
+            raise RuntimeError(f"no se pudo subir la historia: {ultimo}")
     elif tipo == "reel":
         cont = subir_video(archivos[0], caption)
     elif tipo == "post":
