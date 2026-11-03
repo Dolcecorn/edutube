@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Compone una pista corta, original y libre de derechos para historias y reels (upbeat sobrio).
+"""Compone una pista original y libre de derechos para historias y reels: deep house suave y sobrio.
 
-96 BPM, Do mayor, progresión Do(add9) - Sol/Si - Lam7 - Fa maj7. Capas: colchón suave, arpegio
-pulsado (Karplus-Strong), bajo, bombo suave, palmas tenues y hi-hat muy bajo. Sin samples externos:
-todo se sintetiza aquí, así que no hay licencias de por medio.
+121 BPM, La menor. Acordes tipo Rhodes (FM) Lam9 - Rem9 - Fa maj7 - Mim7 con filtro cálido y "bombeo"
+de sidechain, bajo sub sincopado, bombo redondo en negras, hi-hat abierto a contratiempo, shaker
+muy bajo y una palma lejana. Sin samples externos: todo se sintetiza aquí.
 
 Uso: python3 instagram/musica.py [salida.mp3] [segundos]
 """
@@ -16,142 +16,138 @@ from pathlib import Path
 import numpy as np
 
 SR = 44100
-BPM = 96
+BPM = 121
 BEAT = 60 / BPM
 BAR = 4 * BEAT
-rng = np.random.default_rng(7)
+rng = np.random.default_rng(11)
 
-
-def nota(n):  # número MIDI -> Hz
-    return 440.0 * 2 ** ((n - 69) / 12)
-
-
-# acordes (MIDI) por compás
+# voicings (MIDI): raíz para el bajo + acorde en registro medio
 ACORDES = [
-    [48, 55, 60, 62, 64, 67],      # Do add9
-    [47, 55, 59, 62, 67, 71],      # Sol/Si
-    [45, 52, 57, 60, 64, 67],      # Lam7
-    [41, 53, 57, 60, 64, 65],      # Fa maj7
+    (45, [57, 60, 64, 67, 71]),   # Lam9  (La Do Mi Sol Si)
+    (50, [57, 60, 62, 65, 69]),   # Rem9  (La Do Re Fa La) - voicing cerrado
+    (41, [57, 60, 64, 65, 69]),   # Fa maj7 (La Do Mi Fa La)
+    (40, [55, 59, 62, 64, 67]),   # Mim7 (Sol Si Re Mi Sol)
 ]
 
 
-def env(n, ataque, caida):
-    t = np.arange(n) / SR
-    e = np.minimum(1, t / max(ataque, 1e-4)) * np.exp(-t / caida)
-    return e
+def hz(n):
+    return 440.0 * 2 ** ((n - 69) / 12)
 
 
-def pasa_bajos(x, corte):
-    a = np.exp(-2 * np.pi * corte / SR)
-    y = np.empty_like(x)
-    acc = 0.0
-    for i in range(len(x)):  # un polo; suficiente para suavizar
-        acc = (1 - a) * x[i] + a * acc
-        y[i] = acc
-    return y
+def filtro(x, bajo=None, alto=None):
+    """Filtro por FFT (rápido para pistas largas)."""
+    X = np.fft.rfft(x)
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    g = np.ones_like(f)
+    if bajo:   # pasa bajos suave (2º orden aprox.)
+        g *= 1 / np.sqrt(1 + (f / bajo) ** 4)
+    if alto:   # pasa altos suave
+        g *= 1 / np.sqrt(1 + (alto / np.maximum(f, 1)) ** 4)
+    return np.fft.irfft(X * g, len(x))
 
 
-def karplus(freq, dur, brillo=0.5):
-    n = int(dur * SR)
-    p = max(2, int(SR / freq))
-    buf = rng.uniform(-1, 1, p)
-    buf = pasa_bajos(buf, 2000 + 6000 * brillo)
-    out = np.empty(n)
-    idx = 0
-    for i in range(n):
-        out[i] = buf[idx]
-        nxt = (idx + 1) % p
-        buf[idx] = 0.996 * 0.5 * (buf[idx] + buf[nxt])
-        idx = nxt
-    return out * env(n, 0.003, dur * 0.6)
-
-
-def colchon(freqs, dur):
+def rhodes(freq, dur):
+    """Piano eléctrico por FM: cuerpo cálido + un leve 'tine' al ataque."""
     n = int(dur * SR)
     t = np.arange(n) / SR
-    x = np.zeros(n)
-    for f in freqs:
-        for det in (-0.12, 0.12):
-            ff = f * 2 ** (det / 12)
-            x += np.sin(2 * np.pi * ff * t) + 0.3 * np.sin(4 * np.pi * ff * t) + 0.12 * np.sin(6 * np.pi * ff * t)
-    x /= len(freqs) * 2
-    ataque = np.minimum(1, t / 0.6)
-    salida = np.minimum(1, (dur - t) / 0.5)
-    return x * ataque * np.clip(salida, 0, 1)
+    ind = 1.6 * np.exp(-t / 0.35) + 0.25
+    cuerpo = np.sin(2 * np.pi * freq * t + ind * np.sin(2 * np.pi * freq * t))
+    tine = 0.12 * np.sin(2 * np.pi * freq * 14 * t) * np.exp(-t / 0.05)
+    trem = 1 + 0.06 * np.sin(2 * np.pi * 4.5 * t)
+    env = np.minimum(1, t / 0.008) * np.exp(-t / 1.4) * np.clip((dur - t) / 0.06, 0, 1)
+    return (cuerpo + tine) * env * trem
 
 
-def bombo(dur=0.35):
+def bombo():
+    n = int(0.45 * SR)
+    t = np.arange(n) / SR
+    f = 48 + 60 * np.exp(-t / 0.03)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.22)
+    clic = rng.uniform(-1, 1, n) * np.exp(-t / 0.002) * 0.08
+    return s + clic
+
+
+def ruido_filtrado(dur, alto, caida, bajo=None):
     n = int(dur * SR)
     t = np.arange(n) / SR
-    f = 45 + 75 * np.exp(-t / 0.04)
-    fase = 2 * np.pi * np.cumsum(f) / SR
-    return np.sin(fase) * np.exp(-t / 0.12)
+    r = filtro(rng.uniform(-1, 1, n), bajo=bajo, alto=alto)
+    return r / (np.max(np.abs(r)) + 1e-9) * np.exp(-t / caida)
 
 
-def palma(dur=0.2):
-    n = int(dur * SR)
-    ruido = rng.uniform(-1, 1, n)
-    ruido = ruido - pasa_bajos(ruido, 900)  # quita graves
-    e = np.zeros(n)
-    for d in (0, 0.011, 0.022):  # tres golpecitos muy juntos, como una palma
-        i = int(d * SR)
-        e[i:] += np.exp(-np.arange(n - i) / SR / 0.03)
-    return ruido * e / 3
-
-
-def hihat(dur=0.05):
-    n = int(dur * SR)
-    ruido = rng.uniform(-1, 1, n)
-    ruido = ruido - pasa_bajos(ruido, 6000)
-    return ruido * np.exp(-np.arange(n) / SR / 0.015)
-
-
-def poner(pista, sonido, t, vol):
-    i = int(t * SR)
+def poner(pista, sonido, t, vol=1.0):
+    i = int(round(t * SR))
     if i >= len(pista):
         return
     f = min(len(pista), i + len(sonido))
     pista[i:f] += sonido[: f - i] * vol
 
 
-def componer(segundos=24.0):
-    compases = int(np.ceil(segundos / BAR))
+def componer(segundos=60.0):
+    compases = int(np.ceil(segundos / BAR)) + 1
     n = int(compases * BAR * SR)
-    pad, arp, bajo, bat = (np.zeros(n) for _ in range(4))
-    k, p, h = bombo(), palma(), hihat()
-    patron = [0, 2, 4, 3, 5, 4, 2, 3]  # índices del acorde para el arpegio en corcheas
+    acordes, bajo, bat, perc = (np.zeros(n) for _ in range(4))
+    k = bombo()
+    hat = ruido_filtrado(0.22, alto=7000, caida=0.07)
+    shk = ruido_filtrado(0.06, alto=5000, caida=0.018, bajo=11000)
+    palma = ruido_filtrado(0.35, alto=1200, caida=0.09, bajo=5000)
+    # patrón de bajo sincopado (en semicorcheas): (posición, duración en semicorcheas, octava)
+    patron_bajo = [(0, 3, 0), (3, 1, 0), (6, 2, 12), (10, 2, 0), (14, 2, 0)]
+    semi = BEAT / 4
     for c in range(compases):
-        ac = ACORDES[c % 4]
+        raiz, voces = ACORDES[c % 4]
         t0 = c * BAR
-        poner(pad, colchon([nota(x) for x in ac[1:5]], BAR + 0.4), t0, 1.0)
-        for j, ix in enumerate(patron):  # arpegio en corcheas, una octava arriba
-            poner(arp, karplus(nota(ac[ix] + 12), BEAT * 1.2, brillo=0.4), t0 + j * BEAT / 2,
-                  0.9 if j % 2 == 0 else 0.6)
-        for j in range(8):  # bajo en corcheas, acentuado en el tiempo
-            nb = int(BEAT / 2 * SR * 0.9)
-            tb = np.arange(nb) / SR
-            s = np.sin(2 * np.pi * nota(ac[0] - 12) * tb) * np.exp(-tb / 0.18) * np.minimum(1, tb / 0.005)
-            poner(bajo, s, t0 + j * BEAT / 2, 1.0 if j % 2 == 0 else 0.55)
-        if c >= 1:  # la batería entra en el segundo compás
-            for b in range(4):
-                poner(bat, k, t0 + b * BEAT, 0.9 if b in (0, 2) else 0.55)
+        # acordes: un golpe largo en el 1 y otro corto anticipando el 3 ("y" del 2), muy al estilo deep house
+        for tt, dur, vol in ((0.0, BAR * 0.95, 0.9), (BEAT * 1.5, BEAT * 1.4, 0.45)):
+            for v in voces:
+                poner(acordes, rhodes(hz(v), dur), t0 + tt + rng.uniform(0, 0.006), vol)
+        for pos, d, octv in patron_bajo:
+            nn = int(d * semi * SR * 0.92)
+            tb = np.arange(nn) / SR
+            f = hz(raiz - 12 + octv)
+            s = (np.sin(2 * np.pi * f * tb) + 0.15 * np.sin(4 * np.pi * f * tb))
+            s *= np.minimum(1, tb / 0.004) * np.minimum(1, (nn / SR - tb) / 0.02)
+            poner(bajo, s, t0 + pos * semi, 1.0)
+        intro = c < 2  # dos compases de intro: solo acordes y shaker
+        for b in range(4):
+            tb = t0 + b * BEAT
+            if not intro:
+                poner(bat, k, tb, 1.0)
+                poner(perc, hat, tb + BEAT / 2, 0.22)               # hi-hat abierto a contratiempo
                 if b in (1, 3):
-                    poner(bat, p, t0 + b * BEAT, 0.35)
-            for j in range(8):
-                poner(bat, h, t0 + j * BEAT / 2 + BEAT / 4, 0.12)
-    mezcla = 0.30 * pad + 0.32 * arp + 0.38 * bajo + 0.45 * bat
-    # reverb sencilla para el colchón y el arpegio (ecos difusos)
-    rev = np.zeros_like(mezcla)
-    fuente = 0.3 * pad + 0.32 * arp
-    for d, g in ((0.031, 0.35), (0.047, 0.3), (0.071, 0.25), (0.113, 0.2), (0.173, 0.15)):
+                    poner(perc, palma, tb, 0.16)                     # palma lejana
+            for s16 in range(4):
+                poner(perc, shk, tb + s16 * semi + rng.uniform(-0.004, 0.004),
+                      0.10 if s16 % 2 else 0.05)                     # shaker con algo de swing humano
+
+    # color: acordes cálidos y oscuros; bajo solo graves; percusión sin graves
+    acordes = filtro(acordes, bajo=1800)
+    bajo = filtro(bajo, bajo=220)
+    perc = filtro(perc, alto=3000)
+
+    # sidechain: los acordes y el bajo "respiran" con el bombo
+    t = np.arange(n) / SR
+    fase = (t % BEAT) / BEAT
+    bombeo = 0.55 + 0.45 * np.minimum(1, fase / 0.45) ** 1.5
+    bombeo[: int(2 * BAR * SR)] = 1.0  # sin bombeo en la intro
+    acordes *= bombeo
+    bajo *= 0.6 + 0.4 * bombeo
+
+    # reverb difusa para los acordes y la palma
+    rev = np.zeros(n)
+    fuente = acordes * 0.5 + perc * 0.3
+    for d, g in ((0.029, .32), (0.041, .3), (0.059, .27), (0.083, .24), (0.127, .2), (0.191, .15), (0.263, .1)):
         i = int(d * SR)
         rev[i:] += fuente[:-i] * g
-    mezcla += 0.5 * rev
+    rev = filtro(rev, bajo=4000, alto=200)
+
+    mezcla = 0.42 * acordes + 0.55 * bajo + 0.62 * bat + 0.5 * perc + 0.35 * rev
     mezcla = mezcla[: int(segundos * SR)]
     t = np.arange(len(mezcla)) / SR
-    mezcla *= np.clip((segundos - t) / 1.5, 0, 1) * np.clip(t / 0.3, 0, 1)  # entrada y salida
-    mezcla /= np.max(np.abs(mezcla)) + 1e-9
-    return np.stack([mezcla, np.roll(mezcla, 220) * 0.98], axis=1)  # leve apertura estéreo
+    mezcla *= np.clip(t / 1.0, 0, 1) * np.clip((segundos - t) / 2.5, 0, 1)
+    mezcla = np.tanh(1.3 * mezcla / (np.max(np.abs(mezcla)) + 1e-9)) / np.tanh(1.3)  # saturación suave
+    izq = mezcla
+    der = np.roll(mezcla, 260) * 0.97 + 0.03 * mezcla
+    return np.stack([izq, der], axis=1)
 
 
 def guardar(audio, destino):
@@ -164,12 +160,12 @@ def guardar(audio, destino):
             w.setsampwidth(2)
             w.setframerate(SR)
             w.writeframes((audio * 0.9 * 32767).astype("<i2").tobytes())
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav), "-af", "loudnorm=I=-16:TP=-1.5",
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(wav), "-af", "loudnorm=I=-17:TP=-1.5",
                         "-ar", str(SR), "-c:a", "libmp3lame", "-b:a", "192k", str(destino)], check=True)
     return destino
 
 
 if __name__ == "__main__":
     salida = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).resolve().parent / "marca" / "musica.mp3")
-    seg = float(sys.argv[2]) if len(sys.argv) > 2 else 24.0
+    seg = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
     print(guardar(componer(seg), salida))
