@@ -235,3 +235,75 @@ def reel(escenas, destino):
                         *(["-af", "volume=0.6"] if musica.exists() else []),
                         "-shortest", "-movflags", "+faststart", str(destino)], check=True)
     return destino
+
+
+def historia(etiqueta, gancho, texto, llamado, destino, foto=None):
+    """Historia 9:16: foto de fondo oscurecida, etiqueta cyan, gancho grande, texto y tarjeta blanca con
+    el llamado a la acción, teléfono y sitio web. Deja libres las zonas de la interfaz de Instagram
+    (~250 px arriba y ~300 px abajo)."""
+    m = marca()
+    c = m["colores"]
+    W, H = REEL
+    margen = 80
+    ancho = W - 2 * margen
+    ruta = FOTOS_DIR / foto if foto and (FOTOS_DIR / foto).exists() else None
+    if ruta:
+        img = _cubrir(ruta, W, H)
+        img = _degradado(img, 0, H, 70, 70)            # oscurece parejo
+        img = _degradado(img, 0, 520, 140, 0)          # arriba, para el logo
+        img = _degradado(img, 520, H, 0, 230)          # abajo, para el texto
+    else:
+        img = Image.new("RGB", (W, H), c["principal"])
+    d = ImageDraw.Draw(img)
+
+    lg = _logo(True, 470, 150)
+    if lg:
+        img.paste(lg, (margen, 250), lg)
+
+    # Tarjeta del llamado a la acción (de abajo hacia arriba)
+    f_cta = _fuente(True, 50)
+    f_tel = _fuente(True, 66)
+    f_web = _fuente(False, 38)
+    tel, web = m.get("telefono", ""), m.get("web") or m.get("usuario", "")
+    lin_cta = _envolver(d, llamado, f_cta, ancho - 100)
+    alto_card = 50 + len(lin_cta) * 62 + 20 + 80 + 56 + 45
+    y_card = H - 320 - alto_card
+    d.rounded_rectangle([margen, y_card, W - margen, y_card + alto_card], radius=36, fill=c["claro"])
+    d.rectangle([margen, y_card + 36, margen + 14, y_card + alto_card - 36], fill=c["acento"])
+    y = y_card + 50
+    for ln in lin_cta:
+        d.text((margen + 50, y), ln, font=f_cta, fill=c["oscuro"])
+        y += 62
+    y += 20
+    d.text((margen + 50, y), "☎ " + tel, font=f_tel, fill=c["principal"])
+    y += 80
+    d.text((margen + 50, y), web, font=f_web, fill=c["acento"])
+
+    # Gancho y texto (encima de la tarjeta)
+    f_txt, lin_txt, tam_c, alto_txt = _ajustar(d, texto, False, 50, 38, ancho, 330, 1.35)
+    f_tag = _fuente(True, 36)
+    y_txt = y_card - 60 - alto_txt
+    y_bar = y_txt - 40
+    tope = 250 + (lg.height if lg else 60) + 60 + 92   # bajo el logo y la etiqueta
+    f_gan, lin_gan, tam_g, alto_gan = _ajustar(d, gancho, True, 104, 56, ancho, max(150, y_bar - 26 - tope), 1.12)
+    y_gan = y_bar - 26 - alto_gan
+    y_tag = y_gan - 92
+    if etiqueta:
+        tw = d.textlength(etiqueta.upper(), font=f_tag)
+        d.rounded_rectangle([margen, y_tag, margen + tw + 44, y_tag + 62], radius=31, fill=c["acento"])
+        d.text((margen + 22, y_tag + 11), etiqueta.upper(), font=f_tag, fill=c["claro"])
+    y = y_gan
+    for ln in lin_gan:
+        d.text((margen + 3, y + 3), ln, font=f_gan, fill=(0, 0, 0))
+        d.text((margen, y), ln, font=f_gan, fill=c["claro"])
+        y += int(tam_g * 1.12)
+    d.rectangle([margen, y_bar, margen + 120, y_bar + 10], fill=c["acento"])
+    y = y_txt
+    for ln in lin_txt:
+        d.text((margen, y), ln, font=f_txt, fill=c["claro"])
+        y += int(tam_c * 1.35)
+
+    destino = Path(destino)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    img.save(destino, "JPEG", quality=92)
+    return destino
