@@ -79,3 +79,9 @@ Solo usa Python 3.9+ (viene con Ubuntu 24), sin instalar nada más.
 
 `marca/musica.mp3` es la pista base (aprobada); cada publicación lleva su propia variante del mismo estilo (tonalidad, tempo, progresión y ritmo distintos, elegidos a partir del nombre de la carpeta). Es una pista original (sin derechos de autor) compuesta por `musica.py`: deep house suave y sobrio a 121 BPM. Se usa en los reels y en las historias, que se publican como video de 15 s con animación (`historias_video` en `marca.json`; con `false` vuelven a ser imagen). Para cambiarla, reemplaza `marca/musica.mp3` por otra pista libre de derechos (por ejemplo, de la biblioteca de audio de YouTube) o vuelve a generarla con `python3 instagram/musica.py`. La API de Instagram no permite usar la biblioteca de música de la app.
 
+## Calendario de contenidos
+
+`calendario.json` define la planificación: fechas especiales de Chile y de la Región de Valparaíso (feriados, Teletón, Lo Vásquez, Navidad, Año Nuevo, Fiestas Patrias, días mundiales de salud, temporadas), un tema por mes y un foco por día de la semana. `generar.py` lo consulta para cada publicación: en una fecha especial todo el contenido del día se relaciona con ella; los días previos, las historias (y el día anterior también el feed) la anticipan; el resto sigue el tema del mes y el foco del día. Para agregar o corregir fechas (por ejemplo, una votación), edita `calendario.json`; las marcadas `confirmar` dependen de un decreto o anuncio oficial.
+
+Las fotos de portada e historias rotan: `estado.json` guarda la foto usada en cada publicación y se evita repetir las más recientes.
+
