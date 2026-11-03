@@ -137,7 +137,7 @@ def _degradados():
     return g
 
 
-def reel(escenas, destino, voz=None):
+def reel(escenas, destino, voz=None, musica=None):
     """escenas: [(titulo, texto[, foto])]. Devuelve la ruta del MP4 (1080x1920, 30 fps)."""
     m = diseno.marca()
     rojo, cyan = _hex(m["colores"]["principal"]), _hex(m["colores"]["acento"])
@@ -276,7 +276,7 @@ def reel(escenas, destino, voz=None):
 
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    musica = diseno.MARCA_DIR / "musica.mp3"
+    musica = Path(musica) if musica else diseno.MARCA_DIR / "musica.mp3"
     entradas, filtros = [], []
     if voz:
         entradas += ["-i", str(voz)]
@@ -287,6 +287,8 @@ def reel(escenas, destino, voz=None):
                    "-map", "[a]"]
     elif voz or musica.exists():
         filtros = ["-map", "0:v", "-map", "1:a"]
+        if musica.exists():
+            filtros += ["-af", f"afade=t=out:st={max(0, total - 2):.2f}:d=2"]
     else:
         entradas += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
         filtros = ["-map", "0:v", "-map", "1:a"]
