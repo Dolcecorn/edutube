@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 
 import calendario
+import locucion
 import diseno
 import musica
 import video
@@ -40,6 +41,8 @@ class Lamina(BaseModel):
     texto: str = Field(description="Texto de apoyo, máximo 35 palabras. Vacío en la portada si no hace falta")
     foto: str = Field(description="Nombre exacto de una foto de la lista disponible que calce con la lámina, "
                                   "o vacío para una lámina sin foto")
+    locucion: str = Field(description="Solo en reels: lo que dice la voz en off en esta escena, 1 o 2 frases "
+                                      "naturales, máximo 22 palabras. Vacío en posts y carruseles")
 
 
 class Contenido(BaseModel):
@@ -102,7 +105,17 @@ Usa foto en la portada, en el post y en las escenas del reel (prefiere las verti
 interiores del carrusel, usa foto solo en algunas (las de datos o pasos van mejor sin foto, con "foto" vacío).
 Varía las fotos dentro de la misma publicación. Las fotos muestran ambulancias y clínicas: no las uses como si
 mostraran algo que no muestran.{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
-    pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.
+    voz = ""
+    if tipo == "reel":
+        voz = """
+Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
+profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
+palabra por palabra; frases cortas y fáciles de decir. No dictes números de teléfono ni direcciones web
+(aparecen en pantalla); en la última escena invita a seguir la cuenta o a contactar. Cuando corresponda,
+nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
+palabra en una frase o entre frases seguidas (por ejemplo, no "con este calor, un golpe de calor"); usa
+sinónimos."""
+    pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
 {eleccion}
 {guia_fotos}
 No repitas los temas de estas publicaciones recientes:
@@ -178,6 +191,30 @@ def rotar_foto(elegida, historial, vertical=False, evitar=None):
     return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
 
 
+def uso_fotos(historial):
+    """Todas las fotos usadas (portadas e interiores), de la más reciente a la más antigua, sin repetir."""
+    vistas = []
+    for h in reversed(historial):
+        for f in [h.get("foto")] + h.get("fotos", []):
+            if f and f not in vistas:
+                vistas.append(f)
+    return vistas
+
+
+def refrescar_interiores(laminas, historial, recientes_max=6):
+    """Las láminas interiores con una foto muy usada pasan a una foto poco o nunca usada (sin repetir dentro
+    de la publicación). Así las fotos nuevas del banco entran rápido en rotación."""
+    banco = [f["archivo"] for f in diseno.fotos()]
+    uso = uso_fotos(historial)
+    recientes = set(uso[:recientes_max])
+    en_uso = {l.foto for l in laminas if l.foto}
+    libres = sorted((f for f in banco if f not in en_uso),
+                    key=lambda a: (a in uso, -uso.index(a) if a in uso else 0))
+    for l in laminas[1:]:
+        if l.foto and l.foto in recientes and not l.foto.endswith(".mp4") and libres:
+            l.foto = libres.pop(0)
+
+
 def elegir_clips(historial, n):
     """Los n clips de video usados hace más tiempo (primero los nunca usados)."""
     disponibles = [v["archivo"] for v in diseno.videos()]
@@ -232,11 +269,17 @@ def crear(m, estado, tipo, dia, hora, salida):
                 if l.foto == nueva:
                     l.foto = c.laminas[0].foto
             c.laminas[0].foto = nueva
+    if c.laminas:  # láminas interiores: cambiar fotos usadas recientemente por las menos usadas del banco
+        refrescar_interiores(c.laminas, estado["historial"])
     clips = []
     if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
-        clips = elegir_clips(estado["historial"], 1 if len(c.laminas) < 3 else 2)
-        for clip, i in zip(clips, (0, len(c.laminas) // 2)):
-            c.laminas[i].foto = clip
+        clips = elegir_clips(estado["historial"], 3)
+        if clips:
+            # cada escena con video encadena dos clips distintos (se reproducen tal cual, sin ralentizar)
+            otro = lambda k: clips[k % len(clips)]
+            c.laminas[0].foto = "+".join(dict.fromkeys([otro(0), otro(1)]))
+            if len(c.laminas) >= 3:
+                c.laminas[len(c.laminas) // 2].foto = "+".join(dict.fromkeys([otro(2), otro(0)]))
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
@@ -244,8 +287,18 @@ def crear(m, estado, tipo, dia, hora, salida):
     if tipo == "reel":
         with tempfile.TemporaryDirectory() as tmp:
             pista = lambda seg, golpe: musica.pista(carpeta.name, seg, Path(tmp) / "m.mp3", golpe)  # variante propia
+            locs = None
+            if locucion.disponible() and any(l.locucion.strip() for l in c.laminas):
+                locs = []
+                for i, l in enumerate(c.laminas):
+                    if l.locucion.strip():
+                        ruta = Path(tmp) / f"voz{i}.wav"
+                        locucion.decir(l.locucion.strip(), ruta)
+                        locs.append(ruta)
+                    else:
+                        locs.append(None)
             video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
-                       musica=pista)
+                       musica=pista, locuciones=locs)
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         foto_previa = next((l.foto for l in c.laminas if l.foto and not l.foto.endswith(".mp4")), None)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
@@ -268,7 +321,9 @@ def crear(m, estado, tipo, dia, hora, salida):
 
     estado["ultimo_tipo"] = tipo
     estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
-                                "foto": c.laminas[0].foto if c.laminas else "", **({"clips": clips} if clips else {})})
+                                "foto": c.laminas[0].foto if c.laminas else "",
+                                "fotos": [l.foto for l in c.laminas[1:] if l.foto and not l.foto.endswith(".mp4")],
+                                **({"clips": clips} if clips else {})})
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 

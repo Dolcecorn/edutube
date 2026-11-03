@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "carrusel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -31,16 +31,26 @@
       "foto": "noche-frente-balizas-vertical.jpg"
     },
     {
-      "fecha": "2026-11-03 18:30",
-      "tipo": "carrusel",
-      "tema": "Diabetes y calor: apoyo sanitario para trasladarse con seguridad",
-      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
-    },
-    {
       "fecha": "2026-11-03 12:00",
       "tipo": "historia",
       "tema": "Atención de urgencias con apoyo seguro en la Región de Valparaíso",
       "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-03 18:30",
+      "tipo": "reel",
+      "tema": "Golpe de calor: señales de alerta y qué hacer",
+      "foto": "noche-ciudad-frente.mp4",
+      "fotos": [
+        "noche-clinica-las-condes-vertical.jpg",
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
     },
     {
       "fecha": "2026-11-03 20:30",
@@ -55,20 +65,16 @@
       "foto": "clinica-dia-angulo-bajo.jpg"
     },
     {
-      "fecha": "2026-11-04 18:30",
-      "tipo": "reel",
-      "tema": "Golpe de calor: señales de alerta y qué hacer",
-      "foto": "noche-ciudad-frente.mp4",
-      "clips": [
-        "noche-ciudad-frente.mp4",
-        "noche-autopista-trasera.mp4"
-      ]
-    },
-    {
       "fecha": "2026-11-04 12:00",
       "tipo": "historia",
       "tema": "Teletón 2026: inclusión y rehabilitación",
       "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 18:30",
+      "tipo": "carrusel",
+      "tema": "Diabetes y calor: apoyo sanitario para trasladarse con seguridad",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
     },
     {
       "fecha": "2026-11-04 20:30",
