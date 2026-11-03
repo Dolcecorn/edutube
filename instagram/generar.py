@@ -195,7 +195,7 @@ def crear(m, estado, tipo, dia, hora, salida):
         diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None)
         if m.get("historias_video", True):  # video de 15 s con animación y música; la imagen queda de respaldo
             with tempfile.TemporaryDirectory() as tmp:
-                pista = musica.pista(carpeta.name, 16, Path(tmp) / "m.mp3")  # variante propia de la publicación
+                pista = lambda seg, golpe: musica.pista(carpeta.name, seg, Path(tmp) / "m.mp3", golpe)  # variante propia
                 video.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "video.mp4",
                                foto=c.foto or None, musica=pista)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
@@ -220,7 +220,7 @@ def crear(m, estado, tipo, dia, hora, salida):
 
     if tipo == "reel":
         with tempfile.TemporaryDirectory() as tmp:
-            pista = musica.pista(carpeta.name, 75, Path(tmp) / "m.mp3")  # variante propia de la publicación
+            pista = lambda seg, golpe: musica.pista(carpeta.name, seg, Path(tmp) / "m.mp3", golpe)  # variante propia
             video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
                        musica=pista)
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Compone una pista original y libre de derechos para historias y reels: deep house suave y sobrio.
 
-121 BPM, La menor. Acordes tipo Rhodes (FM) Lam9 - Rem9 - Fa maj7 - Mim7 con filtro cálido y "bombeo"
-de sidechain, bajo sub sincopado, bombo redondo en negras, hi-hat abierto a contratiempo, shaker
-muy bajo y una palma lejana. Sin samples externos: todo se sintetiza aquí.
+121 BPM, La menor. Acordes tipo Rhodes (FM) Lam9 - Rem9 - Fa maj7 - Mim7 en segundo plano, con filtro
+cálido y "bombeo" suave de sidechain; bajo sub sincopado; bombo claro en negras y caja en 2 y 4;
+hi-hat a contratiempo, sin siseo de fondo. Termina con un remate y un golpe final (bombo, platillo suave
+y acorde de tónica) que se alinea con el logo del cierre. Sin samples externos: todo se sintetiza aquí.
 
 Cada publicación usa una variante distinta (tonalidad, tempo, progresión, ritmo de acordes y bajo),
 elegida a partir del nombre de su carpeta; sin semilla se obtiene la pista base aprobada.
@@ -86,12 +87,23 @@ def rhodes(freq, dur):
 
 
 def bombo():
-    n = int(0.45 * SR)
+    """Bombo redondo y claro: cuerpo grave con caída de tono y un ataque limpio (sin ruido)."""
+    n = int(0.5 * SR)
     t = np.arange(n) / SR
-    f = 48 + 60 * np.exp(-t / 0.03)
-    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.22)
-    clic = rng.uniform(-1, 1, n) * np.exp(-t / 0.002) * 0.08
-    return s + clic
+    f = 52 + 95 * np.exp(-t / 0.025)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.26)
+    ataque = np.sin(2 * np.pi * 1600 * t) * np.exp(-t / 0.0025) * 0.25   # "clic" tonal, sin ruido
+    return np.tanh(1.4 * (s + ataque)) / np.tanh(1.4)
+
+
+def caja():
+    """Caja suave pero definida (tipo house): tono corto + ruido de banda media que se apaga rápido."""
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    tono = np.sin(2 * np.pi * 185 * t) * np.exp(-t / 0.045)
+    r = filtro(rng.uniform(-1, 1, n), bajo=6500, alto=1400)
+    r = r / (np.max(np.abs(r)) + 1e-9) * np.exp(-t / 0.075)
+    return 0.55 * tono + 0.7 * r
 
 
 def ruido_filtrado(dur, alto, caida, bajo=None):
@@ -123,7 +135,9 @@ def variante(semilla):
                 palma=bool(r.random() < 0.6))
 
 
-def componer(segundos=60.0, semilla=None):
+def componer(segundos=60.0, semilla=None, golpe=None):
+    """Compone la pista. golpe = segundo en que cae el final (acorde de cierre + bombo), pensado para que
+    coincida con la aparición del logo; la pista se alinea para que ese momento caiga en un compás."""
     global BPM, BEAT, BAR, rng
     v = variante(semilla)
     BPM = v["bpm"]
@@ -131,72 +145,102 @@ def componer(segundos=60.0, semilla=None):
     BAR = 4 * BEAT
     rng = np.random.default_rng(11 if semilla is None else v["bpm"] * 1000 + v["prog"] * 100 + v["ritmo"])
     prog = [(raiz + v["transp"], [x + v["transp"] for x in voces]) for raiz, voces in PROGRESIONES[v["prog"]]]
-    compases = int(np.ceil(segundos / BAR)) + 1
-    n = int(compases * BAR * SR)
-    acordes, bajo, bat, perc = (np.zeros(n) for _ in range(4))
-    k = bombo()
-    hat = ruido_filtrado(0.22, alto=7000, caida=0.07)
-    shk = ruido_filtrado(0.06, alto=5000, caida=0.018, bajo=11000)
-    palma = ruido_filtrado(0.35, alto=1200, caida=0.09, bajo=5000)
-    # patrón de bajo sincopado (en semicorcheas): (posición, duración en semicorcheas, octava)
+    tonica = (LAm9[0] + v["transp"], [x + v["transp"] for x in LAm9[1]])
+    if golpe is None:
+        golpe = max(BAR, segundos - 3.0)
+    golpe = min(golpe, segundos - 0.5)
+    compases = int(np.floor(golpe / BAR))
+    inicio = golpe - compases * BAR        # el primer compás empieza aquí; antes queda un compás de entrada
+    n = int(segundos * SR)
+    acordes, bajo, bat, perc, cola = (np.zeros(n) for _ in range(5))
+    k, sn = bombo(), caja()
+    hat_abierto = filtro(ruido_filtrado(0.16, alto=7500, caida=0.045), bajo=11000)
+    hat_cerrado = filtro(ruido_filtrado(0.04, alto=8000, caida=0.012), bajo=11000)
     patron_bajo = PATRONES_BAJO[v["bajo"]]
     ritmo = RITMOS_ACORDES[v["ritmo"]]
     semi = BEAT / 4
-    for c in range(compases):
+    for c in range(-1, compases):
         raiz, voces = prog[c % 4]
-        t0 = c * BAR
-        # acordes con el ritmo de la variante (por defecto: golpe largo en el 1 y otro anticipando el 3)
+        t0 = inicio + c * BAR
+        ultimo = c == compases - 1
         for tt, dur, vol in ritmo:
             if dur > 4 and c % 2:  # acorde largo: se toca cada dos compases
+                continue
+            dur = min(dur, (golpe - t0) / BEAT - tt)   # nada se cuela sobre el golpe final
+            if dur <= 0.1:
                 continue
             for nv in voces:
                 poner(acordes, rhodes(hz(nv), dur * BEAT), t0 + tt * BEAT + rng.uniform(0, 0.006), vol)
         for pos, d, octv in patron_bajo:
+            if ultimo and pos >= 12:   # el bajo calla en el último tiempo para dar aire al cierre
+                continue
             nn = int(d * semi * SR * 0.92)
             tb = np.arange(nn) / SR
             f = hz(raiz - 12 + octv)
             s = (np.sin(2 * np.pi * f * tb) + 0.15 * np.sin(4 * np.pi * f * tb))
             s *= np.minimum(1, tb / 0.004) * np.minimum(1, (nn / SR - tb) / 0.02)
             poner(bajo, s, t0 + pos * semi, 1.0)
-        intro = c < 2  # dos compases de intro: solo acordes y shaker
+        intro = c < 1  # entrada: solo acordes y hi-hat suave
         for b in range(4):
             tb = t0 + b * BEAT
-            if not intro:
+            if not intro and not (ultimo and b == 3):
                 poner(bat, k, tb, 1.0)
-                if v["hat"]:
-                    poner(perc, hat, tb + BEAT / 2, 0.22)           # hi-hat abierto a contratiempo
-                if b in (1, 3) and v["palma"]:
-                    poner(perc, palma, tb, 0.16)                     # palma lejana
-            for s16 in range(4):
-                poner(perc, shk, tb + s16 * semi + rng.uniform(-0.004, 0.004),
-                      0.10 if s16 % 2 else 0.05)                     # shaker con algo de swing humano
+            if not intro and b in (1, 3):
+                poner(bat, sn, tb, 0.42)                                # caja marcada en 2 y 4
+            if v["hat"] or not intro:
+                poner(perc, hat_abierto, tb + BEAT / 2, 0.22 if not intro else 0.12)   # contratiempo
+            if not intro and v["palma"]:
+                poner(perc, hat_cerrado, tb + 3 * semi, 0.10)           # semicorchea suave antes del tiempo
+        if ultimo:  # pequeño remate de caja que anuncia el final
+            for j, vol in ((13, 0.16), (14, 0.22), (15, 0.3)):
+                poner(bat, sn, t0 + j * semi, vol)
 
-    # color: acordes cálidos y oscuros; bajo solo graves; percusión sin graves
-    acordes = filtro(acordes, bajo=1800)
+    # subida suave (ruido muy filtrado) en los dos compases previos al golpe
+    nr = int(2 * BAR * SR)
+    tr = np.arange(nr) / SR
+    subida = filtro(rng.uniform(-1, 1, nr), bajo=5000, alto=900) * (tr / tr[-1]) ** 2.5
+    poner(perc, subida / (np.max(np.abs(subida)) + 1e-9), golpe - 2 * BAR, 0.10)
+
+    # golpe final: bombo, platillo suave, sub y acorde de tónica que se queda sonando con reverb
+    resto = segundos - golpe
+    poner(bat, k, golpe, 1.1)
+    plat = filtro(ruido_filtrado(min(3.0, resto + 0.5), alto=3500, caida=0.9), bajo=9000)
+    poner(cola, plat, golpe, 0.16)
+    raiz, voces = tonica
+    for j, nv in enumerate(voces + [voces[0] + 12, voces[2] + 12]):
+        poner(cola, rhodes(hz(nv), resto + 0.3) * (0.9 if j < len(voces) else 0.45), golpe + 0.012 * j, 1.0)
+    nb = int((resto + 0.3) * SR)
+    tb = np.arange(nb) / SR
+    sub = np.sin(2 * np.pi * hz(raiz - 12) * tb) * np.minimum(1, tb / 0.01) * np.exp(-tb / 1.6)
+    poner(bajo, sub, golpe, 1.1)
+
+    # color: acordes cálidos y oscuros; bajo solo graves; percusión sin graves ni siseo
+    acordes = filtro(acordes, bajo=1600)
+    cola = filtro(cola, bajo=3200)
     bajo = filtro(bajo, bajo=220)
-    perc = filtro(perc, alto=3000)
+    perc = filtro(perc, alto=3000, bajo=10500)
 
-    # sidechain: los acordes y el bajo "respiran" con el bombo
+    # sidechain: los acordes y el bajo "respiran" con el bombo (más suave que antes)
     t = np.arange(n) / SR
-    fase = (t % BEAT) / BEAT
-    bombeo = 0.55 + 0.45 * np.minimum(1, fase / 0.45) ** 1.5
-    bombeo[: int(2 * BAR * SR)] = 1.0  # sin bombeo en la intro
+    fase = ((t - inicio) % BEAT) / BEAT
+    bombeo = 0.68 + 0.32 * np.minimum(1, fase / 0.45) ** 1.5
+    bombeo[: int(max(0, inicio + BAR) * SR)] = 1.0   # sin bombeo en la entrada
+    bombeo[int(golpe * SR):] = 1.0
     acordes *= bombeo
-    bajo *= 0.6 + 0.4 * bombeo
+    bajo *= 0.7 + 0.3 * bombeo
 
-    # reverb difusa para los acordes y la palma
+    # reverb difusa solo para acordes y cierre (la batería queda seca y clara)
     rev = np.zeros(n)
-    fuente = acordes * 0.5 + perc * 0.3
-    for d, g in ((0.029, .32), (0.041, .3), (0.059, .27), (0.083, .24), (0.127, .2), (0.191, .15), (0.263, .1)):
+    fuente = acordes * 0.5 + cola * 0.7 + bat * 0.04
+    for d, g in ((0.029, .32), (0.041, .3), (0.059, .27), (0.083, .24), (0.127, .2), (0.191, .15),
+                 (0.263, .1), (0.37, .07), (0.52, .05)):
         i = int(d * SR)
         rev[i:] += fuente[:-i] * g
-    rev = filtro(rev, bajo=4000, alto=200)
+    rev = filtro(rev, bajo=3500, alto=250)
 
-    mezcla = 0.42 * acordes + 0.55 * bajo + 0.62 * bat + 0.5 * perc + 0.35 * rev
-    mezcla = mezcla[: int(segundos * SR)]
-    t = np.arange(len(mezcla)) / SR
-    mezcla *= np.clip(t / 1.0, 0, 1) * np.clip((segundos - t) / 2.5, 0, 1)
-    mezcla = np.tanh(1.3 * mezcla / (np.max(np.abs(mezcla)) + 1e-9)) / np.tanh(1.3)  # saturación suave
+    mezcla = 0.26 * acordes + 0.34 * cola + 0.55 * bajo + 0.85 * bat + 0.45 * perc + 0.3 * rev
+    mezcla *= np.clip(t / 0.6, 0, 1) * np.clip((segundos - t) / 0.4, 0, 1)
+    mezcla = np.tanh(1.15 * mezcla / (np.max(np.abs(mezcla)) + 1e-9)) / np.tanh(1.15)
     izq = mezcla
     der = np.roll(mezcla, 260) * 0.97 + 0.03 * mezcla
     return np.stack([izq, der], axis=1)
@@ -217,9 +261,10 @@ def guardar(audio, destino):
     return destino
 
 
-def pista(semilla, segundos, destino):
-    """Compone y guarda la variante de una publicación (cada carpeta usa su nombre como semilla)."""
-    return guardar(componer(segundos, semilla), destino)
+def pista(semilla, segundos, destino, golpe=None):
+    """Compone y guarda la variante de una publicación (cada carpeta usa su nombre como semilla).
+    golpe: segundo del cierre (por ejemplo, cuando aparece el logo)."""
+    return guardar(componer(segundos, semilla, golpe), destino)
 
 
 if __name__ == "__main__":
