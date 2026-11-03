@@ -35,6 +35,11 @@
       "fecha": "2026-11-03 20:30",
       "tipo": "historia",
       "tema": "Atención de urgencias"
+    },
+    {
+      "fecha": "2026-11-02 23:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un desmayo"
     }
   ]
 }
