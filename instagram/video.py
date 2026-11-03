@@ -138,47 +138,80 @@ def _duracion(ruta):
     return float(r.stdout or 0)
 
 
-class Clip:
-    """Clip de video real como fondo de una escena: se recorta a 9:16, se oscurece igual que las fotos y,
-    si es más corto que la escena, se ralentiza un poco para cubrirla (sin saltos de bucle)."""
+class _Fuente:
+    """Lee un clip cuadro a cuadro a su velocidad original (sin interpolar ni ralentizar)."""
 
-    def __init__(self, ruta, oscuro, dur):
-        self.ruta, self.dur, self.factor = ruta, dur, 1 - oscuro / 255
-        largo = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
-                                      str(ruta)], capture_output=True, text=True).stdout or 0) or dur
-        self.lento = max(1.0, dur / max(0.5, largo - 0.1))
-        self.proc, self.i, self.ultimo = None, -1, None
+    def __init__(self, ruta, recorte=None):
+        self.ruta, self.largo = ruta, _duracion(ruta)
+        corte = f"crop={recorte}," if recorte else ""
+        vf = f"{corte}fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}"
+        self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", str(ruta), "-an", "-vf", vf,
+                                      "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
+        self.i, self.ultimo = -1, None
 
-    def _abrir(self):
-        # cámara lenta fluida: si hay que estirar el clip, se interpolan cuadros nuevos por movimiento
-        # (en vez de repetir cuadros, que se ve entrecortado)
-        lento = (f"setpts={self.lento:.3f}*PTS,minterpolate=fps={FPS}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:"
-                 f"vsbmc=1," if self.lento > 1.02 else "")
-        vf = f"{lento}fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase:flags=lanczos,crop={W}:{H}"
-        self.proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", str(self.ruta), "-an", "-vf", vf,
-                                      "-t", f"{self.dur + 0.5:.2f}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
-                                     stdout=subprocess.PIPE)
-
-    def cuadro(self, t):  # t en 0..1, siempre hacia adelante
-        if self.proc is None:
-            self._abrir()
-        objetivo = int(t * self.dur * FPS)
-        while self.i < objetivo:
+    def cuadro(self, n):  # n = número de cuadro, siempre hacia adelante
+        while self.i < n:
             datos = self.proc.stdout.read(W * H * 3)
-            if len(datos) < W * H * 3:   # se acabó el clip: se queda en el último cuadro
+            if len(datos) < W * H * 3:
                 break
             self.ultimo, self.i = datos, self.i + 1
-        if self.ultimo is None:
+        return None if self.ultimo is None else np.frombuffer(self.ultimo, np.uint8).reshape(H, W, 3)
+
+    def cerrar(self):
+        self.proc.stdout.close()
+        self.proc.kill()
+        self.proc.wait()
+
+
+class Clip:
+    """Uno o más clips de video reales como fondo de una escena. Cada clip se reproduce tal cual, a su
+    velocidad original (solo se recorta a 9:16 y se oscurece igual que las fotos). Si la escena dura más
+    que el clip, se encadena el siguiente con un fundido corto en vez de estirarlo."""
+
+    FUNDIDO = 0.4
+
+    def __init__(self, rutas, oscuro, dur):
+        rutas = rutas if isinstance(rutas, (list, tuple)) else [rutas]
+        info = {v["archivo"]: v for v in diseno.videos()}
+        self.items = [(Path(r), info.get(Path(r).name, {}).get("recorte")) for r in rutas]
+        self.dur, self.factor = dur, 1 - oscuro / 255
+        self.fuentes, self.inicios = [], []
+
+    def _fuente(self, k):
+        while len(self.fuentes) <= k:
+            ruta, recorte = self.items[len(self.fuentes)]
+            ini = 0.0 if not self.fuentes else \
+                self.inicios[-1] + max(1.0, self.fuentes[-1].largo - 0.15 - self.FUNDIDO)
+            self.fuentes.append(_Fuente(ruta, recorte))
+            self.inicios.append(ini)
+        return self.fuentes[k]
+
+    def cuadro(self, t):  # t en 0..1, siempre hacia adelante
+        s = t * self.dur
+        self._fuente(0)
+        # ¿hay que sumar el siguiente clip?
+        while len(self.fuentes) < len(self.items) and \
+                s >= self.inicios[-1] + self.fuentes[-1].largo - 0.15 - self.FUNDIDO:
+            self._fuente(len(self.fuentes))
+        k = len(self.fuentes) - 1
+        a = self.fuentes[k].cuadro(int((s - self.inicios[k]) * FPS))
+        if k > 0:
+            mezcla = (s - self.inicios[k]) / self.FUNDIDO
+            if mezcla < 1:
+                b = self.fuentes[k - 1].cuadro(int((s - self.inicios[k - 1]) * FPS))
+                if a is None:
+                    a = b
+                elif b is not None:
+                    m = _ease_io(max(0.0, mezcla))
+                    a = a * m + b * (1 - m)
+        if a is None:
             return Image.new("RGB", (W, H), (20, 20, 20))
-        a = np.frombuffer(self.ultimo, np.uint8).reshape(H, W, 3)
         return Image.fromarray((a * self.factor).astype(np.uint8))
 
     def cerrar(self):
-        if self.proc:
-            self.proc.stdout.close()
-            self.proc.kill()
-            self.proc.wait()
-            self.proc = None
+        for f in self.fuentes:
+            f.cerrar()
+        self.fuentes = []
 
 
 def _degradados():
@@ -209,8 +242,10 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     for i, esc in enumerate(escenas):
         titulo, texto = esc[0], esc[1]
         foto = esc[2] if len(esc) > 2 and esc[2] else None
-        es_clip = bool(foto) and foto.lower().endswith(".mp4") and (diseno.VIDEOS_DIR / foto).exists()
-        ruta = diseno.VIDEOS_DIR / foto if es_clip else \
+        partes = foto.split("+") if foto else []
+        es_clip = bool(partes) and all(x.lower().endswith(".mp4") and (diseno.VIDEOS_DIR / x).exists()
+                                       for x in partes)
+        ruta = [diseno.VIDEOS_DIR / x for x in partes] if es_clip else \
             (diseno.FOTOS_DIR / foto if foto else (fotos[i % len(fotos)] if fotos else None))
         portada = i == 0
         f_tit, _, tam_t, _ = diseno._ajustar(d0, titulo, True, 84 if portada else 72, 52, ANCHO_TEXTO, 420)

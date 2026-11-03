@@ -273,9 +273,13 @@ def crear(m, estado, tipo, dia, hora, salida):
         refrescar_interiores(c.laminas, estado["historial"])
     clips = []
     if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
-        clips = elegir_clips(estado["historial"], 1 if len(c.laminas) < 3 else 2)
-        for clip, i in zip(clips, (0, len(c.laminas) // 2)):
-            c.laminas[i].foto = clip
+        clips = elegir_clips(estado["historial"], 3)
+        if clips:
+            # cada escena con video encadena dos clips distintos (se reproducen tal cual, sin ralentizar)
+            otro = lambda k: clips[k % len(clips)]
+            c.laminas[0].foto = "+".join(dict.fromkeys([otro(0), otro(1)]))
+            if len(c.laminas) >= 3:
+                c.laminas[len(c.laminas) // 2].foto = "+".join(dict.fromkeys([otro(2), otro(0)]))
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
