@@ -1,4 +1,4 @@
-# Prueba temporal: renderiza un reel con locución clonada y lo deja en instagram/pruebas/ de esta rama.
+# Prueba temporal (v2): renderiza un reel con locución clonada y lo deja en instagram/pruebas/ de esta rama.
 name: Prueba de locución
 on:
   push:
