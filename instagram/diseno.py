@@ -18,6 +18,7 @@ REEL = (1080, 1920)   # 9:16
 
 
 FOTOS_DIR = MARCA_DIR / "fotos"
+VIDEOS_DIR = MARCA_DIR / "videos"
 
 
 def fotos():
@@ -26,6 +27,14 @@ def fotos():
     if not f.exists():
         return []
     return [x for x in json.loads(f.read_text(encoding="utf-8")) if (FOTOS_DIR / x["archivo"]).exists()]
+
+
+def videos():
+    """Clips de video disponibles para los reels: [{archivo, descripcion}]."""
+    f = VIDEOS_DIR / "videos.json"
+    if not f.exists():
+        return []
+    return [x for x in json.loads(f.read_text(encoding="utf-8")) if (VIDEOS_DIR / x["archivo"]).exists()]
 
 
 def _cubrir(ruta, ancho, alto):
