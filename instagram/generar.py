@@ -109,6 +109,7 @@ Objetivo: ganar seguidores y generar clientes para {m['nombre']}. Alterna entre:
 - servicio de la empresa ({', '.join(m['servicios'])}) con un beneficio claro y un llamado a cotizar o llamar,
 - recordatorio práctico de la temporada o del día a día en Chile.
 El llamado a la acción debe ser concreto (llamar, cotizar, visitar el sitio web o seguir la cuenta).
+El teléfono y el sitio web ya aparecen en la tarjeta del diseño: no los repitas en el gancho ni en el texto.
 No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else ''}
 {guia_fotos}
 Usa siempre una foto vertical si hay.
