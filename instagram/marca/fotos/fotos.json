@@ -5,5 +5,9 @@
   {"archivo": "clinica-atardecer-balizas.jpg", "descripcion": "Dos ambulancias AHP con balizas encendidas frente a una clínica al atardecer, ambiente de servicio activo", "orientacion": "horizontal"},
   {"archivo": "clinica-dia-dos-ambulancias-palmeras.jpg", "descripcion": "Dos ambulancias AHP frente a una clínica con palmeras, de día, flota lista para servicio", "orientacion": "horizontal"},
   {"archivo": "noche-frente-balizas-vertical.jpg", "descripcion": "Ambulancia de frente en la noche con balizas rojas y azules encendidas, sensación de urgencia", "orientacion": "vertical"},
-  {"archivo": "urgencias-noche-vertical.jpg", "descripcion": "Ambulancia AHP frente a la entrada de Urgencias de un hospital, de noche, piso mojado y balizas", "orientacion": "vertical"}
+  {"archivo": "urgencias-noche-vertical.jpg", "descripcion": "Ambulancia AHP frente a la entrada de Urgencias de un hospital, de noche, piso mojado y balizas", "orientacion": "vertical"},
+  {"archivo": "noche-clinica-las-condes-vertical.jpg", "descripcion": "Ambulancia AHP (Hyundai, ATS) con balizas encendidas saliendo de una clínica de noche, piso mojado, sensación de servicio activo", "orientacion": "vertical"},
+  {"archivo": "noche-urgencias-centro-medico-vertical.jpg", "descripcion": "Ambulancia AHP San Antonio saliendo de la entrada de Urgencias de un centro médico de noche, ciudad y cerros al fondo", "orientacion": "vertical"},
+  {"archivo": "noche-costanera-vertical.jpg", "descripcion": "Ambulancia AHP San Antonio con balizas circulando por una autopista urbana de noche (Costanera Norte, Santiago)", "orientacion": "vertical"},
+  {"archivo": "noche-vespucio-vertical.jpg", "descripcion": "Ambulancia AHP (Hyundai, ATS) circulando rápido por autopista de noche (Vespucio Norte, Santiago), sensación de urgencia", "orientacion": "vertical"}
 ]

@@ -178,6 +178,18 @@ def rotar_foto(elegida, historial, vertical=False, evitar=None):
     return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
 
 
+def elegir_clips(historial, n):
+    """Los n clips de video usados hace más tiempo (primero los nunca usados)."""
+    disponibles = [v["archivo"] for v in diseno.videos()]
+    usados = []
+    for h in reversed(historial):
+        for v in h.get("clips", []):
+            if v not in usados:
+                usados.append(v)
+    orden = sorted(disponibles, key=lambda a: (a in usados, -usados.index(a) if a in usados else 0))
+    return orden[:n]
+
+
 def slug(texto):
     t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40]
@@ -220,6 +232,11 @@ def crear(m, estado, tipo, dia, hora, salida):
                 if l.foto == nueva:
                     l.foto = c.laminas[0].foto
             c.laminas[0].foto = nueva
+    clips = []
+    if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
+        clips = elegir_clips(estado["historial"], 1 if len(c.laminas) < 3 else 2)
+        for clip, i in zip(clips, (0, len(c.laminas) // 2)):
+            c.laminas[i].foto = clip
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")
@@ -230,8 +247,9 @@ def crear(m, estado, tipo, dia, hora, salida):
             video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
                        musica=pista)
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
+        foto_previa = next((l.foto for l in c.laminas if l.foto and not l.foto.endswith(".mp4")), None)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
-                      diseno.REEL, portada=True, foto=c.laminas[0].foto or None)
+                      diseno.REEL, portada=True, foto=foto_previa)
     else:
         laminas = c.laminas[:1] if tipo == "post" else c.laminas[:10]
         total = len(laminas)
@@ -250,7 +268,7 @@ def crear(m, estado, tipo, dia, hora, salida):
 
     estado["ultimo_tipo"] = tipo
     estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
-                                "foto": c.laminas[0].foto if c.laminas else ""})
+                                "foto": c.laminas[0].foto if c.laminas else "", **({"clips": clips} if clips else {})})
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 

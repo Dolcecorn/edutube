@@ -85,3 +85,7 @@ Solo usa Python 3.9+ (viene con Ubuntu 24), sin instalar nada más.
 
 Las fotos de portada e historias rotan: `estado.json` guarda la foto usada en cada publicación y se evita repetir las más recientes.
 
+## Fotos y clips de video
+
+- `marca/fotos/` + `fotos.json`: banco de fotos (la IA elige según la descripción; portadas e historias rotan para no repetir).
+- `marca/videos/` + `videos.json`: clips cortos verticales (sin audio) para los reels. Cada reel usa 1 o 2 clips (portada y una escena intermedia), rotando primero los menos usados; el resto de escenas usa fotos. Si un clip es más corto que su escena, se ralentiza levemente.
