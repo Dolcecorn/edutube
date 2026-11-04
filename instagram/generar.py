@@ -87,7 +87,14 @@ Tono: {m['tono']}
 Reglas de contenido:
 - La información de salud debe ser correcta, prudente y alineada con recomendaciones oficiales vigentes
   (MINSAL, Cruz Roja, AHA/ERC). Ante la duda, sé conservador y no des dosis de medicamentos ni diagnósticos.
-- Cuando sea una emergencia, indica llamar al {m['numero_emergencia']}.
+- El objetivo es que la gente llame y contrate a {m['nombre']}: el llamado principal es siempre contactarnos
+  (teléfono {m['telefono']} o sitio web) para traslados, cobertura de eventos o atención de urgencias.
+- El {m['numero_emergencia']} se menciona SOLO cuando el tema trata una situación de riesgo vital (paro, pérdida de
+  conciencia, dificultad grave para respirar, convulsiones, hemorragia grave), como máximo una vez y sin hacerlo
+  el centro del mensaje. Fuera de eso, no lo nombres.
+- Mensajes concretos y útiles, nada vago ni genérico: di qué hacemos, para quién, en qué situación y qué gana la
+  persona (ej. "¿Alta médica y tu familiar no puede ir en auto? Lo trasladamos en camilla con paramédico").
+  Evita frases de relleno como "estamos para apoyarte", "tu bienestar es lo primero" o "apoyo seguro".
 - En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
@@ -112,7 +119,7 @@ Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno
 profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
 palabra por palabra; frases cortas y fáciles de decir. No dictes números de teléfono ni direcciones web
 (aparecen en pantalla); en la última escena invita a seguir la cuenta o a contactar. Cuando corresponda,
-nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
+si (y solo si) hay riesgo vital, nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
 palabra en una frase o entre frases seguidas (por ejemplo, no "con este calor, un golpe de calor"); usa
 sinónimos."""
     pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
