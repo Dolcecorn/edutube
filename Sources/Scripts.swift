@@ -62,6 +62,31 @@ enum Scripts {
     """
 
     /**
+     Busca los videos de cualquier página (también dentro de reproductores incrustados) y avisa a la app
+     su dirección, para poder enviarlos al Chromecast. Mira las etiquetas <video> y las descargas de
+     listas HLS (.m3u8) o archivos .mp4 que hace la página.
+     */
+    static let media = """
+    (function(){if(window.__tvmedia||!window.webkit||!webkit.messageHandlers.tvweb)return;window.__tvmedia=1;
+    var seen={},RX=/\\.(m3u8|mp4|webm|mpd)$/i;
+    function post(m){try{webkit.messageHandlers.tvweb.postMessage(m);}catch(e){}}
+    function report(u,current){try{if(!u)return;u=new URL(String(u),location.href).href;
+     if(!/^https?:/.test(u))return;var path=u.split(/[?#]/)[0];
+     if(!RX.test(path)&&!/m3u8/i.test(u))return;
+     if(!current&&seen[u])return;seen[u]=1;post((current?'media-current:':'media:')+u);}catch(e){}}
+    var xo=XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open=function(m,u){report(u,false);return xo.apply(this,arguments);};
+    if(window.fetch){var fo=window.fetch;window.fetch=function(i){report(typeof i==='string'?i:(i&&i.url),false);return fo.apply(this,arguments);};}
+    function fromVideo(v){report(v.currentSrc||v.src,true);
+     var ss=v.querySelectorAll('source');for(var i=0;i<ss.length;i++)report(ss[i].src,false);}
+    document.addEventListener('playing',function(e){if(e.target.tagName==='VIDEO')fromVideo(e.target);},true);
+    document.addEventListener('loadedmetadata',function(e){if(e.target.tagName==='VIDEO')fromVideo(e.target);},true);
+    var lt=0;document.addEventListener('timeupdate',function(e){var v=e.target;
+     if(v.tagName!=='VIDEO'||v.duration<30)return;var n=Date.now();if(n-lt<3000)return;lt=n;post('mtime:'+v.currentTime);},true);
+    })();
+    """
+
+    /**
      Hace creer a YouTube que la app sigue a la vista, para que no pause el video al bloquear
      la pantalla o cambiar de app (escuchar música o podcasts con la pantalla apagada).
      */
