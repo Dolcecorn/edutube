@@ -1,6 +1,6 @@
-# Genera las publicaciones del día siguiente (09:00 y 18:30) y las historias (12:00 y 20:30) (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
-# Modo revisión (por defecto): abre un PR con la publicación; al aceptarlo (merge) entra a la cola.
-# Modo automático: variable AUTO_PUBLICAR = true; la deja directo en la cola, sin intervención.
+# Genera las publicaciones del día siguiente (09:00 y 18:30) y las historias (11:30, 15:30 y 20:30) (texto con OpenAI o Claude, gráficas con Pillow, reel con ffmpeg).
+# Modo automático (por defecto, pedido de Eleva 2026-11-04): deja las publicaciones directo en la cola, sin aprobación.
+# Modo revisión: variable AUTO_PUBLICAR = false; abre un PR y al aceptarlo (merge) entra a la cola.
 name: Generar publicación de Instagram
 
 on:
@@ -72,7 +72,7 @@ jobs:
         run: python3 instagram/generar.py ${FECHA:+--fecha "$FECHA"} ${HORARIOS:+--horarios "$HORARIOS"}
 
       - name: Guardar (automático)
-        if: vars.AUTO_PUBLICAR == 'true'
+        if: vars.AUTO_PUBLICAR != 'false'
         env:
           RESUMEN: ${{ steps.gen.outputs.resumen }}
         run: |
@@ -80,10 +80,10 @@ jobs:
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git add instagram
           git commit -m "Instagram: $RESUMEN"
-          git push
+          for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push && break; sleep 5; done
 
       - name: Abrir PR para revisar
-        if: vars.AUTO_PUBLICAR != 'true'
+        if: vars.AUTO_PUBLICAR == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           CARPETAS: ${{ steps.gen.outputs.carpetas }}

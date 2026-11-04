@@ -116,28 +116,25 @@ def publicar(carpeta):
     if DRY:
         return None
 
-    if tipo == "historia":  # las historias no llevan descripción; video (con música) o, si falla, la imagen
+    if tipo == "historia":  # las historias van siempre en video con música (sin caer a imagen muda)
         videos = [a for a in archivos if a.suffix.lower() in VIDEO]
-        imagenes = [a for a in archivos if a.suffix.lower() in IMAGEN]
-        intentos = []
-        if videos:
-            intentos += [lambda: subir_video(videos[0], "", media_type="STORIES"),
-                         lambda: api("POST", f"{USER}/media", video_url=url_publica(videos[0]),
-                                     media_type="STORIES")["id"]]
-        if imagenes:
-            intentos.append(lambda: api("POST", f"{USER}/media", image_url=url_publica(imagenes[0]),
-                                        media_type="STORIES")["id"])
+        if not videos:
+            raise RuntimeError("la historia no tiene video con música")
+        intentos = [lambda: subir_video(videos[0], "", media_type="STORIES"),
+                    lambda: api("POST", f"{USER}/media", video_url=url_publica(videos[0]),
+                                media_type="STORIES")["id"]] * 2
         ultimo = None
-        for intento in intentos:
+        for n, intento in enumerate(intentos):
             try:
                 cont = intento()
                 esperar_listo(cont)
                 break
-            except Exception as e:  # prueba la siguiente forma
+            except Exception as e:  # reintenta
                 ultimo = e
                 print(f"   aviso: {e}", file=sys.stderr)
+                time.sleep(10 * (n + 1))
         else:
-            raise RuntimeError(f"no se pudo subir la historia: {ultimo}")
+            raise RuntimeError(f"no se pudo subir la historia en video: {ultimo}")
     elif tipo == "reel":
         cont = subir_video(archivos[0], caption)
     elif tipo == "post":

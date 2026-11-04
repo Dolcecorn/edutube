@@ -79,6 +79,12 @@
       "foto": "noche-urgencias-centro-medico-vertical.jpg"
     },
     {
+      "fecha": "2026-11-04 15:30",
+      "tipo": "historia",
+      "tema": "Prevención de accidentes al asistir a actividades de Teletón",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
       "fecha": "2026-11-04 18:30",
       "tipo": "reel",
       "tema": "Somnolencia al volante: señales de alerta y prevención",
@@ -117,6 +123,12 @@
       ]
     },
     {
+      "fecha": "2026-11-05 11:30",
+      "tipo": "historia",
+      "tema": "Revisión del equipamiento antes de una actividad solidaria",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
       "fecha": "2026-11-05 18:30",
       "tipo": "carrusel",
       "tema": "Cómo trabaja un equipo de ambulancia antes y durante una jornada inclusiva",
@@ -125,12 +137,6 @@
         "noche-vespucio-vertical.jpg",
         "clinica-atardecer-balizas.jpg"
       ]
-    },
-    {
-      "fecha": "2026-11-05 12:00",
-      "tipo": "historia",
-      "tema": "Revisión del equipamiento antes de una actividad solidaria",
-      "foto": "clinica-dia-vertical.jpg"
     },
     {
       "fecha": "2026-11-05 20:30",
