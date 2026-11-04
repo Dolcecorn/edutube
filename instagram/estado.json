@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "post",
+  "ultimo_tipo": "carrusel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -99,6 +99,44 @@
       "tipo": "historia",
       "tema": "Traslados planificados para participar en actividades de Teletón",
       "foto": "noche-costanera-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 09:00",
+      "tipo": "reel",
+      "tema": "Detrás de escena: preparación y coordinación antes de cada servicio",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "noche-clinica-las-condes-vertical.jpg",
+        "urgencias-noche-vertical.jpg",
+        "clinica-dia-vertical.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-05 18:30",
+      "tipo": "carrusel",
+      "tema": "Cómo trabaja un equipo de ambulancia antes y durante una jornada inclusiva",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": [
+        "noche-vespucio-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-05 12:00",
+      "tipo": "historia",
+      "tema": "Revisión del equipamiento antes de una actividad solidaria",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 20:30",
+      "tipo": "historia",
+      "tema": "Traslados inclusivos para la Teletón",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
     }
   ]
 }
