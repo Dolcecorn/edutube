@@ -4,8 +4,8 @@
 name: Generar publicación de Instagram
 
 on:
-  schedule:
-    - cron: "17 13 * * *"   # todos los días ~10:17 de Chile (verano) / 09:17 (invierno); prepara las publicaciones del día siguiente
+  # Sin "schedule": el horario de GitHub se atrasa horas y duplicaba el contenido. La generación diaria
+  # la lanza una tarea programada externa (10:17 de Chile) con workflow_dispatch.
   workflow_dispatch:
     inputs:
       tipo:
@@ -72,7 +72,7 @@ jobs:
         run: python3 instagram/generar.py ${FECHA:+--fecha "$FECHA"} ${HORARIOS:+--horarios "$HORARIOS"}
 
       - name: Guardar (automático)
-        if: vars.AUTO_PUBLICAR != 'false'
+        if: vars.AUTO_PUBLICAR != 'false' && steps.gen.outputs.carpetas != ''
         env:
           RESUMEN: ${{ steps.gen.outputs.resumen }}
         run: |
@@ -83,7 +83,7 @@ jobs:
           for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push && break; sleep 5; done
 
       - name: Abrir PR para revisar
-        if: vars.AUTO_PUBLICAR == 'false'
+        if: vars.AUTO_PUBLICAR == 'false' && steps.gen.outputs.carpetas != ''
         env:
           GH_TOKEN: ${{ github.token }}
           CARPETAS: ${{ steps.gen.outputs.carpetas }}

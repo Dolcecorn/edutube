@@ -356,6 +356,15 @@ def main():
     else:  # publicaciones del feed (alternando tipo) y, si no se pidieron horas específicas, las historias
         plan = [(h, None) for h in horarios] + ([] if args.horarios else [(h, "historia") for h in hist])
 
+    # no duplicar: si la cola ya tiene algo para ese día y hora, se salta (REEMPLAZAR=1 para forzar)
+    salida = Path(args.salida)
+    if not os.environ.get("REEMPLAZAR"):
+        ocupadas = {p.name[:15] for p in salida.glob(f"{dia}-*") if p.is_dir()} if salida.exists() else set()
+        saltadas = [h for h, _ in plan if f"{dia}-{h.replace(':', '')}" in ocupadas]
+        if saltadas:
+            print(f"Ya hay contenido en la cola para {dia} a las {', '.join(saltadas)}: no se vuelve a generar.")
+        plan = [(h, t) for h, t in plan if f"{dia}-{h.replace(':', '')}" not in ocupadas]
+
     hechas = []
     for hora, tipo in plan:
         tipo = tipo or siguiente_tipo(estado)
