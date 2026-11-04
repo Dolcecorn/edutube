@@ -10,6 +10,8 @@ La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pan
 - **Transmitir a la TV / Chromecast (v1.3):** botón rojo con una TV abajo a la derecha cuando hay un video abierto. Muestra los Chromecast de tu Wi-Fi (los encuentra solos; la primera vez iOS pide permiso de "Red local", hay que aceptarlo) y envía el video en el mismo segundo. También se puede vincular una TV con "Vincular con código de TV" (YouTube de la TV → Configuración).
 - **Anuncios en el Chromecast (v1.4):** el Chromecast pide sus propios anuncios, así que los bloqueos del iPhone no le llegan. Mientras edutube siga abierto (o en segundo plano), escucha a la TV: si empieza un anuncio lo silencia y lo omite apenas YouTube lo permite.
 - **Saltar anuncios a mitad del video (v1.5):** si en el Chromecast aparece un anuncio en medio del video, edutube vuelve a cargar el mismo video un segundo después de donde iba. Si YouTube insiste con el anuncio, se silencia y se omite como en la v1.4.
+- **Cualquier página en la TV (v1.6):** en el menú, "Ir a una página…" abre cualquier link o búsqueda (con el mismo bloqueo de anuncios). Si la página tiene un video, aparece el botón rojo: envía solo el video al Chromecast, a pantalla completa y en el mismo segundo. No sirve con sitios con protección anticopia (Netflix, Disney+, etc.) ni con los que solo dejan ver el video dentro de su página.
+- **Espejo de pantalla (v1.7, experimental):** menú → "Espejo de pantalla en la TV" → "Iniciar transmisión" → elegir el Chromecast. Muestra toda la pantalla del iPhone en la TV (con unos segundos de retraso). Para terminar: punto rojo arriba o Centro de control → Detener.
 - **Barra de carga (v1.4):** cuando un video carga aparece una barra roja delgada abajo, en vez del ícono grande.
 - Imagen en imagen (PiP) desde el botón del reproductor en pantalla completa.
 - **Video fluido:** revisa qué formatos decodifica tu iPhone por hardware y le oculta a YouTube los demás (AV1 en casi todos los modelos), con tope de 1080p. "Máxima fluidez" fuerza H.264 a 30 fps para iPhones antiguos.
@@ -21,7 +23,7 @@ La misma idea que la app de la TV, pero para iPhone (y iPad): abre YouTube a pan
 |---|---|
 | Deslizar desde el borde izquierdo | Página anterior |
 | Tirar hacia abajo | Recargar |
-| Mantener con **dos dedos**, o agitar el iPhone | Menú: ir al inicio, recargar, cambiar página fija, segundo plano, máxima fluidez |
+| Mantener con **dos dedos**, o agitar el iPhone | Menú: ir al inicio, ir a una página, recargar, cambiar página fija, segundo plano, máxima fluidez |
 
 ## Instalar sin Mac (desde Ubuntu)
 Apple no deja instalar apps fuera de la App Store sin firmarlas. Con un Apple ID gratis la firma dura **7 días**; luego hay que volver a instalarla (se conservan la sesión y los ajustes). Con la cuenta de desarrollador pagada (USD 99/año) dura un año.

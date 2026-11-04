@@ -22,12 +22,13 @@ final class Chromecast {
     private var sessions: [CastSession] = []
 
     enum CastError: LocalizedError {
-        case timeout, launch(String), connection(String)
+        case timeout, launch(String), connection(String), message(String)
         var errorDescription: String? {
             switch self {
             case .timeout: return "El Chromecast no respondió. Revisa que el iPhone esté en el mismo Wi-Fi."
             case .launch(let s): return "El Chromecast no pudo abrir YouTube (\(s))."
             case .connection(let s): return "No se pudo conectar con el Chromecast (\(s))."
+            case .message(let s): return s
             }
         }
     }
@@ -63,7 +64,33 @@ final class Chromecast {
 
     /// Abre YouTube en el Chromecast y devuelve su screenId.
     func openYouTube(on device: Device, completion: @escaping (Result<String, Error>) -> Void) {
-        let s = CastSession(endpoint: device.endpoint)
+        run(CastSession(endpoint: device.endpoint, mode: .youtube), completion)
+    }
+
+    /**
+     Envía un archivo de video (mp4, HLS…) al reproductor que trae el Chromecast. La TV recibe solo
+     el video, a pantalla completa, sin la página ni sus anuncios.
+     */
+    func playMedia(_ media: Media, on device: Device, completion: @escaping (Result<String, Error>) -> Void) {
+        run(CastSession(endpoint: device.endpoint, mode: .media(media)), completion)
+    }
+
+    struct Media {
+        let url: String
+        let title: String
+        let time: Double
+        var live = false
+
+        var contentType: String {
+            let u = url.lowercased()
+            if u.contains(".m3u8") { return "application/x-mpegURL" }
+            if u.contains(".mpd") { return "application/dash+xml" }
+            if u.contains(".webm") { return "video/webm" }
+            return "video/mp4"
+        }
+    }
+
+    private func run(_ s: CastSession, _ completion: @escaping (Result<String, Error>) -> Void) {
         sessions.append(s)
         s.start { [weak self, weak s] result in
             self?.sessions.removeAll { $0 === s }
@@ -72,9 +99,16 @@ final class Chromecast {
     }
 }
 
-/// Una conexión al Chromecast, solo el tiempo necesario para abrir YouTube y obtener el screenId.
+/// Una conexión al Chromecast, solo el tiempo necesario para abrir la app (YouTube o el reproductor) y darle la orden.
 private final class CastSession {
+    enum Mode {
+        case youtube
+        case media(Chromecast.Media)
+    }
+
     private static let youtubeApp = "233637DE"
+    private static let mediaApp = "CC1AD845" // reproductor incluido en todo Chromecast
+    private static let nsMedia = "urn:x-cast:com.google.cast.media"
     private static let nsConnection = "urn:x-cast:com.google.cast.tp.connection"
     private static let nsHeartbeat = "urn:x-cast:com.google.cast.tp.heartbeat"
     private static let nsReceiver = "urn:x-cast:com.google.cast.receiver"
@@ -85,8 +119,14 @@ private final class CastSession {
     private var completion: ((Result<String, Error>) -> Void)?
     private var transportId: String?
     private var requestId = 1
+    private let mode: Mode
+    private var appId: String {
+        if case .youtube = mode { return Self.youtubeApp }
+        return Self.mediaApp
+    }
 
-    init(endpoint: NWEndpoint) {
+    init(endpoint: NWEndpoint, mode: Mode) {
+        self.mode = mode
         let tls = NWProtocolTLS.Options()
         // El Chromecast usa un certificado propio, no uno de una autoridad pública.
         sec_protocol_options_set_verify_block(tls.securityProtocolOptions, { _, _, complete in complete(true) }, .main)
@@ -101,7 +141,7 @@ private final class CastSession {
             case .ready:
                 self.send(Self.nsConnection, to: "receiver-0", ["type": "CONNECT"])
                 self.send(Self.nsReceiver, to: "receiver-0",
-                          ["type": "LAUNCH", "appId": Self.youtubeApp, "requestId": self.nextRequest()])
+                          ["type": "LAUNCH", "appId": self.appId, "requestId": self.nextRequest()])
                 self.receive()
             case .failed(let error):
                 self.finish(.failure(Chromecast.CastError.connection(error.localizedDescription)))
@@ -140,13 +180,39 @@ private final class CastSession {
             let status = json["status"] as? [String: Any]
             let apps = status?["applications"] as? [[String: Any]] ?? []
             guard transportId == nil,
-                  let app = apps.first(where: { ($0["appId"] as? String) == Self.youtubeApp }),
+                  let app = apps.first(where: { ($0["appId"] as? String) == appId }),
                   let transport = app["transportId"] as? String else { return }
             transportId = transport
             send(Self.nsConnection, to: transport, ["type": "CONNECT"])
-            askScreenId(transport, attempt: 0)
+            switch mode {
+            case .youtube:
+                askScreenId(transport, attempt: 0)
+            case .media(let media):
+                var info: [String: Any] = [
+                    "contentId": media.url, "contentUrl": media.url, "contentType": media.contentType,
+                    "streamType": media.live ? "LIVE" : "BUFFERED",
+                    "metadata": ["metadataType": 0, "title": media.title] as [String: Any],
+                ]
+                if media.live {
+                    // El espejo usa trozos fMP4; hay que decírselo al reproductor del Chromecast.
+                    info["hlsSegmentFormat"] = "fmp4"
+                    info["hlsVideoSegmentFormat"] = "fmp4"
+                }
+                var load: [String: Any] = ["type": "LOAD", "requestId": nextRequest(), "autoplay": true, "media": info]
+                if !media.live { load["currentTime"] = media.time }
+                send(Self.nsMedia, to: transport, load)
+            }
         case (Self.nsReceiver, "LAUNCH_ERROR"):
             finish(.failure(Chromecast.CastError.launch(json["reason"] as? String ?? "error")))
+        case (Self.nsMedia, "MEDIA_STATUS"):
+            let status = (json["status"] as? [[String: Any]])?.first
+            if let state = status?["playerState"] as? String, state != "IDLE" {
+                finish(.success("ok"))
+            } else if (status?["idleReason"] as? String) == "ERROR" {
+                finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video.")))
+            }
+        case (Self.nsMedia, "LOAD_FAILED"), (Self.nsMedia, "LOAD_CANCELLED"), (Self.nsMedia, "INVALID_REQUEST"):
+            finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video.")))
         case (Self.nsYouTube, "mdxSessionStatus"):
             let data = json["data"] as? [String: Any]
             if let screenId = data?["screenId"] as? String {

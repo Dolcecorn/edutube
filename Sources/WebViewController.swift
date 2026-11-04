@@ -127,6 +127,8 @@ final class WebViewController: UIViewController {
         for src in sources {
             ucc.addUserScript(WKUserScript(source: src, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
+        // Los videos de otras páginas suelen estar en reproductores incrustados: este va en todos los marcos.
+        ucc.addUserScript(WKUserScript(source: Scripts.media, injectionTime: .atDocumentStart, forMainFrameOnly: false))
     }
 
     private var loadedOnce = false
@@ -177,8 +179,22 @@ final class WebViewController: UIViewController {
         }
     }
 
+    // Videos encontrados en la página actual (que no sea YouTube), para enviarlos al Chromecast.
+    private var pageMedia: [String] = []
+    private var playingMedia: String?
+    private var mediaTime: Double = 0
+    private var mediaPage: String?
+
     private func updateCastButton() {
-        castButton.isHidden = currentVideoId() == nil
+        // Al cambiar de página se olvidan los videos de la anterior.
+        let page = webView.url.map { "\($0.host ?? "")\($0.path)" }
+        if page != mediaPage {
+            mediaPage = page
+            pageMedia = []
+            playingMedia = nil
+            mediaTime = 0
+        }
+        castButton.isHidden = currentVideoId() == nil && pageMedia.isEmpty
         // Empieza a buscar Chromecast apenas se abre un video, para tenerlos listos al tocar el botón.
         if !castButton.isHidden { Chromecast.shared.startDiscovery() }
     }
@@ -195,7 +211,9 @@ final class WebViewController: UIViewController {
     }
 
     @objc private func castTapped() {
-        guard currentVideoId() != nil else { return toast("Abre un video para enviarlo a la TV") }
+        if currentVideoId() == nil {
+            return castPageMedia()
+        }
         Chromecast.shared.startDiscovery()
         if Chromecast.shared.devices.isEmpty {
             // Recién empezó a buscar: se da un momento para que aparezcan los Chromecast.
@@ -232,6 +250,126 @@ final class WebViewController: UIViewController {
             pop.sourceRect = castButton.bounds
         }
         present(sheet, animated: true)
+    }
+
+    // MARK: - Espejo de pantalla
+
+    /// Duplica toda la pantalla del iPhone en el Chromecast (con unos segundos de retraso).
+    private func startMirror() {
+        guard ScreenMirror.extensionId != nil else { return showError("Falta el módulo de espejo en esta instalación.") }
+        Chromecast.shared.startDiscovery()
+        toast("Toca «Iniciar transmisión»")
+        ScreenMirror.showSystemPicker(in: view)
+        ScreenMirror.waitUntilLive { [weak self] ok in
+            guard let self = self else { return }
+            guard ok else { return }
+            guard let ip = ScreenMirror.wifiAddress() else {
+                return self.showError("El iPhone tiene que estar conectado al mismo Wi-Fi que el Chromecast.")
+            }
+            let media = Chromecast.Media(url: "http://\(ip):\(ScreenMirror.port)/live.m3u8",
+                                         title: "Pantalla del iPhone", time: 0, live: true)
+            let devices = Chromecast.shared.devices
+            let sheet = UIAlertController(
+                title: "Mostrar la pantalla en",
+                message: devices.isEmpty ? "No encontré ningún Chromecast en tu Wi-Fi." : "Para terminar, toca el punto rojo arriba a la izquierda (o el Centro de control) y luego «Detener».",
+                preferredStyle: .actionSheet)
+            for device in devices {
+                sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in
+                    self.toast("Conectando con \(device.name)…")
+                    Chromecast.shared.playMedia(media, on: device) { result in
+                        switch result {
+                        case .success: self.toast("Pantalla en \(device.name)")
+                        case .failure(let e): self.showError(e.localizedDescription)
+                        }
+                    }
+                })
+            }
+            sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+            if let pop = sheet.popoverPresentationController {
+                pop.sourceView = self.view
+                pop.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 1, height: 1)
+                pop.permittedArrowDirections = []
+            }
+            self.present(sheet, animated: true)
+        }
+    }
+
+    // MARK: - Videos de cualquier página
+
+    fileprivate func mediaFound(_ url: String, current: Bool) {
+        guard webView.url?.host?.contains("youtube.com") != true else { return }
+        if current { playingMedia = url }
+        if !pageMedia.contains(url) { pageMedia.append(url) }
+        castButton.isHidden = false
+    }
+
+    fileprivate func mediaTimeUpdate(_ t: Double) {
+        mediaTime = t
+    }
+
+    /// El mejor candidato: el que está sonando; si no, la lista HLS principal; si no, el último mp4.
+    private func bestMedia() -> String? {
+        if let p = playingMedia { return p }
+        if let hls = pageMedia.first(where: { $0.lowercased().contains("m3u8") }) { return hls }
+        return pageMedia.last
+    }
+
+    private func castPageMedia() {
+        guard let url = bestMedia() else {
+            return toast("Dale play al video de la página y vuelve a tocar el botón")
+        }
+        Chromecast.shared.startDiscovery()
+        let show = { [weak self] in
+            guard let self = self, self.presentedViewController == nil else { return }
+            let devices = Chromecast.shared.devices
+            let sheet = UIAlertController(
+                title: "Enviar este video a",
+                message: devices.isEmpty ? "No encontré ningún Chromecast. Revisa que el iPhone y el Chromecast estén en el mismo Wi-Fi "
+                    + "y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
+                preferredStyle: .actionSheet)
+            for device in devices {
+                sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in self.castMedia(url, to: device) })
+            }
+            sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+            if let pop = sheet.popoverPresentationController {
+                pop.sourceView = self.castButton
+                pop.sourceRect = self.castButton.bounds
+            }
+            self.present(sheet, animated: true)
+        }
+        if Chromecast.shared.devices.isEmpty {
+            toast("Buscando Chromecast en tu Wi-Fi…")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: show)
+        } else {
+            show()
+        }
+    }
+
+    private func castMedia(_ url: String, to device: Chromecast.Device) {
+        castStarted()
+        toast("Enviando a \(device.name)…")
+        let title = webView.title?.isEmpty == false ? webView.title! : (webView.url?.host ?? "Video")
+        let media = Chromecast.Media(url: url, title: title, time: url == playingMedia ? mediaTime : 0)
+        Chromecast.shared.playMedia(media, on: device) { [weak self] result in
+            guard let self = self else { return }
+            if case .failure = result, url != self.pageMedia.last, let other = self.pageMedia.last, other != url {
+                // Si la TV no pudo con ese, se prueba con el otro video encontrado.
+                let retry = Chromecast.Media(url: other, title: title, time: 0)
+                return Chromecast.shared.playMedia(retry, on: device) { self.mediaCastFinished($0, device: device) }
+            }
+            self.mediaCastFinished(result, device: device)
+        }
+    }
+
+    private func mediaCastFinished(_ result: Result<String, Error>, device: Chromecast.Device) {
+        switch result {
+        case .success:
+            webView.pauseAllMediaPlayback(completionHandler: nil)
+            castFinished(.success(device.name))
+        case .failure(let error):
+            castFinished(.failure(Chromecast.CastError.message(
+                "\(error.localizedDescription) Algunas páginas protegen sus videos para que solo se vean dentro de su sitio.")))
+        }
     }
 
     private func castToChromecast(_ device: Chromecast.Device) {
@@ -382,6 +520,8 @@ final class WebViewController: UIViewController {
         let sheet = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
         sheet.addAction(UIAlertAction(title: "Ir a la página fija", style: .default) { _ in self.loadHome() })
         sheet.addAction(UIAlertAction(title: "Recargar", style: .default) { _ in self.webView.reload() })
+        sheet.addAction(UIAlertAction(title: "Ir a una página…", style: .default) { _ in self.askGo() })
+        sheet.addAction(UIAlertAction(title: "Espejo de pantalla en la TV", style: .default) { _ in self.startMirror() })
         sheet.addAction(UIAlertAction(title: "Cambiar página fija", style: .default) { _ in self.askURL() })
         sheet.addAction(UIAlertAction(title: "Fijar la página actual", style: .default) { _ in
             self.prefs.set(self.webView.url?.absoluteString, forKey: Pref.url)
@@ -420,6 +560,37 @@ final class WebViewController: UIViewController {
     private func reloadScripts() {
         addScripts(to: webView.configuration.userContentController)
         webView.reload()
+    }
+
+    /// Abre cualquier página o búsqueda, sin cambiar la página fija.
+    private func askGo() {
+        let alert = UIAlertController(title: "Ir a una página", message: "Escribe un link o lo que quieras buscar.",
+                                      preferredStyle: .alert)
+        alert.addTextField { f in
+            f.placeholder = "ejemplo.com o una búsqueda"
+            f.keyboardType = .webSearch
+            f.autocapitalizationType = .none
+            f.autocorrectionType = .no
+            f.clearButtonMode = .whileEditing
+        }
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Ir", style: .default) { _ in
+            let text = (alert.textFields?.first?.text ?? "").trimmingCharacters(in: .whitespaces)
+            guard !text.isEmpty else { return }
+            var url: URL?
+            if text.hasPrefix("http://") || text.hasPrefix("https://") {
+                url = URL(string: text)
+            } else if !text.contains(" "), text.contains(".") {
+                url = URL(string: "https://" + text)
+            }
+            if url == nil {
+                var c = URLComponents(string: "https://www.google.com/search")!
+                c.queryItems = [URLQueryItem(name: "q", value: text)]
+                url = c.url
+            }
+            if let url = url { self.webView.load(URLRequest(url: url)) }
+        })
+        present(alert, animated: true)
     }
 
     private func askURL() {
@@ -524,6 +695,9 @@ extension WebViewController: WKScriptMessageHandler {
     func userContentController(_ ucc: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let body = message.body as? String else { return }
         if body == "buffering:1" { buffering(true) } else if body == "buffering:0" { buffering(false) }
+        else if body.hasPrefix("media-current:") { mediaFound(String(body.dropFirst(14)), current: true) }
+        else if body.hasPrefix("media:") { mediaFound(String(body.dropFirst(6)), current: false) }
+        else if body.hasPrefix("mtime:"), let t = Double(body.dropFirst(6)) { mediaTimeUpdate(t) }
     }
 }
 
