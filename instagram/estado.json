@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -66,10 +66,17 @@
       "fotos": []
     },
     {
+      "fecha": "2026-11-04 11:30",
+      "tipo": "post",
+      "tema": "Traslado en ambulancia después del alta médica u hospitalización",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "fotos": []
+    },
+    {
       "fecha": "2026-11-04 12:00",
       "tipo": "historia",
-      "tema": "Teletón 2026 y primeros auxilios: solidaridad también es saber actuar",
-      "foto": "noche-frente-balizas-vertical.jpg"
+      "tema": "Diabetes: reconocer una baja de azúcar antes de Teletón",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     },
     {
       "fecha": "2026-11-04 18:30",
@@ -86,18 +93,6 @@
         "noche-autopista-frente.mp4",
         "noche-ciudad-frente.mp4"
       ]
-    },
-    {
-      "fecha": "2026-11-04 20:30",
-      "tipo": "historia",
-      "tema": "Prevención de quemaduras en casa y actividades solidarias",
-      "foto": "noche-clinica-las-condes-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-04 12:00",
-      "tipo": "historia",
-      "tema": "Diabetes: reconocer una baja de azúcar antes de Teletón",
-      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     },
     {
       "fecha": "2026-11-04 20:30",
