@@ -203,10 +203,10 @@ private final class CastSession {
             if let state = status?["playerState"] as? String, state != "IDLE" {
                 finish(.success("ok"))
             } else if (status?["idleReason"] as? String) == "ERROR" {
-                finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video")))
+                finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video.")))
             }
         case (Self.nsMedia, "LOAD_FAILED"), (Self.nsMedia, "LOAD_CANCELLED"), (Self.nsMedia, "INVALID_REQUEST"):
-            finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video")))
+            finish(.failure(Chromecast.CastError.message("La TV no pudo abrir este video.")))
         case (Self.nsYouTube, "mdxSessionStatus"):
             let data = json["data"] as? [String: Any]
             if let screenId = data?["screenId"] as? String {
