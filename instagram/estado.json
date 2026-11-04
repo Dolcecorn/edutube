@@ -130,6 +130,22 @@
       "tipo": "historia",
       "tema": "Coordinación de llegada para traslados",
       "foto": "noche-urgencias-centro-medico-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 18:30",
+      "tipo": "reel",
+      "tema": "Traslados programados a terapias, diálisis y controles médicos",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "clinica-atardecer-balizas.jpg",
+        "urgencias-noche-vertical.jpg"
+      ],
+      "clips": [
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-frente.mp4"
+      ]
     }
   ]
 }
