@@ -79,6 +79,7 @@ final class Chromecast {
         let url: String
         let title: String
         let time: Double
+        var live = false
 
         var contentType: String {
             let u = url.lowercased()
@@ -187,14 +188,19 @@ private final class CastSession {
             case .youtube:
                 askScreenId(transport, attempt: 0)
             case .media(let media):
-                send(Self.nsMedia, to: transport, [
-                    "type": "LOAD", "requestId": nextRequest(), "autoplay": true, "currentTime": media.time,
-                    "media": [
-                        "contentId": media.url, "contentUrl": media.url, "contentType": media.contentType,
-                        "streamType": "BUFFERED",
-                        "metadata": ["metadataType": 0, "title": media.title],
-                    ] as [String: Any],
-                ])
+                var info: [String: Any] = [
+                    "contentId": media.url, "contentUrl": media.url, "contentType": media.contentType,
+                    "streamType": media.live ? "LIVE" : "BUFFERED",
+                    "metadata": ["metadataType": 0, "title": media.title] as [String: Any],
+                ]
+                if media.live {
+                    // El espejo usa trozos fMP4; hay que decírselo al reproductor del Chromecast.
+                    info["hlsSegmentFormat"] = "fmp4"
+                    info["hlsVideoSegmentFormat"] = "fmp4"
+                }
+                var load: [String: Any] = ["type": "LOAD", "requestId": nextRequest(), "autoplay": true, "media": info]
+                if !media.live { load["currentTime"] = media.time }
+                send(Self.nsMedia, to: transport, load)
             }
         case (Self.nsReceiver, "LAUNCH_ERROR"):
             finish(.failure(Chromecast.CastError.launch(json["reason"] as? String ?? "error")))

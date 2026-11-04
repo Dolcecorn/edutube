@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.6"
-    CURRENT_PROJECT_VERSION: "7"
+    MARKETING_VERSION: "1.7"
+    CURRENT_PROJECT_VERSION: "8"
 targets:
   TVWeb:
     type: application
@@ -16,6 +16,9 @@ targets:
     sources:
       - Sources
       - Resources
+    dependencies:
+      - target: Mirror
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cl.eleva.tvweb
@@ -52,3 +55,25 @@ targets:
             UIWindowSceneSessionRoleApplication:
               - UISceneConfigurationName: Default
                 UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
+  Mirror:
+    type: app-extension
+    platform: iOS
+    sources:
+      - MirrorExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cl.eleva.tvweb.Mirror
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: MirrorExtension/Info.plist
+    info:
+      path: MirrorExtension/Info.plist
+      properties:
+        CFBundleDisplayName: edutube Espejo
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSLocalNetworkUsageDescription: edutube envía la pantalla a tu Chromecast por la red Wi-Fi.
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.broadcast-services-upload
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SampleHandler
+          RPBroadcastProcessMode: RPBroadcastProcessModeSampleBuffer

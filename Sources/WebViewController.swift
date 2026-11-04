@@ -252,6 +252,48 @@ final class WebViewController: UIViewController {
         present(sheet, animated: true)
     }
 
+    // MARK: - Espejo de pantalla
+
+    /// Duplica toda la pantalla del iPhone en el Chromecast (con unos segundos de retraso).
+    private func startMirror() {
+        guard ScreenMirror.extensionId != nil else { return showError("Falta el módulo de espejo en esta instalación.") }
+        Chromecast.shared.startDiscovery()
+        toast("Toca «Iniciar transmisión»")
+        ScreenMirror.showSystemPicker(in: view)
+        ScreenMirror.waitUntilLive { [weak self] ok in
+            guard let self = self else { return }
+            guard ok else { return }
+            guard let ip = ScreenMirror.wifiAddress() else {
+                return self.showError("El iPhone tiene que estar conectado al mismo Wi-Fi que el Chromecast.")
+            }
+            let media = Chromecast.Media(url: "http://\(ip):\(ScreenMirror.port)/live.m3u8",
+                                         title: "Pantalla del iPhone", time: 0, live: true)
+            let devices = Chromecast.shared.devices
+            let sheet = UIAlertController(
+                title: "Mostrar la pantalla en",
+                message: devices.isEmpty ? "No encontré ningún Chromecast en tu Wi-Fi." : "Para terminar, toca el punto rojo arriba a la izquierda (o el Centro de control) y luego «Detener».",
+                preferredStyle: .actionSheet)
+            for device in devices {
+                sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in
+                    self.toast("Conectando con \(device.name)…")
+                    Chromecast.shared.playMedia(media, on: device) { result in
+                        switch result {
+                        case .success: self.toast("Pantalla en \(device.name)")
+                        case .failure(let e): self.showError(e.localizedDescription)
+                        }
+                    }
+                })
+            }
+            sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+            if let pop = sheet.popoverPresentationController {
+                pop.sourceView = self.view
+                pop.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 1, height: 1)
+                pop.permittedArrowDirections = []
+            }
+            self.present(sheet, animated: true)
+        }
+    }
+
     // MARK: - Videos de cualquier página
 
     fileprivate func mediaFound(_ url: String, current: Bool) {
@@ -479,6 +521,7 @@ final class WebViewController: UIViewController {
         sheet.addAction(UIAlertAction(title: "Ir a la página fija", style: .default) { _ in self.loadHome() })
         sheet.addAction(UIAlertAction(title: "Recargar", style: .default) { _ in self.webView.reload() })
         sheet.addAction(UIAlertAction(title: "Ir a una página…", style: .default) { _ in self.askGo() })
+        sheet.addAction(UIAlertAction(title: "Espejo de pantalla en la TV", style: .default) { _ in self.startMirror() })
         sheet.addAction(UIAlertAction(title: "Cambiar página fija", style: .default) { _ in self.askURL() })
         sheet.addAction(UIAlertAction(title: "Fijar la página actual", style: .default) { _ in
             self.prefs.set(self.webView.url?.absoluteString, forKey: Pref.url)
