@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -92,6 +92,36 @@
       "tipo": "historia",
       "tema": "Prevención de quemaduras en casa y actividades solidarias",
       "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 09:00",
+      "tipo": "carrusel",
+      "tema": "La preparación detrás de una atención segura",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "fotos": [
+        "noche-vespucio-vertical.jpg",
+        "clinica-dia-vertical.jpg",
+        "urgencias-noche-vertical.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-05 18:30",
+      "tipo": "post",
+      "tema": "Preparar traslados con una mirada inclusiva",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-05 12:00",
+      "tipo": "historia",
+      "tema": "Preparación segura y apoyo a la Teletón",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 20:30",
+      "tipo": "historia",
+      "tema": "Privacidad y trato digno durante un traslado",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     }
   ]
 }
