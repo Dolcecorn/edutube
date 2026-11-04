@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "carrusel",
+  "ultimo_tipo": "reel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -149,6 +149,47 @@
       "tipo": "historia",
       "tema": "Seguimiento durante el traslado de pacientes",
       "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 09:00",
+      "tipo": "post",
+      "tema": "Higiene y orden: parte del trabajo detrás de cada servicio",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-05 18:30",
+      "tipo": "reel",
+      "tema": "Detrás de escena: evaluar el entorno antes de atender",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "urgencias-noche-vertical.jpg",
+        "noche-costanera-vertical.jpg",
+        "clinica-dia-vertical.jpg"
+      ],
+      "clips": [
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-autopista-trasera.mp4",
+        "noche-autopista-frente.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-05 11:30",
+      "tipo": "historia",
+      "tema": "Comunicación clara durante cada traslado",
+      "foto": "noche-vespucio-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 15:30",
+      "tipo": "historia",
+      "tema": "Aseguramiento de camilla y silla de ruedas antes del traslado",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-05 20:30",
+      "tipo": "historia",
+      "tema": "Coordinación de llegada para traslados",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     }
   ]
 }
