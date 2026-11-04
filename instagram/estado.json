@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "carrusel",
+  "ultimo_tipo": "reel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -31,22 +31,10 @@
       "foto": "noche-frente-balizas-vertical.jpg"
     },
     {
-      "fecha": "2026-11-04 18:30",
-      "tipo": "carrusel",
-      "tema": "Diabetes y calor: apoyo sanitario para trasladarse con seguridad",
-      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg"
-    },
-    {
       "fecha": "2026-11-03 12:00",
       "tipo": "historia",
       "tema": "Atención de urgencias con apoyo seguro en la Región de Valparaíso",
       "foto": "urgencias-noche-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 20:30",
-      "tipo": "historia",
-      "tema": "Traslados coordinados para controles y altas médicas",
-      "foto": "clinica-dia-vertical.jpg"
     },
     {
       "fecha": "2026-11-03 18:30",
@@ -63,6 +51,47 @@
         "noche-autopista-frente.mp4",
         "noche-autopista-trasera.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-03 20:30",
+      "tipo": "historia",
+      "tema": "Traslados coordinados para controles y altas médicas",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 09:00",
+      "tipo": "post",
+      "tema": "Apoyo inclusivo ante una emergencia",
+      "foto": "clinica-atardecer-balizas.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-04 12:00",
+      "tipo": "historia",
+      "tema": "Teletón 2026 y primeros auxilios: solidaridad también es saber actuar",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 18:30",
+      "tipo": "reel",
+      "tema": "Somnolencia al volante: señales de alerta y prevención",
+      "foto": "noche-autopista-trasera.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "noche-frente-balizas-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-ciudad-frente.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-04 20:30",
+      "tipo": "historia",
+      "tema": "Prevención de quemaduras en casa y actividades solidarias",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
     }
   ]
 }
