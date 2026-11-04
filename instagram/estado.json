@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -92,6 +92,13 @@
       "tipo": "historia",
       "tema": "Prevención de quemaduras en casa y actividades solidarias",
       "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-04 11:30",
+      "tipo": "post",
+      "tema": "Traslado en ambulancia después del alta médica u hospitalización",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "fotos": []
     }
   ]
 }
