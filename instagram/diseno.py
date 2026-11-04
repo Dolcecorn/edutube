@@ -1,5 +1,6 @@
 """Dibuja las gráficas (Pillow) y arma los reels (ffmpeg) con los colores de la marca."""
 import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -74,7 +75,8 @@ def _envolver(draw, texto, fuente, ancho):
     lineas = []
     for parrafo in texto.split("\n"):
         actual = ""
-        for palabra in parrafo.split():
+        # los teléfonos (ej. +56 9 8748 2705) van como una sola pieza: nunca se cortan en dos líneas
+        for palabra in re.findall(r"\+?\d[\d ]{6,}\d|\S+", parrafo):
             prueba = f"{actual} {palabra}".strip()
             if draw.textlength(prueba, font=fuente) <= ancho:
                 actual = prueba

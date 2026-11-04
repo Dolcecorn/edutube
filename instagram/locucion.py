@@ -6,6 +6,7 @@ Corre en CPU (GitHub Actions). Si no hay referencia o el motor no está instalad
 
 Uso de prueba: python3 instagram/locucion.py "Texto a decir" salida.wav
 """
+import re
 import subprocess
 import sys
 import tempfile
@@ -58,6 +59,8 @@ def decir(texto, destino):
     """Sintetiza un texto con la voz de referencia y lo guarda en destino (wav 44.1 kHz). Devuelve la duración."""
     import torchaudio
     m = _cargar()
+    # el nombre de la empresa se deletrea: A, H, P (si no, el modelo lo lee "ap")
+    texto = re.sub(r"\bAHP\b", "A, hache, pe", texto)
     wav = m.generate(texto, language_id="es", audio_prompt_path=str(REFERENCIA),
                      exaggeration=0.45, cfg_weight=0.5, temperature=0.7)
     with tempfile.TemporaryDirectory() as tmp:
