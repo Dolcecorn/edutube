@@ -24,8 +24,7 @@
     "Cuando algo depende del caso o del país, dilo explícitamente y recomienda revisarlo con un abogado antes de decidir.",
     "Cita leyes solo si es seguro (por ejemplo Ley 21.719 de protección de datos personales, Ley 19.886 de compras públicas); no inventes artículos, plazos ni montos.",
     "Cada publicación responde una pregunta concreta que un empresario se hace y deja 2 a 4 puntos accionables para revisar.",
-    "El llamado a la acción es conversar con LegalMain (sitio web www.legalmain.cl o mensaje directo) para revisar el caso de la empresa; nunca es agresivo.",
-    "En la descripción, cuando invites a contactar, menciona el sitio web."
+    "El llamado a la acción es abierto: invita a contactar a LegalMain para revisar el caso de la empresa, SIN nombrar un canal (no digas sitio web, mensaje directo, teléfono, correo ni WhatsApp); por ejemplo 'Contáctanos y revisamos el caso de tu empresa'. Nunca es agresivo."
   ],
   "voz": "voz en off de un abogado o abogada chilena, tono sereno, seguro y profesional (español neutro de Chile, sin modismos)",
   "nota_fotos": "Los fondos son ilustraciones abstractas (mapas, documentos, columnas, balanza, gráficos): elige el que calce con la idea de cada escena.",
@@ -55,5 +54,9 @@
   "estilo_video": "premium",
   "escenas_con_video": 3,
   "horarios_historias": [],
-  "estilo_musica": "corporativo"
+  "estilo_musica": "corporativo",
+  "cta_abierto": true,
+  "pronunciacion": {
+    "Legal Main": "Ligalmein"
+  }
 }

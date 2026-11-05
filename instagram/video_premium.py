@@ -180,10 +180,11 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
                 img.alpha_composite(_con_alfa(ln, e * a), (MARGEN - 10, int(y + li * p["lh_c"] - 10 + 14 * (1 - e))))
         y += len(p["cuerpo"]) * p["lh_c"] + 40
         # llamado a la acción: marco dorado con el sitio web que se dibuja
-        if p["cta"] and web:
+        if p["cta"] and (web or m.get("cta_abierto")):
             e = _ease_io((tl - t_fil - 0.6 - 0.2 * len(p["cuerpo"])) / 0.9)
             if e > 0:
-                tw = d0.textlength(web, font=f_web)
+                rotulo = (m.get("cta_cierre") or "Conversemos") if m.get("cta_abierto") else web
+                tw = d0.textlength(rotulo, font=f_web)
                 bw, bh = tw + 90, 104
                 capa = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                 dc = ImageDraw.Draw(capa)
@@ -201,7 +202,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
                     largo -= seg
                 et = _ease((e - 0.4) / 0.6)
                 dc.rectangle([x0 + 3, y0 + 3, x0 + bw - 3, y0 + bh - 3], fill=azul + (int(150 * et),))
-                dc.text((x0 + 45, y0 + (bh - 62) / 2), web, font=f_web, fill=(255, 255, 255, int(255 * et)))
+                dc.text((x0 + 45, y0 + (bh - 62) / 2), rotulo, font=f_web, fill=(255, 255, 255, int(255 * et)))
                 img.alpha_composite(_con_alfa(capa, a))
         return img
 
