@@ -1,0 +1,42 @@
+[
+  {
+    "archivo": "red-global-1.jpg",
+    "descripcion": "Mapa de conexiones internacionales: puntos unidos por arcos sobre azul (internacionalización, expansión, clientes extranjeros)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "red-global-2.jpg",
+    "descripcion": "Red de ciudades conectadas en el mundo, punto dorado de origen (operar en otro país, contratos internacionales)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "documentos-1.jpg",
+    "descripcion": "Hojas de contrato apiladas con líneas de texto (contratos, bases de licitación, documentos, antecedentes)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "documentos-2.jpg",
+    "descripcion": "Documentos legales en perspectiva con firma dorada (revisión de contratos, cumplimiento, políticas)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "columnas.jpg",
+    "descripcion": "Columnas clásicas de un edificio judicial en líneas finas (derecho, institucionalidad, Estado, compras públicas)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "datos-escudo.jpg",
+    "descripcion": "Escudo con candado dorado y red de datos (protección de datos personales, Ley 21.719, seguridad de la información)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "cuadricula-crecimiento.jpg",
+    "descripcion": "Cuadrícula técnica con gráfico de barras y línea dorada ascendente (empresas, crecimiento, decisiones, riesgos)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "balanza.jpg",
+    "descripcion": "Balanza de la justicia en línea fina (conflictos, controversias, resolución de disputas, jurisdicción)",
+    "orientacion": "vertical"
+  }
+]

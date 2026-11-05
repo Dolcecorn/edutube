@@ -1,0 +1,32 @@
+{
+  "descripcion": "Calendario de contenidos de LegalMain. Tres líneas: compras públicas, protección de datos personales (Ley 21.719) e internacionalización. 'publicaciones' fija tema y formato de un día concreto; si un día no tiene publicación fijada, generar.py elige el tema según el foco del día y el tema del mes.",
+  "region": "Chile; clientes empresas que venden al Estado, tratan datos personales o se expanden a otros países",
+  "foco_semanal": {
+    "lunes": "Compras públicas: licitaciones, bases, evaluación, adjudicación y ejecución de contratos con el Estado",
+    "martes": "Protección de datos personales y Ley 21.719: proveedores, accesos, políticas, gestión de la información",
+    "miercoles": "Internacionalización: estructura para operar fuera de Chile, contratos internacionales, riesgos de expansión",
+    "jueves": "Compras públicas: errores frecuentes y antecedentes que conviene revisar",
+    "viernes": "Protección de datos: preparar a la empresa para la Ley 21.719",
+    "sabado": "Internacionalización: preguntas frecuentes antes de vender o contratar en otro país",
+    "domingo": "Pregunta frecuente de empresarios en cualquiera de las tres líneas"
+  },
+  "meses": {
+    "2026-11": {"tema": "Decisiones informadas antes de firmar, licitar o expandirse", "enfoque": "Completar la serie de reels de octubre; contratar trabajadores en otro país; proveedores y datos; bases de licitación"},
+    "2026-12": {"tema": "Cierre de año y planificación", "enfoque": "Revisar contratos con el Estado antes del cierre, preparar 2027 en protección de datos, planes de expansión"}
+  },
+  "fechas": [],
+  "publicaciones": [
+    {"fecha": "2026-10-15", "formato": "carrusel", "linea": "Compras públicas", "tema": "Licitaciones públicas: ¿qué pasa después de presentar una oferta?", "enfoque": "Evaluación, criterios de las bases y antecedentes que conviene revisar si la empresa no resulta adjudicada."},
+    {"fecha": "2026-10-16", "formato": "carrusel", "linea": "Compras públicas", "tema": "¿Puedes cuestionar una adjudicación si detectas una irregularidad?", "enfoque": "Qué documentos revisar, por qué importan los plazos y por qué una decisión desfavorable no constituye por sí sola una irregularidad."},
+    {"fecha": "2026-10-19", "formato": "carrusel", "linea": "Protección de datos · Ley 21.719", "tema": "Tu empresa comparte datos con proveedores: ¿quién responde si algo sale mal?", "enfoque": "Responsabilidades que pueden surgir al externalizar servicios que involucran datos personales y aspectos que conviene definir contractualmente."},
+    {"fecha": "2026-10-20", "formato": "carrusel", "linea": "Internacionalización", "tema": "Abrir una empresa en el extranjero: ¿qué estructura jurídica te conviene?", "enfoque": "Mercado objetivo, operación, socios y obligaciones que pueden influir en la elección de estructura."},
+    {"fecha": "2026-10-21", "formato": "reel", "linea": "Compras públicas", "tema": "¿Puede una oferta mejor evaluada quedar fuera por un error formal?", "enfoque": "Por qué cumplir las bases es tan importante como la propuesta económica, sin afirmar que cualquier error produce automáticamente la exclusión."},
+    {"fecha": "2026-10-22", "formato": "reel", "linea": "Internacionalización", "tema": "Vas a firmar con un cliente extranjero: ¿qué debes revisar antes?", "enfoque": "Revisar obligaciones, ley aplicable, jurisdicción y mecanismos para resolver controversias según los países involucrados."},
+    {"fecha": "2026-10-23", "formato": "reel", "linea": "Protección de datos · Ley 21.719", "tema": "¿Qué deberías exigirle a un proveedor que trata datos de tus clientes?", "enfoque": "Definir el uso de la información, las medidas de seguridad y las responsabilidades correspondientes."},
+    {"fecha": "2026-10-26", "formato": "reel", "linea": "Internacionalización", "tema": "¿Qué riesgos debes considerar antes de expandir tu empresa a otro país?", "enfoque": "Evaluar requisitos legales, operación, socios y obligaciones locales antes de comprometer recursos."},
+    {"fecha": "2026-10-27", "formato": "reel", "linea": "Internacionalización", "tema": "¿Qué ocurre si surge un conflicto con un cliente extranjero?", "enfoque": "Introducir preguntas sobre jurisdicción, ley aplicable y mecanismos de resolución de controversias."},
+    {"fecha": "2026-10-28", "formato": "reel", "linea": "Protección de datos · Ley 21.719", "tema": "¿Tener una política de privacidad significa cumplir con la Ley 21.719?", "enfoque": "Diferenciar el documento formal de la gestión efectiva: procesos internos, accesos, conservación, proveedores y solicitudes."},
+    {"fecha": "2026-10-29", "formato": "reel", "linea": "Compras públicas", "tema": "¿Sospechas que una licitación tuvo irregularidades? ¿Qué antecedentes necesitas?", "enfoque": "Conservar documentos, identificar hechos verificables y consultar oportunamente antes de decidir cómo actuar."},
+    {"fecha": "2026-10-30", "formato": "reel", "linea": "Protección de datos · Ley 21.719", "tema": "¿Tu empresa sabe quién puede acceder a los datos de sus clientes?", "enfoque": "Abordar la importancia de controlar accesos, definir responsabilidades internas y revisar cómo se conserva y utiliza la información."}
+  ]
+}

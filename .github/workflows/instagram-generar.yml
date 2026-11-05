@@ -8,6 +8,10 @@ on:
   # la lanza una tarea programada externa (10:17 de Chile) con workflow_dispatch.
   workflow_dispatch:
     inputs:
+      perfil:
+        description: "Perfil: ahp (Ambulancias AHP) o una carpeta de instagram/perfiles/ (ej. legalmain)"
+        type: string
+        default: "ahp"
       tipo:
         description: "Forzar tipo (vacío = alternar; historia = solo historias)"
         type: choice
@@ -47,14 +51,14 @@ jobs:
 
       # Locución con voz clonada: solo si existe la grabación de referencia (marca/voz/referencia.wav)
       - name: Caché del modelo de voz
-        if: hashFiles('instagram/marca/voz/referencia.wav') != ''
+        if: hashFiles('instagram/marca/voz/referencia.wav', 'instagram/perfiles/*/marca/voz/referencia.wav') != ''
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
           key: chatterbox-mtl-v1
 
       - name: Instalar motor de voz (CPU)
-        if: hashFiles('instagram/marca/voz/referencia.wav') != ''
+        if: hashFiles('instagram/marca/voz/referencia.wav', 'instagram/perfiles/*/marca/voz/referencia.wav') != ''
         run: |
           pip install -q torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
           pip install -q chatterbox-tts
@@ -65,6 +69,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PERFIL: ${{ inputs.perfil || 'ahp' }}
           TIPO: ${{ inputs.tipo }}
           TEMA: ${{ inputs.tema }}
           FECHA: ${{ inputs.fecha }}
@@ -75,11 +80,12 @@ jobs:
         if: vars.AUTO_PUBLICAR != 'false' && steps.gen.outputs.carpetas != ''
         env:
           RESUMEN: ${{ steps.gen.outputs.resumen }}
+          PERFIL: ${{ inputs.perfil || 'ahp' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git add instagram
-          git commit -m "Instagram: $RESUMEN"
+          git commit -m "Instagram ($PERFIL): $RESUMEN"
           for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push && break; sleep 5; done
 
       - name: Abrir PR para revisar
@@ -89,13 +95,14 @@ jobs:
           CARPETAS: ${{ steps.gen.outputs.carpetas }}
           DIA: ${{ steps.gen.outputs.dia }}
           RESUMEN: ${{ steps.gen.outputs.resumen }}
+          PERFIL: ${{ inputs.perfil || 'ahp' }}
         run: |
           rama="instagram/$DIA-$(date +%H%M%S)"
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$rama"
           git add instagram
-          git commit -m "Instagram: $RESUMEN"
+          git commit -m "Instagram ($PERFIL): $RESUMEN"
           git push -u origin "$rama"
           sha=$(git rev-parse HEAD)
           {
@@ -120,7 +127,7 @@ jobs:
           } > cuerpo.md
           # GitHub a veces falla al crear el PR justo después del push: reintentar
           for i in 1 2 3 4 5; do
-            gh pr create --base main --head "$rama" --title "Instagram $DIA: $RESUMEN" --body-file cuerpo.md && exit 0
+            gh pr create --base main --head "$rama" --title "Instagram ($PERFIL) $DIA: $RESUMEN" --body-file cuerpo.md && exit 0
             sleep $((i * 10))
           done
           exit 1

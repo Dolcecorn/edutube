@@ -7,7 +7,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-RAIZ = Path(__file__).resolve().parent
+import perfil
+
+RAIZ = perfil.BASE
 MARCA_DIR = RAIZ / "marca"
 FUENTES = [
     ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
@@ -127,7 +129,10 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     if modo == "fondo":
         img = _cubrir(ruta_foto, W, H)
         img = _degradado(img, 0, int(H * 0.22), 150, 0)              # arriba, para el logo
-        img = _degradado(img, int(H * 0.28), H, 50, 235)              # abajo, para el texto
+        if m.get("degradado_continuo"):  # fondos lisos (ilustraciones): sin borde visible entre degradados
+            img = _degradado(img, int(H * 0.22), H, 0, 235)
+        else:
+            img = _degradado(img, int(H * 0.28), H, 50, 235)          # abajo, para el texto
         portada = True                                                # textos y logo en blanco
         fondo = None
     else:
@@ -163,7 +168,8 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     tam_pie = 38 if not reel else 44
     f_pie = _fuente(True, tam_pie)
     izquierda = m.get("telefono") or m["usuario"]
-    derecha = f"{numero}/{total}" if numero and total else ((m.get("web") or m["usuario"]) if m.get("telefono") else "")
+    derecha = f"{numero}/{total}" if numero and total else ((m.get("web") or m["usuario"]) if m.get("telefono")
+                                                            else m.get("web", ""))
     while derecha and d.textlength(f"{izquierda}   {derecha}", font=f_pie) > W - 2 * margen and tam_pie > 30:
         tam_pie -= 2
         f_pie = _fuente(True, tam_pie)
@@ -295,7 +301,11 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
         d.text((margen + 50, y), ln, font=f_cta, fill=c["oscuro"])
         y += 62
     y += 20
-    d.text((margen + 50, y), "\u260E " + tel, font=f_tel, fill=c["principal"])
+    if not tel:  # sin teléfono: el sitio web va en grande y la cuenta abajo
+        tel, web = web, m.get("usuario", "")
+    else:
+        tel = "\u260E " + tel
+    d.text((margen + 50, y), tel, font=f_tel, fill=c["principal"])
     y += 80
     d.text((margen + 50, y), web, font=f_web, fill=c["acento"])
 
