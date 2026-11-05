@@ -80,6 +80,8 @@ final class Chromecast {
         let title: String
         let time: Double
         var live = false
+        /// Lista HLS con trozos fMP4 (.m4s/.mp4), como los de X: el Chromecast debe saberlo de antemano.
+        var fmp4 = false
 
         var contentType: String {
             let u = url.lowercased()
@@ -193,8 +195,8 @@ private final class CastSession {
                     "streamType": media.live ? "LIVE" : "BUFFERED",
                     "metadata": ["metadataType": 0, "title": media.title] as [String: Any],
                 ]
-                if media.live {
-                    // El espejo usa trozos fMP4; hay que decírselo al reproductor del Chromecast.
+                if media.live || media.fmp4 {
+                    // El espejo (y algunas páginas) usan trozos fMP4; hay que decírselo al reproductor del Chromecast.
                     info["hlsSegmentFormat"] = "fmp4"
                     info["hlsVideoSegmentFormat"] = "fmp4"
                 }

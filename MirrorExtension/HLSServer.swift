@@ -7,7 +7,7 @@ import Network
  */
 final class HLSServer {
     static let port: UInt16 = 8090
-    private static let keep = 6
+    private static let keep = 20
 
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "hls-server")
@@ -41,13 +41,15 @@ final class HLSServer {
 
     private func playlist() -> String? {
         // Se espera a tener 3 trozos para que la TV no se quede sin video apenas empieza.
-        guard initSegment != nil, segments.count >= 3, let first = segments.first else { return nil }
-        let target = Int((segments.map(\.duration).max() ?? 1).rounded(.up))
+        // Se publican solo los últimos 6 trozos (3 s), pero se guardan más por si la TV pide uno algo atrasado.
+        let recent = Array(segments.suffix(6))
+        guard initSegment != nil, recent.count >= 3, let first = recent.first else { return nil }
+        let target = Int((recent.map(\.duration).max() ?? 1).rounded(.up))
         var lines = [
             "#EXTM3U", "#EXT-X-VERSION:7", "#EXT-X-TARGETDURATION:\(max(target, 1))",
-            "#EXT-X-MEDIA-SEQUENCE:\(first.seq)", "#EXT-X-INDEPENDENT-SEGMENTS", "#EXT-X-MAP:URI=\"init.mp4\"",
+            "#EXT-X-MEDIA-SEQUENCE:\(first.seq)", "#EXT-X-INDEPENDENT-SEGMENTS", "#EXT-X-START:TIME-OFFSET=-1.5", "#EXT-X-MAP:URI=\"init.mp4\"",
         ]
-        for s in segments {
+        for s in recent {
             lines.append(String(format: "#EXTINF:%.3f,", s.duration))
             lines.append("seg\(s.seq).m4s")
         }

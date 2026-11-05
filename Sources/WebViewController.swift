@@ -194,7 +194,7 @@ final class WebViewController: UIViewController {
             playingMedia = nil
             mediaTime = 0
         }
-        castButton.isHidden = currentVideoId() == nil && pageMedia.isEmpty
+        castButton.isHidden = currentVideoId() == nil && pageMedia.isEmpty && XVideo.postId(webView.url) == nil
         // Empieza a buscar Chromecast apenas se abre un video, para tenerlos listos al tocar el botón.
         if !castButton.isHidden { Chromecast.shared.startDiscovery() }
     }
@@ -315,7 +315,24 @@ final class WebViewController: UIViewController {
     }
 
     private func castPageMedia() {
-        guard let url = bestMedia() else {
+        // En X se pide el mp4 del post: es más confiable que la lista de trozos que usa la página.
+        if let id = XVideo.postId(webView.url) {
+            toast("Buscando el video del post…")
+            return XVideo.resolve(id) { [weak self] mp4 in
+                guard let self = self else { return }
+                if let mp4 = mp4 {
+                    if !self.pageMedia.contains(mp4) { self.pageMedia.append(mp4) }
+                    self.pickDevice(for: mp4)
+                } else {
+                    self.pickDevice(for: nil)
+                }
+            }
+        }
+        pickDevice(for: nil)
+    }
+
+    private func pickDevice(for preferred: String?) {
+        guard let url = preferred ?? bestMedia() else {
             return toast("Dale play al video de la página y vuelve a tocar el botón")
         }
         Chromecast.shared.startDiscovery()
@@ -349,15 +366,42 @@ final class WebViewController: UIViewController {
         castStarted()
         toast("Enviando a \(device.name)…")
         let title = webView.title?.isEmpty == false ? webView.title! : (webView.url?.host ?? "Video")
-        let media = Chromecast.Media(url: url, title: title, time: url == playingMedia ? mediaTime : 0)
-        Chromecast.shared.playMedia(media, on: device) { [weak self] result in
-            guard let self = self else { return }
-            if case .failure = result, url != self.pageMedia.last, let other = self.pageMedia.last, other != url {
-                // Si la TV no pudo con ese, se prueba con el otro video encontrado.
-                let retry = Chromecast.Media(url: other, title: title, time: 0)
-                return Chromecast.shared.playMedia(retry, on: device) { self.mediaCastFinished($0, device: device) }
+        let time = url == playingMedia ? mediaTime : 0
+        Self.prepare(url, title: title, time: time) { media in
+            Chromecast.shared.playMedia(media, on: device) { [weak self] result in
+                guard let self = self else { return }
+                if case .failure = result, url != self.pageMedia.last, let other = self.pageMedia.last, other != url {
+                    // Si la TV no pudo con ese, se prueba con el otro video encontrado.
+                    return Self.prepare(other, title: title, time: 0) { retry in
+                        Chromecast.shared.playMedia(retry, on: device) { self.mediaCastFinished($0, device: device) }
+                    }
+                }
+                self.mediaCastFinished(result, device: device)
             }
-            self.mediaCastFinished(result, device: device)
+        }
+    }
+
+    /// Para listas HLS, revisa si los trozos son fMP4 (si no se avisa, el Chromecast no los reproduce).
+    private static func prepare(_ url: String, title: String, time: Double, completion: @escaping (Chromecast.Media) -> Void) {
+        var media = Chromecast.Media(url: url, title: title, time: time)
+        guard url.lowercased().contains(".m3u8"), let address = URL(string: url) else { return completion(media) }
+        func load(_ u: URL, depth: Int, done: @escaping (String?) -> Void) {
+            URLSession.shared.dataTask(with: URLRequest(url: u, timeoutInterval: 5)) { data, _, _ in
+                guard let text = data.flatMap({ String(data: $0, encoding: .utf8) }) else { return done(nil) }
+                // Lista maestra: se revisa la primera calidad para ver de qué tipo son sus trozos.
+                if depth == 0, text.contains("#EXT-X-STREAM-INF"),
+                   let line = text.split(whereSeparator: \.isNewline).first(where: { !$0.hasPrefix("#") && !$0.trimmingCharacters(in: .whitespaces).isEmpty }),
+                   let sub = URL(string: String(line).trimmingCharacters(in: .whitespaces), relativeTo: u) {
+                    return load(sub.absoluteURL, depth: 1, done: done)
+                }
+                done(text)
+            }.resume()
+        }
+        load(address, depth: 0) { text in
+            if let t = text?.lowercased() {
+                media.fmp4 = t.contains("#ext-x-map") || t.contains(".m4s") || t.contains(".mp4")
+            }
+            DispatchQueue.main.async { completion(media) }
         }
     }
 

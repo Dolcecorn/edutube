@@ -22,12 +22,31 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
     private var lastVideo = CMTime.invalid
     private let queue = DispatchQueue(label: "mirror")
 
+    /// Último cuadro enviado: se repite si la pantalla no cambia, para que la TV no se quede sin video y corte.
+    private var lastFrame: CVPixelBuffer?
+    private var timer: DispatchSourceTimer?
+
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         server.start()
         setupWriter()
+        let t = DispatchSource.makeTimerSource(queue: queue)
+        t.schedule(deadline: .now() + 0.1, repeating: 0.1)
+        t.setEventHandler { [weak self] in self?.repeatFrame() }
+        t.resume()
+        timer = t
+    }
+
+    private func repeatFrame() {
+        guard started, let frame = lastFrame, let input = videoInput, let adaptor = adaptor,
+              input.isReadyForMoreMediaData else { return }
+        let now = CMClockGetTime(CMClockGetHostTimeClock())
+        guard lastVideo.isValid, CMTimeGetSeconds(CMTimeSubtract(now, lastVideo)) > 0.09 else { return }
+        if adaptor.append(frame, withPresentationTime: now) { lastVideo = now }
     }
 
     override func broadcastFinished() {
+        timer?.cancel()
+        timer = nil
         server.stop()
         videoInput?.markAsFinished()
         audioInput?.markAsFinished()
@@ -37,7 +56,8 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
     private func setupWriter() {
         let w = AVAssetWriter(contentType: UTType(AVFileType.mp4.rawValue)!)
         w.outputFileTypeProfile = .mpeg4AppleHLS
-        w.preferredOutputSegmentInterval = CMTime(seconds: 1, preferredTimescale: 1)
+        // Trozos de medio segundo: menos retraso en la TV.
+        w.preferredOutputSegmentInterval = CMTime(value: 1, timescale: 2)
         w.delegate = self
 
         let video = AVAssetWriterInput(mediaType: .video, outputSettings: [
@@ -45,8 +65,9 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
             AVVideoWidthKey: Self.width,
             AVVideoHeightKey: Self.height,
             AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: 4_000_000,
-                AVVideoMaxKeyFrameIntervalDurationKey: 1,
+                AVVideoAverageBitRateKey: 3_000_000,
+                AVVideoMaxKeyFrameIntervalDurationKey: 0.5,
+                AVVideoAllowFrameReorderingKey: false,
                 AVVideoExpectedSourceFrameRateKey: 30,
                 AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
             ],
@@ -84,7 +105,11 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
     private func handleVideo(_ sample: CMSampleBuffer) {
         guard let writer = writer, let input = videoInput, let adaptor = adaptor,
               let pixels = CMSampleBufferGetImageBuffer(sample) else { return }
-        let pts = CMSampleBufferGetPresentationTimeStamp(sample)
+        var pts = CMSampleBufferGetPresentationTimeStamp(sample)
+        // Los tiempos nunca pueden ir hacia atrás (el codificador se detendría), aunque se haya repetido un cuadro.
+        if lastVideo.isValid, CMTimeCompare(pts, lastVideo) <= 0 {
+            pts = CMTimeAdd(lastVideo, CMTime(value: 1, timescale: 600))
+        }
         if !started {
             writer.initialSegmentStartTime = pts
             guard writer.startWriting() else { return }
@@ -101,7 +126,12 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
         var image = CIImage(cvPixelBuffer: pixels)
         if let raw = CMGetAttachment(sample, key: RPVideoSampleOrientationKey as CFString, attachmentModeOut: nil) as? NSNumber,
            let orientation = CGImagePropertyOrientation(rawValue: raw.uint32Value) {
-            image = image.oriented(orientation)
+            // ReplayKit indica hacia dónde está girada la pantalla; para enderezarla hay que girar al lado contrario.
+            switch orientation {
+            case .left: image = image.oriented(.right)
+            case .right: image = image.oriented(.left)
+            default: image = image.oriented(orientation)
+            }
         }
         let canvas = CGRect(x: 0, y: 0, width: Self.width, height: Self.height)
         let scale = min(canvas.width / image.extent.width, canvas.height / image.extent.height)
@@ -111,7 +141,10 @@ final class SampleHandler: RPBroadcastSampleHandler, AVAssetWriterDelegate {
             y: (canvas.height - image.extent.height) / 2 - image.extent.minY))
         let framed = image.composited(over: CIImage(color: .black).cropped(to: canvas))
         ci.render(framed, to: target, bounds: canvas, colorSpace: CGColorSpaceCreateDeviceRGB())
-        if adaptor.append(target, withPresentationTime: pts) { lastVideo = pts }
+        if adaptor.append(target, withPresentationTime: pts) {
+            lastVideo = pts
+            lastFrame = target
+        }
     }
 
     private func handleAudio(_ sample: CMSampleBuffer) {
