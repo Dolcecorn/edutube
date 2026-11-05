@@ -224,10 +224,51 @@ def _degradados():
     return g
 
 
+def _audio(duraciones, locuciones, total, fin_escenas, musica, voz=None):
+    """Entradas y filtros de ffmpeg para la voz en off (alineada al inicio de cada escena) y la música
+    (con el golpe final en fin_escenas). Devuelve (entradas, filtros, voz)."""
+    if locuciones and any(locuciones):  # una sola pista de voz alineada con el inicio de cada escena
+        import locucion
+        acc0, partes = 0.0, []
+        for dur, loc in zip(duraciones, locuciones):
+            if loc:
+                partes.append((acc0 + RETRASO_VOZ, loc))
+            acc0 += dur
+        import tempfile
+        voz = locucion.pista(partes, total, Path(tempfile.mkdtemp()) / "voz.wav")
+    # musica puede ser una función (segundos, golpe) -> ruta: compone la pista con el golpe final justo
+    # cuando aparece el logo del cierre
+    musica = Path(musica(total, fin_escenas) if callable(musica) else musica or diseno.MARCA_DIR / "musica.mp3")
+    entradas, filtros = [], []
+    if voz:
+        entradas += ["-i", str(voz)]
+    if musica.exists():
+        entradas += ["-stream_loop", "-1", "-i", str(musica)]
+    if voz and musica.exists():
+        # la música baja sola cuando habla la voz (sidechain) y vuelve a subir en las pausas
+        filtros = ["-filter_complex",
+                   "[1:a]aformat=channel_layouts=stereo,asplit=2[v][sc];"
+                   "[2:a]volume=0.8[m];[m][sc]sidechaincompress=threshold=0.02:ratio=10:attack=15:release=450[md];"
+                   f"[md][v]amix=inputs=2:duration=first:normalize=0,"
+                   f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4[a]",
+                   "-map", "0:v", "-map", "[a]"]
+    elif voz or musica.exists():
+        filtros = ["-map", "0:v", "-map", "1:a"]
+        if musica.exists():
+            filtros += ["-af", f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4"]
+    else:
+        entradas += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+        filtros = ["-map", "0:v", "-map", "1:a"]
+    return entradas, filtros, voz
+
+
 def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     """escenas: [(titulo, texto[, foto])]. locuciones: lista paralela de wav (o None) con la voz en off de
     cada escena; la escena dura lo necesario para que se escuche completa. Devuelve la ruta del MP4."""
     m = diseno.marca()
+    if m.get("estilo_video") == "premium":  # estilo propio (ej. LegalMain): ver video_premium.py
+        import video_premium
+        return video_premium.reel(escenas, destino, voz=voz, musica=musica, locuciones=locuciones)
     rojo, cyan = _hex(m["colores"]["principal"]), _hex(m["colores"]["acento"])
     blanco = (255, 255, 255)
     fotos = [diseno.FOTOS_DIR / f["archivo"] for f in diseno.fotos()]
@@ -380,38 +421,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
     fin_escenas = total - dur_cierre
-    if locuciones and any(locuciones):  # una sola pista de voz alineada con el inicio de cada escena
-        import locucion
-        acc0, partes = 0.0, []
-        for p, loc in zip(preparadas, locuciones):
-            if loc:
-                partes.append((acc0 + RETRASO_VOZ, loc))
-            acc0 += p["dur"]
-        import tempfile
-        voz = locucion.pista(partes, total, Path(tempfile.mkdtemp()) / "voz.wav")
-    # musica puede ser una función (segundos, golpe) -> ruta: compone la pista con el golpe final justo
-    # cuando aparece el logo del cierre
-    musica = Path(musica(total, fin_escenas) if callable(musica) else musica or diseno.MARCA_DIR / "musica.mp3")
-    entradas, filtros = [], []
-    if voz:
-        entradas += ["-i", str(voz)]
-    if musica.exists():
-        entradas += ["-stream_loop", "-1", "-i", str(musica)]
-    if voz and musica.exists():
-        # la música baja sola cuando habla la voz (sidechain) y vuelve a subir en las pausas
-        filtros = ["-filter_complex",
-                   "[1:a]aformat=channel_layouts=stereo,asplit=2[v][sc];"
-                   "[2:a]volume=0.8[m];[m][sc]sidechaincompress=threshold=0.02:ratio=10:attack=15:release=450[md];"
-                   f"[md][v]amix=inputs=2:duration=first:normalize=0,"
-                   f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4[a]",
-                   "-map", "0:v", "-map", "[a]"]
-    elif voz or musica.exists():
-        filtros = ["-map", "0:v", "-map", "1:a"]
-        if musica.exists():
-            filtros += ["-af", f"afade=t=out:st={max(0, total - 0.4):.2f}:d=0.4"]
-    else:
-        entradas += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
-        filtros = ["-map", "0:v", "-map", "1:a"]
+    entradas, filtros, voz = _audio([p["dur"] for p in preparadas], locuciones, total, fin_escenas, musica, voz)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", *entradas, *filtros, "-t", f"{total:.2f}",
            "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",

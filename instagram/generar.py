@@ -147,8 +147,11 @@ Varía las fotos dentro de la misma publicación. {m.get('nota_fotos', 'Las foto
         voz = f"""
 Locución (campo "locucion" de cada escena): {m.get('voz', 'voz en off profesional, español neutro de Chile')}.
 Complementa el texto de pantalla sin leerlo palabra por palabra; frases cortas y fáciles de decir. No dictes
-números de teléfono ni direcciones web (aparecen en pantalla); en la última escena invita a seguir la cuenta o
-a contactar. Evita repetir la misma palabra en frases seguidas; usa sinónimos."""
+números de teléfono ni direcciones web (aparecen en pantalla). Evita repetir la misma palabra en frases
+seguidas; usa sinónimos.
+La ÚLTIMA escena es el llamado a la acción, en el texto y en la locución: invita concretamente a contactar a
+{m['nombre']} para revisar el caso de la empresa (el sitio web aparece en pantalla; en la voz di "escríbenos a
+través de nuestro sitio web" o similar). Después de esa escena el video cierra solo con el logo."""
     elif tipo == "reel":
         voz = """
 Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
