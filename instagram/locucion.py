@@ -69,6 +69,8 @@ def decir(texto, destino):
         texto += "."   # sin punto final el modelo tiende a seguir "murmurando"
     wav = m.generate(texto, language_id="es", audio_prompt_path=str(REFERENCIA),
                      exaggeration=0.45, cfg_weight=0.5, temperature=0.7)
+    vel = float(diseno.marca().get("velocidad_voz", 1.0))   # < 1: habla más pausada (sin cambiar el tono)
+    tempo = f"atempo={vel:.3f}," if abs(vel - 1) > 0.005 else ""
     with tempfile.TemporaryDirectory() as tmp:
         crudo = Path(tmp) / "v.wav"
         torchaudio.save(str(crudo), wav, m.sr)
@@ -76,7 +78,7 @@ def decir(texto, destino):
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(crudo), "-af",
                         "highpass=f=80,silenceremove=start_periods=1:start_threshold=-45dB,"
                         "areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
-                        "acompressor=threshold=-20dB:ratio=2.5:attack=5:release=120,loudnorm=I=-16:TP=-1.5",
+                        f"{tempo}acompressor=threshold=-20dB:ratio=2.5:attack=5:release=120,loudnorm=I=-16:TP=-1.5",
                         "-ar", str(SR), "-ac", "1", str(destino)], check=True)
     limpio = _quitar_ruidos(_leer_wav(destino))
     with wave.open(str(destino), "wb") as w:

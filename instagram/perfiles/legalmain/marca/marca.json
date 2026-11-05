@@ -58,5 +58,10 @@
   "cta_abierto": true,
   "pronunciacion": {
     "Legal Main": "Ligalmein"
-  }
+  },
+  "video_destacado": "mapa-mundial-lineas-desde-chile.mp4",
+  "clips_por_escena": 3,
+  "pausa_voz": 1.4,
+  "retraso_voz": 0.6,
+  "velocidad_voz": 0.95
 }

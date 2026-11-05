@@ -112,6 +112,8 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     f_web = diseno._fuente(True, 46)
     d0 = ImageDraw.Draw(Image.new("RGB", (1, 1)))
     web = m.get("web") or m.get("usuario", "")
+    retraso = float(m.get("retraso_voz", 0.6))   # la voz entra cuando el título ya empezó a aparecer
+    pausa = float(m.get("pausa_voz", 1.4))       # silencio tras cada frase antes de cambiar de escena
 
     preparadas = []
     for i, esc in enumerate(escenas):
@@ -134,10 +136,10 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
         dur = max(4.2, min(8.5, 2.4 + palabras * 0.30))
         loc = locuciones[i] if locuciones and i < len(locuciones) else None
         if loc:
-            dur = max(dur, _duracion(loc) + RETRASO_VOZ + 0.7)
+            dur = max(dur, _duracion(loc) + retraso + pausa)
         fondo = None
         if ruta:
-            fondo = Clip(ruta, 0, dur) if es_clip else Fondo(ruta, 0, desenfoque=False, dir_paneo=1 if i % 2 == 0 else -1)
+            fondo = Clip(ruta, 0, dur, reparto=True) if es_clip else Fondo(ruta, 0, desenfoque=False, dir_paneo=1 if i % 2 == 0 else -1)
         preparadas.append(dict(fondo=fondo, video=es_clip, tit=tit, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, cta=cta))
 
     total = sum(p["dur"] for p in preparadas) + DUR_CIERRE
@@ -264,7 +266,8 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
 
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    entradas, filtros, voz = _audio([p["dur"] for p in preparadas], locuciones, total, fin_escenas, musica, voz)
+    entradas, filtros, voz = _audio([p["dur"] for p in preparadas], locuciones, total, fin_escenas, musica, voz,
+                                    retraso=retraso)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", *entradas, *filtros, "-t", f"{total:.2f}",
            "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",
