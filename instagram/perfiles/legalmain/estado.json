@@ -12,6 +12,23 @@
         "balanza.jpg",
         "red-global-2.jpg"
       ]
+    },
+    {
+      "fecha": "2026-12-31 10:00",
+      "tipo": "reel",
+      "tema": "¿Qué debes considerar para contratar trabajadores en otro país?",
+      "foto": "mapa-mundial-lineas-desde-chile.mp4+pareja-emprendedores-documentos-contables.mp4",
+      "fotos": [
+        "columnas.jpg",
+        "balanza.jpg"
+      ],
+      "clips": [
+        "mapa-mundial-lineas-desde-chile.mp4",
+        "pareja-emprendedores-documentos-contables.mp4",
+        "emprendedor-calculadora-documentos.mp4",
+        "emprendedora-notebook-workplace.mp4",
+        "equipo-notebook-oficina.mp4"
+      ]
     }
   ]
 }
