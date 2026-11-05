@@ -53,6 +53,7 @@
   "historias_video": true,
   "degradado_continuo": true,
   "estilo_video": "premium",
+  "escenas_con_video": 3,
   "horarios_historias": [],
   "estilo_musica": "corporativo"
 }
