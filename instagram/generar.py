@@ -325,19 +325,35 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
     clips = []
     if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
         n_esc = max(1, int(m.get("escenas_con_video", 2)))   # portada + escenas intermedias con video
-        clips = elegir_clips(estado["historial"], max(3, 2 * n_esc - 1))
+        por = max(2, int(m.get("clips_por_escena", 2)))     # clips encadenados en cada escena con video
+        destacado = m.get("video_destacado")                 # clip que aparece en todas las escenas con video
+        if por == 2 and not destacado:
+            clips = elegir_clips(estado["historial"], max(3, 2 * n_esc - 1))
+        else:
+            clips = [v for v in elegir_clips(estado["historial"], por * n_esc + 1) if v != destacado]
         if clips:
-            # cada escena con video encadena dos clips distintos (se reproducen tal cual, sin ralentizar)
+            # cada escena con video encadena clips distintos (se reproducen tal cual, sin ralentizar)
             otro = lambda k: clips[k % len(clips)]
-            c.laminas[0].foto = "+".join(dict.fromkeys([otro(0), otro(1)]))
+            cadena = lambda *ks: "+".join(dict.fromkeys(otro(k) for k in ks))
+            medias = list(range(1, len(c.laminas) - 1))   # nunca en la del llamado final
             if n_esc == 2 and len(c.laminas) >= 3:
-                c.laminas[len(c.laminas) // 2].foto = "+".join(dict.fromkeys([otro(2), otro(0)]))
-            elif n_esc > 2 and len(c.laminas) >= 3:  # repartidas entre las intermedias (no en la del llamado final)
-                medias = list(range(1, len(c.laminas) - 1))
+                elegidas = [len(c.laminas) // 2]
+            elif n_esc > 2 and medias:
                 elegidas = sorted({medias[round(j * (len(medias) - 1) / max(1, n_esc - 2))]
-                                   for j in range(n_esc - 1)}) if medias else []
+                                   for j in range(n_esc - 1)})
+            else:
+                elegidas = []
+            if por == 2 and not destacado:   # comportamiento original (AHP)
+                c.laminas[0].foto = cadena(0, 1)
                 for j, k in enumerate(elegidas):
-                    c.laminas[k].foto = "+".join(dict.fromkeys([otro(2 * j + 2), otro(2 * j + 3)]))
+                    c.laminas[k].foto = cadena(2, 0) if n_esc == 2 else cadena(2 * j + 2, 2 * j + 3)
+            else:
+                propios = por - (1 if destacado else 0)
+                for j, k in enumerate([0] + elegidas):
+                    cad = [otro(j * propios + i) for i in range(propios)]
+                    if destacado:   # abre la portada y va segundo en las demás escenas
+                        cad.insert(0 if j == 0 else 1, destacado)
+                    c.laminas[k].foto = "+".join(dict.fromkeys(cad))
     carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-{tipo}-{slug(c.tema)}"
     carpeta.mkdir(parents=True, exist_ok=False)
     print(f"{dia} {hora} {tipo}: {c.tema} -> {carpeta}")

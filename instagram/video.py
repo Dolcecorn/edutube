@@ -170,18 +170,30 @@ class Clip:
 
     FUNDIDO = 0.4
 
-    def __init__(self, rutas, oscuro, dur):
+    def __init__(self, rutas, oscuro, dur, reparto=False, toma_min=2.5):
         rutas = rutas if isinstance(rutas, (list, tuple)) else [rutas]
         info = {v["archivo"]: v for v in diseno.videos()}
         self.items = [(Path(r), info.get(Path(r).name, {}).get("recorte")) for r in rutas]
         self.dur, self.factor = dur, 1 - oscuro / 255
         self.fuentes, self.inicios = [], []
+        self.plan = None
+        if reparto:  # tomas largas: la escena se reparte entre los clips (sin cortes de menos de toma_min)
+            largos = [_duracion(r) for r, _ in self.items]
+            topes = lambda k: [largos[j % len(largos)] - 0.1 - self.FUNDIDO for j in range(k)]
+            k = max(1, min(len(self.items), int(dur // toma_min)))   # un clip por toma, si alcanzan a durar
+            while sum(topes(k)) < dur and k < 4 * len(self.items):  # clips cortos: más tomas (se repiten)
+                k += 1
+            tomas = [t * dur / sum(topes(k)) for t in topes(k)]     # tomas proporcionales al largo de cada clip
+            self.plan = [sum(tomas[:j]) for j in range(k)]
 
     def _fuente(self, k):
         while len(self.fuentes) <= k:
             ruta, recorte = self.items[len(self.fuentes) % len(self.items)]   # si faltan, vuelve a empezar
-            ini = 0.0 if not self.fuentes else \
-                self.inicios[-1] + max(1.0, self.fuentes[-1].largo - 0.15 - self.FUNDIDO)
+            if self.plan:
+                ini = self.plan[len(self.fuentes)]
+            else:
+                ini = 0.0 if not self.fuentes else \
+                    self.inicios[-1] + max(1.0, self.fuentes[-1].largo - 0.15 - self.FUNDIDO)
             self.fuentes.append(_Fuente(ruta, recorte))
             self.inicios.append(ini)
         return self.fuentes[k]
@@ -190,7 +202,10 @@ class Clip:
         s = t * self.dur
         self._fuente(0)
         # ¿hay que sumar el siguiente clip?
-        while len(self.fuentes) < 4 * len(self.items) and \
+        if self.plan:
+            while len(self.fuentes) < len(self.plan) and s >= self.plan[len(self.fuentes)]:
+                self._fuente(len(self.fuentes))
+        while not self.plan and len(self.fuentes) < 4 * len(self.items) and \
                 s >= self.inicios[-1] + self.fuentes[-1].largo - 0.15 - self.FUNDIDO:
             self._fuente(len(self.fuentes))
         k = len(self.fuentes) - 1
@@ -224,7 +239,7 @@ def _degradados():
     return g
 
 
-def _audio(duraciones, locuciones, total, fin_escenas, musica, voz=None):
+def _audio(duraciones, locuciones, total, fin_escenas, musica, voz=None, retraso=RETRASO_VOZ):
     """Entradas y filtros de ffmpeg para la voz en off (alineada al inicio de cada escena) y la música
     (con el golpe final en fin_escenas). Devuelve (entradas, filtros, voz)."""
     if locuciones and any(locuciones):  # una sola pista de voz alineada con el inicio de cada escena
@@ -232,7 +247,7 @@ def _audio(duraciones, locuciones, total, fin_escenas, musica, voz=None):
         acc0, partes = 0.0, []
         for dur, loc in zip(duraciones, locuciones):
             if loc:
-                partes.append((acc0 + RETRASO_VOZ, loc))
+                partes.append((acc0 + retraso, loc))
             acc0 += dur
         import tempfile
         voz = locucion.pista(partes, total, Path(tempfile.mkdtemp()) / "voz.wav")
