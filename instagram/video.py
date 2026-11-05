@@ -170,17 +170,17 @@ class Clip:
 
     FUNDIDO = 0.4
 
-    def __init__(self, rutas, oscuro, dur, reparto=False, toma_min=2.5):
+    def __init__(self, rutas, oscuro, dur, reparto=False):
         rutas = rutas if isinstance(rutas, (list, tuple)) else [rutas]
         info = {v["archivo"]: v for v in diseno.videos()}
         self.items = [(Path(r), info.get(Path(r).name, {}).get("recorte")) for r in rutas]
         self.dur, self.factor = dur, 1 - oscuro / 255
         self.fuentes, self.inicios = [], []
         self.plan = None
-        if reparto:  # tomas largas: la escena se reparte entre los clips (sin cortes de menos de toma_min)
+        if reparto:  # tomas largas: cada clip se muestra casi completo, sin cortes bruscos
             largos = [_duracion(r) for r, _ in self.items]
             topes = lambda k: [largos[j % len(largos)] - 0.1 - self.FUNDIDO for j in range(k)]
-            k = max(1, min(len(self.items), int(dur // toma_min)))   # un clip por toma, si alcanzan a durar
+            k = 1                                                   # las menos tomas posibles: tomas largas
             while sum(topes(k)) < dur and k < 4 * len(self.items):  # clips cortos: más tomas (se repiten)
                 k += 1
             tomas = [t * dur / sum(topes(k)) for t in topes(k)]     # tomas proporcionales al largo de cada clip
