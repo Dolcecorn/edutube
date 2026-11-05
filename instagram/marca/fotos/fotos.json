@@ -9,5 +9,18 @@
   {"archivo": "noche-clinica-las-condes-vertical.jpg", "descripcion": "Ambulancia AHP (Hyundai, ATS) con balizas encendidas saliendo de una clínica de noche, piso mojado, sensación de servicio activo", "orientacion": "vertical"},
   {"archivo": "noche-urgencias-centro-medico-vertical.jpg", "descripcion": "Ambulancia AHP San Antonio saliendo de la entrada de Urgencias de un centro médico de noche, ciudad y cerros al fondo", "orientacion": "vertical"},
   {"archivo": "noche-costanera-vertical.jpg", "descripcion": "Ambulancia AHP San Antonio con balizas circulando por una autopista urbana de noche (Costanera Norte, Santiago)", "orientacion": "vertical"},
-  {"archivo": "noche-vespucio-vertical.jpg", "descripcion": "Ambulancia AHP (Hyundai, ATS) circulando rápido por autopista de noche (Vespucio Norte, Santiago), sensación de urgencia", "orientacion": "vertical"}
+  {"archivo": "noche-vespucio-vertical.jpg", "descripcion": "Ambulancia AHP (Hyundai, ATS) circulando rápido por autopista de noche (Vespucio Norte, Santiago), sensación de urgencia", "orientacion": "vertical"},
+  {"archivo": "equipo-toldo-dos-ambulancias.jpg", "descripcion": "Equipo AHP (paramédicos y choferes) sentado bajo un toldo azul entre dos ambulancias AHP, cobertura de evento deportivo en ruta, de día nublado", "orientacion": "horizontal"},
+  {"archivo": "equipo-toldo-ruta-vertical.jpg", "descripcion": "Punto de atención AHP junto a la carretera: toldo azul con el equipo y dos ambulancias, cielo nublado amplio (espacio para texto arriba)", "orientacion": "vertical"},
+  {"archivo": "equipo-toldo-cerros-vertical.jpg", "descripcion": "Equipo AHP de cuatro personas bajo toldo azul entre dos ambulancias, con cerros y bosque de fondo, cobertura de evento", "orientacion": "vertical"},
+  {"archivo": "punto-atencion-ruta-vertical.jpg", "descripcion": "Dos ambulancias AHP y toldo de atención al costado de la ruta bajo un cielo nublado dramático, cobertura de evento deportivo", "orientacion": "vertical"},
+  {"archivo": "evento-ciclistas-vertical.jpg", "descripcion": "Ambulancia AHP acompañando la largada de una carrera de ciclismo de montaña, día soleado, muchos ciclistas", "orientacion": "vertical"},
+  {"archivo": "noche-hospital-puerta-abierta-vertical.jpg", "descripcion": "Ambulancia AHP con la puerta lateral abierta y camilla lista frente a la Urgencia de un hospital clínico, de noche", "orientacion": "vertical"},
+  {"archivo": "puerto-crucero-vertical.jpg", "descripcion": "Ambulancia AHP en el muelle del puerto de San Antonio junto a un crucero, día despejado (cobertura en puertos y cruceros)", "orientacion": "vertical"},
+  {"archivo": "evento-downhill-ninos-1.jpg", "descripcion": "Niño en bicicleta de equilibrio cruzando una rampa de madera en un evento de downhill infantil, ambulancia AHP al fondo, familias mirando", "orientacion": "vertical"},
+  {"archivo": "evento-downhill-ninos-2.jpg", "descripcion": "Niño con casco amarillo en bicicleta de equilibrio en una competencia infantil de mountain bike, ambulancia AHP de respaldo al fondo", "orientacion": "vertical"},
+  {"archivo": "evento-downhill-ninos-3.jpg", "descripcion": "Largada de una carrera infantil de mountain bike con niños en fila, rampa de madera y ambulancia AHP estacionada a la derecha", "orientacion": "vertical"},
+  {"archivo": "evento-downhill-ninos-4.jpg", "descripcion": "Niños y familias en un evento de downhill en el cerro, ambulancia AHP con camilla naranja lista junto a la pista", "orientacion": "horizontal"},
+  {"archivo": "evento-downhill-ninos-5.jpg", "descripcion": "Competencia infantil de mountain bike con ambulancia AHP y camilla de rescate preparadas junto al circuito, tarde soleada", "orientacion": "horizontal"},
+  {"archivo": "interior-ambulancia-camilla.jpg", "descripcion": "Interior equipado de una ambulancia AHP: camilla azul, asientos, gabinetes con insumos y tabla espinal", "orientacion": "vertical"}
 ]
