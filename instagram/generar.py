@@ -143,6 +143,9 @@ Usa foto en la portada, en el post y en las escenas del reel (prefiere las verti
 interiores del carrusel, usa foto solo en algunas (las de datos o pasos van mejor sin foto, con "foto" vacío).
 Varía las fotos dentro de la misma publicación. {m.get('nota_fotos', 'Las fotos muestran ambulancias y clínicas: no las uses como si mostraran algo que no muestran.')}{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
     voz = ""
+    abierto = (", de forma abierta y SIN nombrar ningún canal (ni sitio web, ni mensaje directo, ni teléfono, "
+               "ni correo)") if m.get("cta_abierto") else \
+        ' (el sitio web aparece en pantalla; en la voz di "escríbenos a través de nuestro sitio web" o similar)'
     if tipo == "reel" and generico:
         voz = f"""
 Locución (campo "locucion" de cada escena): {m.get('voz', 'voz en off profesional, español neutro de Chile')}.
@@ -150,8 +153,7 @@ Complementa el texto de pantalla sin leerlo palabra por palabra; frases cortas y
 números de teléfono ni direcciones web (aparecen en pantalla). Evita repetir la misma palabra en frases
 seguidas; usa sinónimos.
 La ÚLTIMA escena es el llamado a la acción, en el texto y en la locución: invita concretamente a contactar a
-{m['nombre']} para revisar el caso de la empresa (el sitio web aparece en pantalla; en la voz di "escríbenos a
-través de nuestro sitio web" o similar). Después de esa escena el video cierra solo con el logo."""
+{m['nombre']} para revisar el caso de la empresa{abierto}. Después de esa escena el video cierra solo con el logo."""
     elif tipo == "reel":
         voz = """
 Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
@@ -369,7 +371,7 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
 
     fijos = [h for h in m.get("hashtags_fijos", []) if h not in c.hashtags]
     descripcion = c.descripcion.strip()
-    if m.get("web") and m["web"].lower() not in descripcion.lower():
+    if m.get("web") and m["web"].lower() not in descripcion.lower() and not m.get("cta_abierto"):
         descripcion += "\n\nContacto: " + " · ".join(x for x in (m.get("telefono"), m["web"]) if x)
     (carpeta / "texto.txt").write_text(f"{descripcion}\n\n{' '.join(fijos + c.hashtags)}\n", encoding="utf-8")
     (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")

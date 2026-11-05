@@ -61,6 +61,9 @@ def decir(texto, destino):
     m = _cargar()
     # el nombre de la empresa se deletrea: A, H, P (si no, el modelo lo lee "ap")
     texto = re.sub(r"\bAHP\b", "A, hache, pe", texto)
+    # pronunciaciones propias de la marca (marca.json "pronunciacion": {"LegalMain": "Ligalmein"})
+    for palabra, dicha in (diseno.marca().get("pronunciacion") or {}).items():
+        texto = re.sub(re.escape(palabra).replace("\\ ", "\\s*"), dicha, texto, flags=re.IGNORECASE)
     wav = m.generate(texto, language_id="es", audio_prompt_path=str(REFERENCIA),
                      exaggeration=0.45, cfg_weight=0.5, temperature=0.7)
     with tempfile.TemporaryDirectory() as tmp:

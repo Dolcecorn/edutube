@@ -179,7 +179,7 @@ class Clip:
 
     def _fuente(self, k):
         while len(self.fuentes) <= k:
-            ruta, recorte = self.items[len(self.fuentes)]
+            ruta, recorte = self.items[len(self.fuentes) % len(self.items)]   # si faltan, vuelve a empezar
             ini = 0.0 if not self.fuentes else \
                 self.inicios[-1] + max(1.0, self.fuentes[-1].largo - 0.15 - self.FUNDIDO)
             self.fuentes.append(_Fuente(ruta, recorte))
@@ -190,7 +190,7 @@ class Clip:
         s = t * self.dur
         self._fuente(0)
         # ¿hay que sumar el siguiente clip?
-        while len(self.fuentes) < len(self.items) and \
+        while len(self.fuentes) < 4 * len(self.items) and \
                 s >= self.inicios[-1] + self.fuentes[-1].largo - 0.15 - self.FUNDIDO:
             self._fuente(len(self.fuentes))
         k = len(self.fuentes) - 1
