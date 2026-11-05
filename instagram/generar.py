@@ -117,6 +117,10 @@ Reglas de contenido:
 - Mensajes concretos y útiles, nada vago ni genérico: di qué hacemos, para quién, en qué situación y qué gana la
   persona (ej. "¿Alta médica y tu familiar no puede ir en auto? Lo trasladamos en camilla con paramédico").
   Evita frases de relleno como "estamos para apoyarte", "tu bienestar es lo primero" o "apoyo seguro".
+- Nada obvio: no digas lo que cualquiera da por hecho (ej. "la camilla va asegurada", "llegamos a tiempo",
+  "cuidamos a tu familiar"). Cada pieza aporta algo que la persona no sabía o no había pensado: un dato práctico,
+  un detalle de cómo se hace, una situación concreta o qué preguntar antes de contratar.
+- Si el día tiene una fecha especial, intégrala con naturalidad en el tema; no la pegues como frase suelta al final.
 - En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
