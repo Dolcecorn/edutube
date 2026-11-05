@@ -33,10 +33,11 @@ DUR_CIERRE = 3.4
 
 # ---------- piezas gráficas ----------
 
-def _velo(color):
-    """Velo del color principal: más denso abajo (texto) y en los bordes (viñeta)."""
+def _velo(color, base=0.55):
+    """Velo del color principal: más denso abajo (texto) y en los bordes (viñeta). base menor deja ver más
+    el fondo (videos reales)."""
     y, x = np.mgrid[0:H, 0:W]
-    vertical = 0.55 + 0.38 * np.clip((y / H - 0.25) / 0.6, 0, 1)
+    vertical = base + (0.93 - base) * np.clip((y / H - 0.25) / 0.6, 0, 1)
     d = np.sqrt(((x / W - 0.5) * 1.2) ** 2 + ((y / H - 0.45) * 0.9) ** 2)
     u = np.clip((d - 0.3) / 0.5, 0, 1)
     vin = u * u * (3 - 2 * u) * 0.35                      # viñeta con borde suave (smoothstep)
@@ -103,6 +104,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     blanco, gris = (255, 255, 255), (206, 211, 224)
     fotos = [diseno.FOTOS_DIR / f["archivo"] for f in diseno.fotos()]
     velo = _velo(azul)
+    velo_video = _velo(azul, 0.18)
     deco = _decoracion(dorado)
     logo = diseno._logo(True, 300, 120)
     f_num = diseno._fuente(True, 28)
@@ -135,8 +137,8 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             dur = max(dur, _duracion(loc) + RETRASO_VOZ + 0.7)
         fondo = None
         if ruta:
-            fondo = Clip(ruta, 40, dur) if es_clip else Fondo(ruta, 0, desenfoque=False, dir_paneo=1 if i % 2 == 0 else -1)
-        preparadas.append(dict(fondo=fondo, tit=tit, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, cta=cta))
+            fondo = Clip(ruta, 0, dur) if es_clip else Fondo(ruta, 0, desenfoque=False, dir_paneo=1 if i % 2 == 0 else -1)
+        preparadas.append(dict(fondo=fondo, video=es_clip, tit=tit, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, cta=cta))
 
     total = sum(p["dur"] for p in preparadas) + DUR_CIERRE
     fin_escenas = total - DUR_CIERRE
@@ -144,7 +146,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     def escena(p, tl, num):
         dur = p["dur"]
         img = (p["fondo"].cuadro(tl / dur) if p["fondo"] else Image.new("RGB", (W, H), azul)).convert("RGBA")
-        img.alpha_composite(velo)
+        img.alpha_composite(velo_video if p["video"] else velo)
         img.alpha_composite(deco)
         sal = _ease_io((tl - (dur - 0.5)) / 0.5)      # todo se desvanece y sube un poco al final
         a = 1 - sal
