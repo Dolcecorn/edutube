@@ -1,1 +1,17 @@
-{"ultimo_tipo": null, "historial": []}
+{
+  "ultimo_tipo": "reel",
+  "historial": [
+    {
+      "fecha": "2026-12-31 10:00",
+      "tipo": "reel",
+      "tema": "¿Qué debes considerar para contratar trabajadores en otro país?",
+      "foto": "red-global-1.jpg",
+      "fotos": [
+        "documentos-1.jpg",
+        "cuadricula-crecimiento.jpg",
+        "balanza.jpg",
+        "red-global-2.jpg"
+      ]
+    }
+  ]
+}
