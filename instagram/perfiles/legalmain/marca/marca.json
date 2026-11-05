@@ -26,7 +26,7 @@
     "Cada publicación responde una pregunta concreta que un empresario se hace y deja 2 a 4 puntos accionables para revisar.",
     "El llamado a la acción es abierto: invita a contactar a LegalMain para revisar el caso de la empresa, SIN nombrar un canal (no digas sitio web, mensaje directo, teléfono, correo ni WhatsApp); por ejemplo 'Contáctanos y revisamos el caso de tu empresa'. Nunca es agresivo."
   ],
-  "voz": "voz en off de un abogado o abogada chilena, tono sereno, seguro y profesional (español neutro de Chile, sin modismos)",
+  "voz": "voz en off de un abogado o abogada chilena, tono sereno, cercano y seguro. Escribe como se habla en Chile, no como se escribe un informe: frases cortas (8 a 15 palabras), una idea por frase, conectores naturales ('ojo', 'y antes de partir', 'lo primero es') y trato de tú; nada de construcciones formales como 'no consiste solo en' o 'que correspondan al caso'. Sin garabatos ni modismos fuertes.",
   "nota_fotos": "Los fondos son ilustraciones abstractas (mapas, documentos, columnas, balanza, gráficos): elige el que calce con la idea de cada escena.",
   "ideas_historias": [
     "pregunta frecuente de empresarios con una respuesta breve que invite a seguir la cuenta",
@@ -62,5 +62,11 @@
   "clips_por_escena": 5,
   "pausa_voz": 1.4,
   "retraso_voz": 0.6,
-  "velocidad_voz": 0.95
+  "voz_por_frases": true,
+  "pausa_frases": 0.3,
+  "voz_ajustes": {
+    "exaggeration": 0.6,
+    "cfg_weight": 0.4,
+    "temperature": 0.75
+  }
 }

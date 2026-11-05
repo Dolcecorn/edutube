@@ -289,7 +289,11 @@ def slug(texto):
 
 def crear(m, estado, tipo, dia, hora, salida, pub=None):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
-    c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub)
+    reuso = os.environ.get("CONTENIDO", "").strip()   # volver a renderizar un contenido.json existente
+    if reuso:
+        c = (Historia if tipo == "historia" else Contenido).model_validate_json(Path(reuso).read_text(encoding="utf-8"))
+    else:
+        c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
         if c.foto not in validas:
@@ -314,9 +318,9 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
         estado["historial"] = estado["historial"][-120:]
         return carpeta, c
     for l in c.laminas:
-        if l.foto not in validas:
+        if l.foto not in validas and not (reuso and l.foto.endswith(".mp4")):
             l.foto = ""
-    if c.laminas:  # portada distinta a las de las últimas publicaciones
+    if c.laminas and not reuso:  # portada distinta a las de las últimas publicaciones
         # portadas (también de reels, que recortan la foto a 9:16) rotan por todo el banco de fotos
         nueva = rotar_foto(c.laminas[0].foto, estado["historial"])
         if nueva != c.laminas[0].foto:
@@ -324,10 +328,10 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
                 if l.foto == nueva:
                     l.foto = c.laminas[0].foto
             c.laminas[0].foto = nueva
-    if c.laminas:  # láminas interiores: cambiar fotos usadas recientemente por las menos usadas del banco
+    if c.laminas and not reuso:  # láminas interiores: cambiar fotos usadas recientemente por las menos usadas del banco
         refrescar_interiores(c.laminas, estado["historial"])
-    clips = []
-    if tipo == "reel" and c.laminas:  # escenas con clips de video reales (portada y una escena intermedia)
+    clips = sorted({v for l in c.laminas for v in l.foto.split("+") if v.endswith(".mp4")}) if reuso else []
+    if tipo == "reel" and c.laminas and not reuso:  # escenas con clips de video reales (portada y una escena intermedia)
         n_esc = max(1, int(m.get("escenas_con_video", 2)))   # portada + escenas intermedias con video
         por = max(2, int(m.get("clips_por_escena", 2)))     # clips encadenados en cada escena con video
         destacado = m.get("video_destacado")                 # clip que aparece en todas las escenas con video
