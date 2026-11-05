@@ -82,8 +82,11 @@ def subir_video(ruta_video, caption, media_type="REELS"):
     tam = ruta_video.stat().st_size
     req = urllib.request.Request(cont["uri"], data=ruta_video.read_bytes(), method="POST", headers={
         "Authorization": f"OAuth {TOKEN}", "offset": "0", "file_size": str(tam)})
-    with urllib.request.urlopen(req, timeout=600) as r:
-        json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=600) as r:
+            json.load(r)
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"subida de video: {e.code} {e.read().decode(errors='replace')}") from None
     return cont["id"]
 
 
@@ -151,8 +154,22 @@ def publicar(carpeta):
                 time.sleep(10 * (n + 1))
         else:
             raise RuntimeError(f"no se pudo subir la historia en video: {ultimo}")
-    elif tipo == "reel":
-        cont = subir_video(archivos[0], caption)
+    elif tipo == "reel":  # subida directa y, si falla, por URL pública (con reintentos)
+        intentos = [lambda: subir_video(archivos[0], caption),
+                    lambda: api("POST", f"{USER}/media", media_type="REELS", video_url=url_publica(archivos[0]),
+                                caption=caption, share_to_feed="true")["id"]] * 2
+        ultimo = None
+        for n, intento in enumerate(intentos):
+            try:
+                cont = intento()
+                esperar_listo(cont)
+                break
+            except Exception as e:  # reintenta
+                ultimo = e
+                print(f"   aviso: {e}", file=sys.stderr)
+                time.sleep(10 * (n + 1))
+        else:
+            raise RuntimeError(f"no se pudo subir el reel: {ultimo}")
     elif tipo == "post":
         cont = api("POST", f"{USER}/media", image_url=url_publica(archivos[0]), caption=caption)["id"]
     else:
