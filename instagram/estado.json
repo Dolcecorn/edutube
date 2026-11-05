@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -146,6 +146,41 @@
         "noche-ciudad-frente.mp4",
         "noche-autopista-frente.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-06 09:00",
+      "tipo": "carrusel",
+      "tema": "Teletón 2026: solidaridad que respeta la autonomía",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "clinica-dia-dos-ambulancias.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-06 18:30",
+      "tipo": "post",
+      "tema": "Teletón 2026: comunidad que impulsa inclusión y rehabilitación",
+      "foto": "noche-frente-balizas-vertical.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-06 11:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: apoyo continuo a la rehabilitación",
+      "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-06 15:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: verifica antes de donar",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-06 20:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: hacer comunidad también es facilitar la participación",
+      "foto": "clinica-dia-vertical.jpg"
     }
   ]
 }
