@@ -29,6 +29,23 @@
         "emprendedora-notebook-workplace.mp4",
         "equipo-notebook-oficina.mp4"
       ]
+    },
+    {
+      "fecha": "2026-12-31 10:00",
+      "tipo": "reel",
+      "tema": "¿Qué debes considerar para contratar trabajadores en otro país?",
+      "foto": "emprendedor-videollamada-oficina.mp4+emprendedor-notebook-oficina.mp4",
+      "fotos": [
+        "documentos-2.jpg",
+        "columnas.jpg"
+      ],
+      "clips": [
+        "emprendedor-videollamada-oficina.mp4",
+        "emprendedor-notebook-oficina.mp4",
+        "emprendedora-escritorio-notebook.mp4",
+        "equipo-notebook-oficina.mp4",
+        "emprendedora-notebook-workplace.mp4"
+      ]
     }
   ]
 }
