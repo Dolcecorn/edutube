@@ -67,8 +67,19 @@ def decir(texto, destino):
     texto = texto.strip()
     if texto and texto[-1] not in ".!?…":
         texto += "."   # sin punto final el modelo tiende a seguir "murmurando"
-    wav = m.generate(texto, language_id="es", audio_prompt_path=str(REFERENCIA),
-                     exaggeration=0.45, cfg_weight=0.5, temperature=0.7)
+    marca = diseno.marca()
+    ajuste = {"exaggeration": 0.45, "cfg_weight": 0.5, "temperature": 0.7, **(marca.get("voz_ajustes") or {})}
+    if marca.get("voz_por_frases"):
+        # cada frase por separado y unidas con una pausa breve: ritmo más natural que una tirada larga
+        import torch
+        frases = [f.strip() for f in re.findall(r"[^.!?…]+[.!?…]+", texto) if f.strip()] or [texto]
+        pausa = torch.zeros(1, int(m.sr * float(marca.get("pausa_frases", 0.3))))
+        partes = []
+        for f in frases:
+            partes += [m.generate(f, language_id="es", audio_prompt_path=str(REFERENCIA), **ajuste), pausa]
+        wav = torch.cat(partes[:-1], dim=1)
+    else:
+        wav = m.generate(texto, language_id="es", audio_prompt_path=str(REFERENCIA), **ajuste)
     vel = float(diseno.marca().get("velocidad_voz", 1.0))   # < 1: habla más pausada (sin cambiar el tono)
     tempo = f"atempo={vel:.3f}," if abs(vel - 1) > 0.005 else ""
     with tempfile.TemporaryDirectory() as tmp:
