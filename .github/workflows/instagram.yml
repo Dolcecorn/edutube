@@ -33,8 +33,13 @@ jobs:
 
       - name: Publicar
         env:
-          # cada perfil usa sus secrets: IG_USER_ID / IG_ACCESS_TOKEN (AHP) o IG_USER_ID_<PERFIL> / IG_ACCESS_TOKEN_<PERFIL>
-          SECRETOS: ${{ toJSON(secrets) }}
+          # cada perfil usa sus secrets: IG_USER_ID / IG_ACCESS_TOKEN (AHP) o IG_USER_ID_<PERFIL> / IG_ACCESS_TOKEN_<PERFIL>.
+          # Se nombran uno por uno (pasar todos los secrets con toJSON deja el workflow esperando aprobación).
+          # Al agregar un perfil nuevo, sumar aquí sus dos líneas.
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID_LEGALMAIN: ${{ secrets.IG_USER_ID_LEGALMAIN }}
+          IG_ACCESS_TOKEN_LEGALMAIN: ${{ secrets.IG_ACCESS_TOKEN_LEGALMAIN }}
           IG_API_HOST: ${{ vars.IG_API_HOST || 'graph.facebook.com' }}
           MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}

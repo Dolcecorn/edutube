@@ -27,5 +27,5 @@ PERFIL=legalmain python3 instagram/publicar.py
 5. Fotos: `marca/fotos/` + `marca/fotos/fotos.json` (`archivo`, `descripcion`, `orientacion`). Clips de video en `marca/videos/` + `videos.json`. Sin fotos propias, se pueden generar fondos como en `perfiles/legalmain/marca/fondos.py`.
 6. Voz en off (opcional): `marca/voz/referencia.wav` (20-30 s de una sola persona, con su autorización). Sin ella, los reels van solo con música.
 7. `calendario.json`: `foco_semanal`, `meses`, `fechas` y `publicaciones` (fecha exacta con `formato` y `tema`, que se respetan tal cual).
-8. Secrets de GitHub (nunca en el chat): `IG_USER_ID_<PERFIL>` y `IG_ACCESS_TOKEN_<PERFIL>` (ej. `IG_USER_ID_LEGALMAIN`).
+8. Secrets de GitHub (nunca en el chat): `IG_USER_ID_<PERFIL>` y `IG_ACCESS_TOKEN_<PERFIL>` (ej. `IG_USER_ID_LEGALMAIN`), y sumar esas dos líneas en el paso "Publicar" de `.github/workflows/instagram.yml`.
 9. Tareas programadas: generar con el workflow "Generar publicación de Instagram" (input `perfil`) y publicar con "Publicar en Instagram" (sin input publica todos los perfiles).
