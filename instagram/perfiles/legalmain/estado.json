@@ -63,6 +63,25 @@
         "emprendedora-notebook-workplace.mp4",
         "equipo-notebook-oficina.mp4"
       ]
+    },
+    {
+      "fecha": "2026-12-31 10:00",
+      "tipo": "reel",
+      "tema": "Qué considerar para contratar trabajadores en otro país",
+      "foto": "mapa-mundial-lineas-desde-chile.mp4+emprendedora-escritorio-notebook.mp4+emprendedor-notebook-oficina.mp4",
+      "fotos": [
+        "red-global-1.jpg",
+        "cuadricula-crecimiento.jpg"
+      ],
+      "clips": [
+        "emprendedora-escritorio-notebook.mp4",
+        "emprendedor-notebook-oficina.mp4",
+        "emprendedor-videollamada-oficina.mp4",
+        "equipo-notebook-oficina.mp4",
+        "emprendedora-notebook-workplace.mp4",
+        "pareja-emprendedores-documentos-contables.mp4",
+        "emprendedor-calculadora-documentos.mp4"
+      ]
     }
   ]
 }
