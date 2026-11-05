@@ -32,15 +32,31 @@ from zoneinfo import ZoneInfo
 
 API_VERSION = "v23.0"
 ZONA = ZoneInfo("America/Santiago")
-RAIZ = Path(__file__).resolve().parent
+import perfil
+
+RAIZ = perfil.BASE
 COLA = RAIZ / "cola"
 PUBLICADOS = RAIZ / "publicados"
 VIDEO = {".mp4", ".mov"}
 IMAGEN = {".jpg", ".jpeg"}
 
 HOST = os.environ.get("IG_API_HOST", "graph.facebook.com")
-USER = os.environ.get("IG_USER_ID", "")
-TOKEN = os.environ.get("IG_ACCESS_TOKEN", "")
+
+
+def _credencial(nombre):
+    """AHP usa IG_USER_ID / IG_ACCESS_TOKEN; otro perfil usa <NOMBRE>_<PERFIL> (ej. IG_USER_ID_LEGALMAIN),
+    desde el entorno o desde SECRETOS (JSON con los secrets del repositorio, lo pasa el workflow)."""
+    clave = nombre if perfil.NOMBRE == "ahp" else f"{nombre}_{perfil.NOMBRE.upper()}"
+    if os.environ.get(clave):
+        return os.environ[clave]
+    try:
+        return json.loads(os.environ.get("SECRETOS") or "{}").get(clave, "")
+    except ValueError:
+        return ""
+
+
+USER = _credencial("IG_USER_ID")
+TOKEN = _credencial("IG_ACCESS_TOKEN")
 DRY = os.environ.get("DRY_RUN") == "1"
 
 
@@ -83,7 +99,7 @@ def url_publica(ruta):
         if not (repo and sha):
             sys.exit("Falta MEDIA_BASE_URL para publicar imagenes")
         base = f"https://raw.githubusercontent.com/{repo}/{sha}"
-    rel = ruta.relative_to(RAIZ.parent).as_posix()
+    rel = ruta.resolve().relative_to(perfil.CODIGO.parent).as_posix()
     return f"{base.rstrip('/')}/{urllib.parse.quote(rel)}"
 
 
@@ -161,15 +177,16 @@ def fecha_de(carpeta):
 
 
 def main():
-    if not DRY and not (USER and TOKEN):
-        sys.exit("Faltan IG_USER_ID o IG_ACCESS_TOKEN")
     ahora = dt.datetime.now(ZONA)
     maximo = int(os.environ.get("MAX_POR_PASADA", "1"))
-    pendientes = sorted((c for c in COLA.iterdir() if c.is_dir() and (fecha_de(c) or ahora) <= ahora),
+    pendientes = sorted((c for c in (COLA.iterdir() if COLA.exists() else []) if c.is_dir() and (fecha_de(c) or ahora) <= ahora),
                         key=lambda c: (fecha_de(c) or ahora, c.name))  # primero la de hora más temprana
     if not pendientes:
-        print("Nada que publicar ahora.")
+        print(f"[{perfil.NOMBRE}] Nada que publicar ahora.")
         return
+    if not DRY and not (USER and TOKEN):
+        sys.exit(f"[{perfil.NOMBRE}] Faltan las credenciales de Instagram (IG_USER_ID / IG_ACCESS_TOKEN"
+                 f"{'' if perfil.NOMBRE == 'ahp' else '_' + perfil.NOMBRE.upper()})")
     errores = 0
     for carpeta in pendientes[:maximo]:
         try:

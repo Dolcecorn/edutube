@@ -6,6 +6,10 @@ cálido y "bombeo" suave de sidechain; bajo sub sincopado; bombo claro en negras
 hi-hat a contratiempo, sin siseo de fondo. Termina con un remate y un golpe final (bombo, platillo suave
 y acorde de tónica) que se alinea con el logo del cierre. Sin samples externos: todo se sintetiza aquí.
 
+Estilo "corporativo" (marca.json "estilo_musica", ej. LegalMain): misma base pero más lenta (100-106 BPM),
+batería mucho más tenue (sin palmas, caja suave tipo aro), bombeo casi imperceptible, bajo largo y acordes
+más presentes: sobrio, para rubros profesionales.
+
 Cada publicación usa una variante distinta (tonalidad, tempo, progresión, ritmo de acordes y bajo),
 elegida a partir del nombre de su carpeta; sin semilla se obtiene la pista base aprobada.
 
@@ -56,6 +60,26 @@ PATRONES_BAJO = [
     [(2, 2, 0), (6, 2, 0), (10, 2, 0), (14, 2, 12)],          # bajo a contratiempo, muy house
     [(0, 2, 0), (4, 1, 0), (7, 2, 0), (11, 1, 12), (12, 3, 0)],
 ]
+PATRONES_BAJO_CORP = [
+    [(0, 6, 0), (8, 6, 0)],                                   # notas largas, sin síncopa
+    [(0, 3, 0), (6, 2, 0), (8, 6, 0)],
+]
+# mezcla por estilo: bombo, caja, hi-hat, profundidad del bombeo, acordes, percusión
+MEZCLA = {
+    "deep_house": dict(bombo=1.0, caja=0.42, hat=0.22, bombeo=0.32, acordes=0.26, perc=0.45),
+    "corporativo": dict(bombo=0.55, caja=0.16, hat=0.13, bombeo=0.12, acordes=0.36, perc=0.3),
+}
+
+
+def estilo_marca():
+    """Estilo de música del perfil activo (marca.json "estilo_musica"); por defecto deep house."""
+    try:
+        import perfil
+        import json
+        m = json.loads((perfil.BASE / "marca" / "marca.json").read_text(encoding="utf-8"))
+        return m.get("estilo_musica") or "deep_house"
+    except Exception:
+        return "deep_house"
 
 
 def hz(n):
@@ -123,23 +147,29 @@ def poner(pista, sonido, t, vol=1.0):
     pista[i:f] += sonido[: f - i] * vol
 
 
-def variante(semilla):
+def variante(semilla, estilo="deep_house"):
     """Parámetros de una variante. semilla=None da la pista base aprobada; otra semilla da otra
     canción del mismo estilo (tonalidad, tempo, progresión, ritmo de acordes y bajo distintos)."""
     if semilla is None:
         return dict(bpm=121, transp=0, prog=0, ritmo=0, bajo=0, hat=True, palma=True)
     r = np.random.default_rng(int(hashlib.sha256(str(semilla).encode()).hexdigest()[:8], 16))
+    if estilo == "corporativo":
+        return dict(bpm=int(r.choice([100, 102, 104, 106])), transp=int(r.integers(-4, 4)),
+                    prog=int(r.choice([0, 1, 3, 4])), ritmo=int(r.choice([0, 2])),
+                    bajo=int(r.integers(0, len(PATRONES_BAJO_CORP))), hat=True, palma=False, estilo=estilo)
     return dict(bpm=int(r.choice([118, 119, 120, 121, 122, 123, 124])), transp=int(r.integers(-4, 4)),
                 prog=int(r.integers(0, len(PROGRESIONES))), ritmo=int(r.integers(0, len(RITMOS_ACORDES))),
                 bajo=int(r.integers(0, len(PATRONES_BAJO))), hat=bool(r.random() < 0.8),
                 palma=bool(r.random() < 0.6))
 
 
-def componer(segundos=60.0, semilla=None, golpe=None):
+def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
     """Compone la pista. golpe = segundo en que cae el final (acorde de cierre + bombo), pensado para que
     coincida con la aparición del logo; la pista se alinea para que ese momento caiga en un compás."""
     global BPM, BEAT, BAR, rng
-    v = variante(semilla)
+    estilo = estilo or estilo_marca()
+    v = variante(semilla if semilla is not None or estilo == "deep_house" else "base", estilo)
+    mz = MEZCLA.get(v.get("estilo", "deep_house"), MEZCLA["deep_house"])
     BPM = v["bpm"]
     BEAT = 60 / BPM
     BAR = 4 * BEAT
@@ -156,7 +186,7 @@ def componer(segundos=60.0, semilla=None, golpe=None):
     k, sn = bombo(), caja()
     hat_abierto = filtro(ruido_filtrado(0.16, alto=7500, caida=0.045), bajo=11000)
     hat_cerrado = filtro(ruido_filtrado(0.04, alto=8000, caida=0.012), bajo=11000)
-    patron_bajo = PATRONES_BAJO[v["bajo"]]
+    patron_bajo = (PATRONES_BAJO_CORP if v.get("estilo") == "corporativo" else PATRONES_BAJO)[v["bajo"]]
     ritmo = RITMOS_ACORDES[v["ritmo"]]
     semi = BEAT / 4
     for c in range(-1, compases):
@@ -184,16 +214,16 @@ def componer(segundos=60.0, semilla=None, golpe=None):
         for b in range(4):
             tb = t0 + b * BEAT
             if not intro and not (ultimo and b == 3):
-                poner(bat, k, tb, 1.0)
+                poner(bat, k, tb, mz["bombo"])
             if not intro and b in (1, 3):
-                poner(bat, sn, tb, 0.42)                                # caja marcada en 2 y 4
+                poner(bat, sn, tb, mz["caja"])                          # caja marcada en 2 y 4
             if v["hat"] or not intro:
-                poner(perc, hat_abierto, tb + BEAT / 2, 0.22 if not intro else 0.12)   # contratiempo
+                poner(perc, hat_abierto, tb + BEAT / 2, mz["hat"] if not intro else 0.12)   # contratiempo
             if not intro and v["palma"]:
                 poner(perc, hat_cerrado, tb + 3 * semi, 0.10)           # semicorchea suave antes del tiempo
         if ultimo:  # pequeño remate de caja que anuncia el final
             for j, vol in ((13, 0.16), (14, 0.22), (15, 0.3)):
-                poner(bat, sn, t0 + j * semi, vol)
+                poner(bat, sn, t0 + j * semi, vol * mz["caja"] / 0.42)
 
     # subida suave (ruido muy filtrado) en los dos compases previos al golpe
     nr = int(2 * BAR * SR)
@@ -223,7 +253,7 @@ def componer(segundos=60.0, semilla=None, golpe=None):
     # sidechain: los acordes y el bajo "respiran" con el bombo (más suave que antes)
     t = np.arange(n) / SR
     fase = ((t - inicio) % BEAT) / BEAT
-    bombeo = 0.68 + 0.32 * np.minimum(1, fase / 0.45) ** 1.5
+    bombeo = 1 - mz["bombeo"] + mz["bombeo"] * np.minimum(1, fase / 0.45) ** 1.5
     bombeo[: int(max(0, inicio + BAR) * SR)] = 1.0   # sin bombeo en la entrada
     bombeo[int(golpe * SR):] = 1.0
     acordes *= bombeo
@@ -238,7 +268,7 @@ def componer(segundos=60.0, semilla=None, golpe=None):
         rev[i:] += fuente[:-i] * g
     rev = filtro(rev, bajo=3500, alto=250)
 
-    mezcla = 0.26 * acordes + 0.34 * cola + 0.55 * bajo + 0.85 * bat + 0.45 * perc + 0.3 * rev
+    mezcla = mz["acordes"] * acordes + 0.34 * cola + 0.55 * bajo + 0.85 * bat + mz["perc"] * perc + 0.3 * rev
     mezcla *= np.clip(t / 0.6, 0, 1) * np.clip((segundos - t) / 0.4, 0, 1)
     mezcla = np.tanh(1.15 * mezcla / (np.max(np.abs(mezcla)) + 1e-9)) / np.tanh(1.15)
     izq = mezcla
@@ -261,15 +291,16 @@ def guardar(audio, destino):
     return destino
 
 
-def pista(semilla, segundos, destino, golpe=None):
+def pista(semilla, segundos, destino, golpe=None, estilo=None):
     """Compone y guarda la variante de una publicación (cada carpeta usa su nombre como semilla).
     golpe: segundo del cierre (por ejemplo, cuando aparece el logo)."""
-    return guardar(componer(segundos, semilla, golpe), destino)
+    return guardar(componer(segundos, semilla, golpe, estilo), destino)
 
 
 if __name__ == "__main__":
     salida = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).resolve().parent / "marca" / "musica.mp3")
     seg = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
     semilla = sys.argv[3] if len(sys.argv) > 3 else None
-    print(semilla, variante(semilla))
-    print(guardar(componer(seg, semilla), salida))
+    est = sys.argv[4] if len(sys.argv) > 4 else None
+    print(semilla, variante(semilla, est or estilo_marca()))
+    print(guardar(componer(seg, semilla, estilo=est), salida))

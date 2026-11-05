@@ -27,7 +27,9 @@ import diseno
 import musica
 import video
 
-RAIZ = Path(__file__).resolve().parent
+import perfil
+
+RAIZ = perfil.BASE
 ESTADO = RAIZ / "estado.json"
 ZONA = ZoneInfo("America/Santiago")
 ORDEN = ["post", "reel", "carrusel"]
@@ -77,8 +79,28 @@ def siguiente_tipo(estado):
     return ORDEN[(ORDEN.index(estado["ultimo_tipo"]) + 1) % len(ORDEN)]
 
 
-def pedir_contenido(m, tipo, historial, dia=None, hora=""):
+def sistema_marca(m):
+    """Instrucciones de sistema de un perfil definido por marca.json (rubro, reglas, etc.)."""
+    contacto = "; ".join(x for x in (f"teléfono {m['telefono']}" if m.get("telefono") else "",
+                                      f"sitio web {m['web']}" if m.get("web") else "",
+                                      f"Instagram {m['usuario']}") if x)
+    reglas = "\n".join(f"- {r}" for r in m.get("reglas", []))
+    return f"""Eres el community manager de {m['nombre']} ({m['usuario']}), {m['rubro']} en {m['pais']}.
+Servicios: {', '.join(m['servicios'])}.
+Público: {m.get('publico', 'clientes de la empresa')}.
+Contacto: {contacto}.
+Tono: {m['tono']}
+
+Reglas de contenido:
+{reglas}
+- No inventes datos de la empresa (precios, cifras, nombres, clientes, casos) que no estén aquí.
+- Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
+
+
+def pedir_contenido(m, tipo, historial, dia=None, hora="", pub=None):
     recientes = "\n".join(f"- {h['fecha']}: {h['tema']}" for h in historial[-30:]) or "(ninguna todavía)"
+    if m.get("rubro"):
+        return _pedir(m, tipo, historial, recientes, sistema_marca(m), dia, hora, pub)
     sistema = f"""Eres el community manager de {m['nombre']} ({m['usuario']}), empresa de ambulancias en {m['pais']}.
 Servicios: {', '.join(m['servicios'])}.
 Contacto: teléfono {m['telefono']}; sitio web {m.get('web') or '(no tiene)'}.
@@ -98,7 +120,16 @@ Reglas de contenido:
 - En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
+    return _pedir(m, tipo, historial, recientes, sistema, dia, hora, pub)
+
+
+def _pedir(m, tipo, historial, recientes, sistema, dia, hora, pub):
+    generico = bool(m.get("rubro"))
     tema = os.environ.get("TEMA", "").strip()
+    if pub:  # publicación fijada en el calendario para ese día
+        tema = pub["tema"] + (f" (objetivo: {pub['objetivo']})" if pub.get("objetivo") else "") + \
+            (f" Línea de contenido: {pub['linea']}." if pub.get("linea") else "") + \
+            (f" Enfoque: {pub['enfoque']}" if pub.get("enfoque") else "")
     planificacion = calendario.texto_para_prompt(dia, hora, tipo) if dia else ""
     eleccion = (f"Tema pedido: {tema}." if tema else
                 f"{planificacion}\nTemas de referencia de la cuenta: {'; '.join(m['temas'])}.")
@@ -110,10 +141,15 @@ Reglas de contenido:
 {lista_fotos}
 Usa foto en la portada, en el post y en las escenas del reel (prefiere las verticales en el reel); en las láminas
 interiores del carrusel, usa foto solo en algunas (las de datos o pasos van mejor sin foto, con "foto" vacío).
-Varía las fotos dentro de la misma publicación. Las fotos muestran ambulancias y clínicas: no las uses como si
-mostraran algo que no muestran.{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
+Varía las fotos dentro de la misma publicación. {m.get('nota_fotos', 'Las fotos muestran ambulancias y clínicas: no las uses como si mostraran algo que no muestran.')}{aviso_fotos}""" if lista_fotos else 'No hay fotos: deja el campo "foto" vacío.')
     voz = ""
-    if tipo == "reel":
+    if tipo == "reel" and generico:
+        voz = f"""
+Locución (campo "locucion" de cada escena): {m.get('voz', 'voz en off profesional, español neutro de Chile')}.
+Complementa el texto de pantalla sin leerlo palabra por palabra; frases cortas y fáciles de decir. No dictes
+números de teléfono ni direcciones web (aparecen en pantalla); en la última escena invita a seguir la cuenta o
+a contactar. Evita repetir la misma palabra en frases seguidas; usa sinónimos."""
+    elif tipo == "reel":
         voz = """
 Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
 profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
@@ -130,11 +166,14 @@ No repitas los temas de estas publicaciones recientes:
     formato = Contenido
     if tipo == "historia":
         formato = Historia
+        ideas = m.get("ideas_historias") or [
+            'dato útil o "¿sabías que?" de primeros auxilios que invite a seguir la cuenta para aprender más',
+            f"servicio de la empresa ({', '.join(m['servicios'])}) con un beneficio claro y un llamado a cotizar o llamar",
+            "recordatorio práctico de la temporada o del día a día en Chile"]
+        ideas = "\n".join(f"- {x}," for x in ideas)
         pedido = f"""Crea una HISTORIA de Instagram (formato vertical 9:16, una sola imagen, dura 24 horas).
 Objetivo: ganar seguidores y generar clientes para {m['nombre']}. Alterna entre:
-- dato útil o "¿sabías que?" de primeros auxilios que invite a seguir la cuenta para aprender más,
-- servicio de la empresa ({', '.join(m['servicios'])}) con un beneficio claro y un llamado a cotizar o llamar,
-- recordatorio práctico de la temporada o del día a día en Chile.
+{ideas}
 El llamado a la acción debe ser concreto (llamar, cotizar, visitar el sitio web o seguir la cuenta).
 El teléfono y el sitio web ya aparecen en la tarjeta del diseño: no los repitas en el gancho ni en el texto.
 No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else planificacion}
@@ -239,9 +278,9 @@ def slug(texto):
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40]
 
 
-def crear(m, estado, tipo, dia, hora, salida):
+def crear(m, estado, tipo, dia, hora, salida, pub=None):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
-    c = pedir_contenido(m, tipo, estado["historial"], dia, hora)
+    c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
         if c.foto not in validas:
@@ -250,7 +289,7 @@ def crear(m, estado, tipo, dia, hora, salida):
         c.foto = rotar_foto(c.foto, estado["historial"], vertical=True)
         # la tarjeta ya muestra teléfono y web: el llamado no los repite
         if re.search(r"\d{4}|www\.|\.cl", c.llamado):
-            c.llamado = "Coordina tu servicio con nosotros"
+            c.llamado = m.get("llamado_defecto", "Coordina tu servicio con nosotros")
         carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
@@ -321,7 +360,7 @@ def crear(m, estado, tipo, dia, hora, salida):
     fijos = [h for h in m.get("hashtags_fijos", []) if h not in c.hashtags]
     descripcion = c.descripcion.strip()
     if m.get("web") and m["web"].lower() not in descripcion.lower():
-        descripcion += f"\n\nContacto: {m['telefono']} · {m['web']}"
+        descripcion += "\n\nContacto: " + " · ".join(x for x in (m.get("telefono"), m["web"]) if x)
     (carpeta / "texto.txt").write_text(f"{descripcion}\n\n{' '.join(fijos + c.hashtags)}\n", encoding="utf-8")
     (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
     (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
@@ -366,15 +405,20 @@ def main():
         plan = [(h, t) for h, t in plan if f"{dia}-{h.replace(':', '')}" not in ocupadas]
 
     hechas = []
+    fijadas = calendario.publicaciones(dia)  # publicaciones fijadas en el calendario para ese día (tema y formato)
     for hora, tipo in plan:
+        pub = None
+        if tipo is None and fijadas and not os.environ.get("TEMA"):
+            pub = fijadas.pop(0)
+            tipo = os.environ.get("TIPO") or pub.get("formato")
         tipo = tipo or siguiente_tipo(estado)
-        carpeta, c = crear(m, estado, tipo, dia, hora, args.salida)
+        carpeta, c = crear(m, estado, tipo, dia, hora, args.salida, pub)
         hechas.append((carpeta, tipo, c.tema, hora))
         ESTADO.write_text(json.dumps(estado, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            rels = " ".join(str(c.relative_to(RAIZ.parent)) for c, *_ in hechas)
+            rels = " ".join(str(Path(c).resolve().relative_to(perfil.CODIGO.parent)) for c, *_ in hechas)
             resumen = " + ".join(f"{h} {t}: {tema}" for _, t, tema, h in hechas)
             f.write(f"carpetas={rels}\ndia={dia}\nresumen={resumen}\n")
 

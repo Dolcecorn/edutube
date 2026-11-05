@@ -3,7 +3,9 @@ import datetime as dt
 import json
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent
+import perfil
+
+RAIZ = perfil.BASE
 DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
 
 
@@ -33,6 +35,13 @@ def plan(dia, cal=None):
     hoy.sort(key=lambda e: e.get("tipo") == "temporada")  # lo puntual primero
     return {"hoy": hoy, "proximas": proximas, "mes": cal.get("meses", {}).get(dia[:7], {}),
             "foco": cal.get("foco_semanal", {}).get(DIAS[d.weekday()], ""), "region": cal.get("region", "")}
+
+
+def publicaciones(dia, cal=None):
+    """Publicaciones del feed fijadas para ese día en "publicaciones" del calendario:
+    [{"fecha", "formato" (post|reel|carrusel), "tema", "objetivo"?, "linea"?, "enfoque"?}]."""
+    cal = cal if cal is not None else cargar()
+    return [p for p in cal.get("publicaciones", []) if p.get("fecha") == dia]
 
 
 def texto_para_prompt(dia, hora, tipo, cal=None):

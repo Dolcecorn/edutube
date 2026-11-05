@@ -294,20 +294,23 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             img.paste(lg, (W // 2 - lg.width // 2, 760 - lg.height // 2), lg)
         e2 = _ease((tl - 0.5) / 0.6)
         if e2 > 0:
-            cta = "Llámanos"
+            cta = m.get("cta_cierre") or ("Llámanos" if m.get("telefono") else "Contáctanos")
             tw = d.textlength(cta, font=f_cta)
             capa = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             dc = ImageDraw.Draw(capa)
             dc.text((W / 2 - tw / 2, 1010 + 30 * (1 - e2)), cta, font=f_cta, fill=(255, 255, 255, int(255 * e2)))
-            tel = m["telefono"]
-            tw = d.textlength(tel, font=f_tel)
+            tel = m.get("telefono") or m.get("web") or m["usuario"]
+            f_t = f_tel
+            while d.textlength(tel, font=f_t) > W - 260 and f_t.size > 44:
+                f_t = diseno._fuente(True, f_t.size - 4)
+            tw = d.textlength(tel, font=f_t)
             pulso = 1 + 0.03 * math.sin(max(0, tl - 1.2) * 6) if tl > 1.2 else 1
             bw, bh = (tw + 90) * pulso, 130 * pulso
             dc.rounded_rectangle([W / 2 - bw / 2, 1080 + 30 * (1 - e2), W / 2 + bw / 2, 1080 + bh + 30 * (1 - e2)],
                                  radius=int(bh / 2), fill=(255, 255, 255, int(255 * e2)))
-            dc.text((W / 2 - tw / 2, 1080 + (bh - 86) / 2 + 30 * (1 - e2)), tel, font=f_tel,
+            dc.text((W / 2 - tw / 2, 1080 + (bh - f_t.size * 1.16) / 2 + 30 * (1 - e2)), tel, font=f_t,
                     fill=rojo + (int(255 * e2),))
-            us = "   ·   ".join(x for x in (m.get("web"), m.get("usuario")) if x)
+            us = "   ·   ".join(x for x in (m.get("web"), m.get("usuario")) if x and x != tel)
             tw = d.textlength(us, font=f_user)
             e3 = _ease((tl - 0.9) / 0.6)
             dc.text((W / 2 - tw / 2, 1270), us, font=f_user, fill=(255, 255, 255, int(230 * e3)))
@@ -366,8 +369,12 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
         d.rectangle([0, 0, int(W * t / total), 10], fill=cyan + (255,))
         # pie rojo con teléfono (dentro de la zona segura)
         yb = ZONA_INF + 20
-        d.rounded_rectangle([MARGEN - 20, yb, MARGEN + 520, yb + 70], radius=35, fill=rojo + (255,))
-        d.text((MARGEN + 10, yb + 15), "☎ " + m["telefono"], font=f_pie, fill=(255, 255, 255, 255))
+        txt = "☎ " + m["telefono"] if m.get("telefono") else (m.get("web") or m["usuario"])
+        ancho = max(520 if m.get("telefono") else 0, int(d.textlength(txt, font=f_pie)) + 50)
+        borde = _hex(m["colores"]["borde_boton"]) + (255,) if m["colores"].get("borde_boton") else None
+        d.rounded_rectangle([MARGEN - 20, yb, MARGEN + ancho, yb + 70], radius=35, fill=rojo + (255,),
+                            outline=borde, width=3 if borde else 0)
+        d.text((MARGEN + 10, yb + 15), txt, font=f_pie, fill=(255, 255, 255, 255))
         return img
 
     destino = Path(destino)

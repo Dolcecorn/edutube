@@ -1,4 +1,5 @@
-# Publica en Instagram lo que esté en instagram/cola/ cuando llega su hora.
+# Publica en Instagram lo que esté en la cola de cada perfil cuando llega su hora
+# (AHP: instagram/cola/; otros perfiles: instagram/perfiles/<perfil>/cola/).
 name: Publicar en Instagram
 
 on:
@@ -6,6 +7,10 @@ on:
     - cron: "3,33 * * * *"   # cada media hora: la de 9:00 sale ~9:03 y la de 18:30 ~18:33 (GitHub puede atrasarse)
   workflow_dispatch:
     inputs:
+      perfil:
+        description: "Perfil (vacío = todos: ahp y los de instagram/perfiles/)"
+        type: string
+        default: ""
       dry_run:
         description: "Solo probar, sin publicar"
         type: boolean
@@ -28,12 +33,20 @@ jobs:
 
       - name: Publicar
         env:
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # cada perfil usa sus secrets: IG_USER_ID / IG_ACCESS_TOKEN (AHP) o IG_USER_ID_<PERFIL> / IG_ACCESS_TOKEN_<PERFIL>
+          SECRETOS: ${{ toJSON(secrets) }}
           IG_API_HOST: ${{ vars.IG_API_HOST || 'graph.facebook.com' }}
           MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
-        run: python3 instagram/publicar.py
+          SOLO: ${{ inputs.perfil }}
+        run: |
+          perfiles="${SOLO:-ahp $(ls instagram/perfiles 2>/dev/null | grep -v '\.' | tr '\n' ' ')}"
+          fallo=0
+          for p in $perfiles; do
+            echo "== $p"
+            PERFIL=$p python3 instagram/publicar.py || fallo=1
+          done
+          exit $fallo
 
       - name: Mover lo publicado y guardar
         if: always()
