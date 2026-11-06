@@ -314,6 +314,18 @@ def slug(texto):
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40]
 
 
+def fondo_del_dia(m, dia, hora, solo_oscuros=False):
+    """Fondo de fecha especial que le toca a esta pieza (rotan dentro del día y entre días)."""
+    fondos = diseno.fondos_especiales(dia)
+    if solo_oscuros:
+        fondos = [f for f in fondos if diseno.es_oscuro(f)]
+    if not fondos:
+        return None
+    horas = sorted(set(m.get("horarios", []) + m.get("horarios_historias", [])))
+    i = horas.index(hora) if hora in horas else 0
+    return fondos[(dt.date.fromisoformat(dia).toordinal() * len(horas) + i) % len(fondos)]
+
+
 def crear(m, estado, tipo, dia, hora, salida, pub=None):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
     reuso = os.environ.get("CONTENIDO", "").strip()   # volver a renderizar un contenido.json existente
@@ -334,12 +346,14 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
         carpeta = Path(salida) / f"{dia}-{hora.replace(':', '')}-historia-{slug(c.tema)}"
         carpeta.mkdir(parents=True, exist_ok=False)
         print(f"{dia} {hora} historia: {c.tema} -> {carpeta}")
-        diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None)
+        especial = fondo_del_dia(m, dia, hora)
+        diseno.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "01.jpg", foto=c.foto or None,
+                        especial=especial)
         if m.get("historias_video", True):  # video de 15 s con animación y música; la imagen queda de respaldo
             with tempfile.TemporaryDirectory() as tmp:
                 pista = lambda seg, golpe: musica.pista(carpeta.name, seg, Path(tmp) / "m.mp3", golpe)  # variante propia
                 video.historia(c.etiqueta, c.gancho, c.texto, c.llamado, carpeta / "video.mp4",
-                               foto=c.foto or None, musica=pista)
+                               foto=c.foto or None, musica=pista, especial=especial)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
         (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
         estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema, "foto": c.foto,
@@ -409,7 +423,7 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
                     else:
                         locs.append(None)
             video.reel([(l.titulo, l.texto, l.foto or None) for l in c.laminas], carpeta / "video.mp4",
-                       musica=pista, locuciones=locs)
+                       musica=pista, locuciones=locs, especial=fondo_del_dia(m, dia, hora, solo_oscuros=True))
         # Primera escena en PNG para revisar rápido (publicar.py no sube los .png)
         foto_previa = next((l.foto for l in c.laminas if l.foto and not l.foto.endswith(".mp4")), None)
         diseno.lamina(c.laminas[0].titulo, c.laminas[0].texto, carpeta / "vista-previa.png",
@@ -420,7 +434,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
         for i, l in enumerate(laminas, 1):
             diseno.lamina(l.titulo, l.texto, carpeta / f"{i:02d}.jpg",
                           numero=i if total > 1 else None, total=total if total > 1 else None,
-                          portada=(i == 1 and total > 1), foto=l.foto or None)
+                          portada=(i == 1 and total > 1), foto=l.foto or None,
+                          especial=fondo_del_dia(m, dia, hora) if i in (1, total) else None)
 
     fijos = [h for h in m.get("hashtags_fijos", []) if h not in c.hashtags]
     descripcion = c.descripcion.strip()

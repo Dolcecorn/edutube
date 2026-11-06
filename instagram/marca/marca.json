@@ -55,5 +55,20 @@
     "18:30": [
       "reel"
     ]
-  }
+  },
+  "fondos_especiales": [
+    {
+      "nombre": "Teletón 2026",
+      "desde": "2026-11-06",
+      "hasta": "2026-11-07",
+      "archivos": [
+        "teleton-2026-rojo-1.jpg",
+        "teleton-2026-blanco-1.jpg",
+        "teleton-2026-rojo-2.jpg",
+        "teleton-2026-blanco-2.jpg",
+        "teleton-2026-rojo-3.jpg",
+        "teleton-2026-blanco-3.jpg"
+      ]
+    }
+  ]
 }

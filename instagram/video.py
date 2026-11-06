@@ -277,7 +277,7 @@ def _audio(duraciones, locuciones, total, fin_escenas, musica, voz=None, retraso
     return entradas, filtros, voz
 
 
-def reel(escenas, destino, voz=None, musica=None, locuciones=None):
+def reel(escenas, destino, voz=None, musica=None, locuciones=None, especial=None):
     """escenas: [(titulo, texto[, foto])]. locuciones: lista paralela de wav (o None) con la voz en off de
     cada escena; la escena dura lo necesario para que se escuche completa. Devuelve la ruta del MP4."""
     m = diseno.marca()
@@ -328,15 +328,23 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     n_cuadros = int(total * FPS)
 
     logo_grande = diseno._logo(True, 760, 300)
+    # fecha especial: el cierre muestra el arte de la fecha (fondo de color) sobre el logo y el teléfono
+    Y_LOGO, Y_CTA, Y_TEL, Y_USER = 760, 1010, 1080, 1270
+    base_cierre = None
+    if especial:
+        base_cierre = diseno.lienzo_especial(especial, W, H)
+        diseno.pegar_arte(base_cierre, especial, 240, 620, W - 2 * 110)
+        logo_grande = diseno._logo(True, 560, 190)
+        Y_LOGO, Y_CTA, Y_TEL, Y_USER = 1000, 1140, 1210, 1400
     f_tel = diseno._fuente(True, 74)
     f_cta = diseno._fuente(True, 44)
     f_user = diseno._fuente(False, 40)
 
     def cierre(tl):
-        img = Image.new("RGB", (W, H), rojo)
+        img = base_cierre.copy() if base_cierre else Image.new("RGB", (W, H), rojo)
         d = ImageDraw.Draw(img)
         # círculos suaves que se expanden
-        for k in range(3):
+        for k in range(0 if base_cierre else 3):
             r = int(260 + 420 * _ease((tl - 0.15 * k) / 2.5)) + 120 * k
             a = int(40 * (1 - k / 3))
             capa = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -347,14 +355,14 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             esc = 0.8 + 0.2 * e
             lg = logo_grande.resize((int(logo_grande.width * esc), int(logo_grande.height * esc)), Image.LANCZOS)
             lg = _con_alfa(lg, e)
-            img.paste(lg, (W // 2 - lg.width // 2, 760 - lg.height // 2), lg)
+            img.paste(lg, (W // 2 - lg.width // 2, Y_LOGO - lg.height // 2), lg)
         e2 = _ease((tl - 0.5) / 0.6)
         if e2 > 0:
             cta = m.get("cta_cierre") or ("Llámanos" if m.get("telefono") else "Contáctanos")
             tw = d.textlength(cta, font=f_cta)
             capa = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             dc = ImageDraw.Draw(capa)
-            dc.text((W / 2 - tw / 2, 1010 + 30 * (1 - e2)), cta, font=f_cta, fill=(255, 255, 255, int(255 * e2)))
+            dc.text((W / 2 - tw / 2, Y_CTA + 30 * (1 - e2)), cta, font=f_cta, fill=(255, 255, 255, int(255 * e2)))
             tel = m.get("telefono") or m.get("web") or m["usuario"]
             f_t = f_tel
             while d.textlength(tel, font=f_t) > W - 260 and f_t.size > 44:
@@ -362,14 +370,14 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             tw = d.textlength(tel, font=f_t)
             pulso = 1 + 0.03 * math.sin(max(0, tl - 1.2) * 6) if tl > 1.2 else 1
             bw, bh = (tw + 90) * pulso, 130 * pulso
-            dc.rounded_rectangle([W / 2 - bw / 2, 1080 + 30 * (1 - e2), W / 2 + bw / 2, 1080 + bh + 30 * (1 - e2)],
+            dc.rounded_rectangle([W / 2 - bw / 2, Y_TEL + 30 * (1 - e2), W / 2 + bw / 2, Y_TEL + bh + 30 * (1 - e2)],
                                  radius=int(bh / 2), fill=(255, 255, 255, int(255 * e2)))
-            dc.text((W / 2 - tw / 2, 1080 + (bh - f_t.size * 1.16) / 2 + 30 * (1 - e2)), tel, font=f_t,
+            dc.text((W / 2 - tw / 2, Y_TEL + (bh - f_t.size * 1.16) / 2 + 30 * (1 - e2)), tel, font=f_t,
                     fill=rojo + (int(255 * e2),))
             us = "   ·   ".join(x for x in (m.get("web"), m.get("usuario")) if x and x != tel)
             tw = d.textlength(us, font=f_user)
             e3 = _ease((tl - 0.9) / 0.6)
-            dc.text((W / 2 - tw / 2, 1270), us, font=f_user, fill=(255, 255, 255, int(230 * e3)))
+            dc.text((W / 2 - tw / 2, Y_USER), us, font=f_user, fill=(255, 255, 255, int(230 * e3)))
             img.paste(capa, (0, 0), capa)
         return img
 
@@ -480,10 +488,10 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     return destino
 
 
-def historia(etiqueta, gancho, texto, llamado, destino, foto=None, duracion=15.0, musica=None):
+def historia(etiqueta, gancho, texto, llamado, destino, foto=None, duracion=15.0, musica=None, especial=None):
     """Historia en video (9:16): la foto se acerca lentamente y los elementos entran animados;
     lleva la pista de música (marca/musica.mp3 por defecto) con fundido al final."""
-    fondo, capas = diseno.historia(etiqueta, gancho, texto, llamado, foto=foto, capas=True)
+    fondo, capas = diseno.historia(etiqueta, gancho, texto, llamado, foto=foto, capas=True, especial=especial)
     base = fondo.resize((int(W * 1.10), int(H * 1.10)), Image.LANCZOS)
     # momento de entrada de cada elemento (s) y desplazamiento inicial (dx, dy)
     orden = {"logo": (0.2, (0, -30)), "etiqueta": (0.6, (-60, 0)), "gancho": (0.85, (0, 50)),
