@@ -1,0 +1,50 @@
+{
+  "tema": "Teletón: planifica tu traslado en ambulancia",
+  "laminas": [
+    {
+      "titulo": "¿Camilla o silla para ir a Teletón?",
+      "texto": "Planifica tu traslado a la jornada de cierre o a un punto de donación.",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "locucion": "Si asistir a Teletón requiere camilla o silla de ruedas, puedes organizar el viaje con anticipación."
+    },
+    {
+      "titulo": "Reserva antes de la jornada",
+      "texto": "Solicita tu traslado con anticipación y cuéntanos si necesitas ida y vuelta con espera.",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "locucion": "Así puedes considerar el regreso y la espera, sin depender de encontrar transporte disponible ese mismo día."
+    },
+    {
+      "titulo": "Vuelve cuando lo necesites",
+      "texto": "Traslado de ida y vuelta con espera, según lo que requiera tu participación en Teletón.",
+      "foto": "noche-autopista-trasera.mp4+noche-ciudad-frente.mp4",
+      "locucion": "La ambulancia puede esperarte durante la actividad para realizar el retorno en el mismo servicio."
+    },
+    {
+      "titulo": "Puede viajar un acompañante",
+      "texto": "En cada traslado van un conductor y un TENS. También puede acompañarte una persona.",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "locucion": "El equipo incluye conductor y TENS; además, puedes viajar con un acompañante durante el trayecto."
+    },
+    {
+      "titulo": "Cotiza tu traslado con AHP",
+      "texto": "Desde la provincia de San Antonio, Litoral Central, trabajamos en la Quinta Región y la Región Metropolitana.",
+      "foto": "evento-downhill-ninos-5.jpg",
+      "locucion": "Cotiza tu traslado para Teletón con Ambulancias AHP o sigue nuestra cuenta para conocer nuestros servicios."
+    }
+  ],
+  "descripcion": "¿Necesitas camilla o silla de ruedas para participar en Teletón?\n\nPuedes reservar un traslado a la jornada de cierre o a un punto de donación, con opción de ida y vuelta con espera. También puede viajar un acompañante.\n\nEn cada servicio van un conductor y un TENS. Atendemos desde la provincia de San Antonio, Litoral Central, Quinta Región, con cobertura en la Quinta Región y la Región Metropolitana.\n\nCotiza tu traslado con Ambulancias AHP al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#Teletón",
+    "#TrasladoEnAmbulancia",
+    "#Accesibilidad",
+    "#SillaDeRuedas",
+    "#Camilla",
+    "#SanAntonio",
+    "#LitoralCentral",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#VinaDelMar",
+    "#RegionMetropolitana",
+    "#AmbulanciasAHP"
+  ]
+}

@@ -235,6 +235,23 @@
         "noche-autopista-frente.mp4",
         "noche-autopista-trasera.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-07 18:30",
+      "tipo": "reel",
+      "tema": "Teletón: planifica tu traslado en ambulancia",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "interior-ambulancia-camilla.jpg",
+        "evento-downhill-ninos-5.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
     }
   ]
 }
