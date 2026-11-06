@@ -158,6 +158,52 @@
       "tipo": "historia",
       "tema": "Preparar la casa antes del traslado tras el alta médica",
       "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-06 09:00",
+      "tipo": "carrusel",
+      "tema": "Checklist para planificar un traslado accesible durante la Teletón",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg",
+        "evento-downhill-ninos-4.jpg"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-06 18:30",
+      "tipo": "reel",
+      "tema": "Teletón e inclusión: acompañamiento durante traslados de rehabilitación",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "punto-atencion-ruta-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-trasera.mp4",
+        "noche-autopista-frente.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-06 11:30",
+      "tipo": "historia",
+      "tema": "Teletón e inclusión: cómo ayudar correctamente",
+      "foto": "equipo-toldo-cerros-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-06 15:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: solidaridad e inclusión",
+      "foto": "evento-downhill-ninos-3.jpg"
+    },
+    {
+      "fecha": "2026-11-06 20:30",
+      "tipo": "historia",
+      "tema": "Cobertura para actividades solidarias por Teletón 2026",
+      "foto": "evento-ciclistas-vertical.jpg"
     }
   ]
 }
