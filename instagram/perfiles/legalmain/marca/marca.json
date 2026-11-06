@@ -61,12 +61,5 @@
   },
   "clips_por_escena": 5,
   "pausa_voz": 1.4,
-  "retraso_voz": 0.6,
-  "voz_por_frases": true,
-  "pausa_frases": 0.3,
-  "voz_ajustes": {
-    "exaggeration": 0.6,
-    "cfg_weight": 0.4,
-    "temperature": 0.75
-  }
+  "retraso_voz": 0.6
 }
