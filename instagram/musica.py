@@ -10,6 +10,11 @@ Estilo "corporativo" (marca.json "estilo_musica", ej. LegalMain): misma base per
 batería mucho más tenue (sin palmas, caja suave tipo aro), bombeo casi imperceptible, bajo largo y acordes
 más presentes: sobrio, para rubros profesionales.
 
+Estilo "tecnologia" (ej. LegalMain desde 2026-11-06, pedido de Eleva: tipo "Corporate Technology background"):
+112-118 BPM, progresión pop en tono menor, pads sintetizados amplios, arpegio "pluck" en semicorcheas,
+bajo en corcheas, bombo en negras, palmas suaves en 2 y 4 y shaker en semicorcheas: moderno, limpio y
+motivador, sin protagonismo sobre la voz.
+
 Cada publicación usa una variante distinta (tonalidad, tempo, progresión, ritmo de acordes y bajo),
 elegida a partir del nombre de su carpeta; sin semilla se obtiene la pista base aprobada.
 
@@ -60,6 +65,16 @@ PATRONES_BAJO = [
     [(2, 2, 0), (6, 2, 0), (10, 2, 0), (14, 2, 12)],          # bajo a contratiempo, muy house
     [(0, 2, 0), (4, 1, 0), (7, 2, 0), (11, 1, 12), (12, 3, 0)],
 ]
+PATRONES_BAJO_TEC = [
+    [(p, 2, 12 if p % 4 == 2 else 0) for p in range(0, 16, 2)],           # corcheas, octava en contratiempo
+    [(0, 2, 0), (2, 2, 0), (4, 2, 0), (6, 1, 12), (8, 2, 0), (10, 2, 0), (12, 2, 0), (14, 1, 12)],
+]
+# arpegio: índices sobre las notas del acorde (en semicorcheas)
+ARPEGIOS = [
+    [0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1],
+    [0, 2, 1, 3, 2, 4, 3, 1, 0, 2, 1, 3, 2, 4, 3, 1],
+    [0, 1, 2, 4, 0, 1, 2, 4, 0, 1, 3, 4, 0, 1, 3, 4],
+]
 PATRONES_BAJO_CORP = [
     [(0, 6, 0), (8, 6, 0)],                                   # notas largas, sin síncopa
     [(0, 3, 0), (6, 2, 0), (8, 6, 0)],
@@ -68,7 +83,35 @@ PATRONES_BAJO_CORP = [
 MEZCLA = {
     "deep_house": dict(bombo=1.0, caja=0.42, hat=0.22, bombeo=0.32, acordes=0.26, perc=0.45),
     "corporativo": dict(bombo=0.55, caja=0.16, hat=0.13, bombeo=0.12, acordes=0.36, perc=0.3),
+    "tecnologia": dict(bombo=0.75, caja=0.26, hat=0.16, bombeo=0.25, acordes=0.20, perc=0.42, arp=0.22),
 }
+
+
+def _diente(freq, t, armonicos=10):
+    """Onda diente de sierra con armónicos limitados (sin aliasing)."""
+    x = np.zeros_like(t)
+    for h in range(1, armonicos + 1):
+        if freq * h > 9000:
+            break
+        x += np.sin(2 * np.pi * freq * h * t) / h
+    return x
+
+
+def pad(freq, dur):
+    """Pad sintetizado amplio: tres sierras levemente desafinadas, ataque y salida lentos."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = sum(_diente(freq * d, t, 6) for d in (0.996, 1.0, 1.004)) / 3
+    env = np.minimum(1, t / 0.35) * np.clip((dur - t) / 0.4, 0, 1)
+    return x * env
+
+
+def pluck(freq, dur=0.3):
+    """Nota corta tipo "pluck" para el arpegio."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = _diente(freq, t, 8) * 0.6 + 0.4 * np.sin(2 * np.pi * freq * t)
+    return x * np.minimum(1, t / 0.003) * np.exp(-t / 0.09)
 
 
 def estilo_marca():
@@ -153,6 +196,10 @@ def variante(semilla, estilo="deep_house"):
     if semilla is None:
         return dict(bpm=121, transp=0, prog=0, ritmo=0, bajo=0, hat=True, palma=True)
     r = np.random.default_rng(int(hashlib.sha256(str(semilla).encode()).hexdigest()[:8], 16))
+    if estilo == "tecnologia":
+        return dict(bpm=int(r.choice([112, 114, 116, 118])), transp=int(r.integers(-3, 4)),
+                    prog=int(r.choice([1, 4, 0])), ritmo=2, bajo=int(r.integers(0, len(PATRONES_BAJO_TEC))),
+                    arp=int(r.integers(0, len(ARPEGIOS))), hat=True, palma=True, estilo=estilo)
     if estilo == "corporativo":
         return dict(bpm=int(r.choice([100, 102, 104, 106])), transp=int(r.integers(-4, 4)),
                     prog=int(r.choice([0, 1, 3, 4])), ritmo=int(r.choice([0, 2])),
@@ -186,7 +233,10 @@ def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
     k, sn = bombo(), caja()
     hat_abierto = filtro(ruido_filtrado(0.16, alto=7500, caida=0.045), bajo=11000)
     hat_cerrado = filtro(ruido_filtrado(0.04, alto=8000, caida=0.012), bajo=11000)
-    patron_bajo = (PATRONES_BAJO_CORP if v.get("estilo") == "corporativo" else PATRONES_BAJO)[v["bajo"]]
+    tec = v.get("estilo") == "tecnologia"
+    arp = np.zeros(n)
+    patron_bajo = (PATRONES_BAJO_TEC if tec else PATRONES_BAJO_CORP if v.get("estilo") == "corporativo"
+                   else PATRONES_BAJO)[v["bajo"]]
     ritmo = RITMOS_ACORDES[v["ritmo"]]
     semi = BEAT / 4
     for c in range(-1, compases):
@@ -200,7 +250,14 @@ def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
             if dur <= 0.1:
                 continue
             for nv in voces:
-                poner(acordes, rhodes(hz(nv), dur * BEAT), t0 + tt * BEAT + rng.uniform(0, 0.006), vol)
+                sonido = pad(hz(nv), dur * BEAT) if tec else rhodes(hz(nv), dur * BEAT)
+                poner(acordes, sonido, t0 + tt * BEAT + rng.uniform(0, 0.006), vol)
+        if tec and c >= 0:  # arpegio en semicorcheas, una octava arriba
+            notas = sorted(voces)
+            for j, idx in enumerate(ARPEGIOS[v["arp"]]):
+                if ultimo and j >= 12:
+                    break
+                poner(arp, pluck(hz(notas[idx % len(notas)] + 12)), t0 + j * semi, 0.9 if j % 4 == 0 else 0.6)
         for pos, d, octv in patron_bajo:
             if ultimo and pos >= 12:   # el bajo calla en el último tiempo para dar aire al cierre
                 continue
@@ -221,6 +278,9 @@ def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
                 poner(perc, hat_abierto, tb + BEAT / 2, mz["hat"] if not intro else 0.12)   # contratiempo
             if not intro and v["palma"]:
                 poner(perc, hat_cerrado, tb + 3 * semi, 0.10)           # semicorchea suave antes del tiempo
+            if tec and not intro:                                       # shaker en semicorcheas
+                for j in (0, 1, 3):
+                    poner(perc, hat_cerrado, tb + j * semi, 0.07)
         if ultimo:  # pequeño remate de caja que anuncia el final
             for j, vol in ((13, 0.16), (14, 0.22), (15, 0.3)):
                 poner(bat, sn, t0 + j * semi, vol * mz["caja"] / 0.42)
@@ -238,14 +298,15 @@ def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
     poner(cola, plat, golpe, 0.16)
     raiz, voces = tonica
     for j, nv in enumerate(voces + [voces[0] + 12, voces[2] + 12]):
-        poner(cola, rhodes(hz(nv), resto + 0.3) * (0.9 if j < len(voces) else 0.45), golpe + 0.012 * j, 1.0)
+        poner(cola, (pad if tec else rhodes)(hz(nv), resto + 0.3) * (0.9 if j < len(voces) else 0.45), golpe + 0.012 * j, 1.0)
     nb = int((resto + 0.3) * SR)
     tb = np.arange(nb) / SR
     sub = np.sin(2 * np.pi * hz(raiz - 12) * tb) * np.minimum(1, tb / 0.01) * np.exp(-tb / 1.6)
     poner(bajo, sub, golpe, 1.1)
 
     # color: acordes cálidos y oscuros; bajo solo graves; percusión sin graves ni siseo
-    acordes = filtro(acordes, bajo=1600)
+    acordes = filtro(acordes, bajo=2600 if tec else 1600, alto=180 if tec else None)
+    arp = filtro(arp, bajo=4200, alto=300)
     cola = filtro(cola, bajo=3200)
     bajo = filtro(bajo, bajo=220)
     perc = filtro(perc, alto=3000, bajo=10500)
@@ -261,14 +322,15 @@ def componer(segundos=60.0, semilla=None, golpe=None, estilo=None):
 
     # reverb difusa solo para acordes y cierre (la batería queda seca y clara)
     rev = np.zeros(n)
-    fuente = acordes * 0.5 + cola * 0.7 + bat * 0.04
+    fuente = acordes * 0.5 + cola * 0.7 + bat * 0.04 + arp * 0.6
     for d, g in ((0.029, .32), (0.041, .3), (0.059, .27), (0.083, .24), (0.127, .2), (0.191, .15),
                  (0.263, .1), (0.37, .07), (0.52, .05)):
         i = int(d * SR)
         rev[i:] += fuente[:-i] * g
     rev = filtro(rev, bajo=3500, alto=250)
 
-    mezcla = mz["acordes"] * acordes + 0.34 * cola + 0.55 * bajo + 0.85 * bat + mz["perc"] * perc + 0.3 * rev
+    arp *= bombeo
+    mezcla = mz.get("arp", 0) * arp + mz["acordes"] * acordes + 0.34 * cola + 0.55 * bajo + 0.85 * bat + mz["perc"] * perc + 0.3 * rev
     mezcla *= np.clip(t / 0.6, 0, 1) * np.clip((segundos - t) / 0.4, 0, 1)
     mezcla = np.tanh(1.15 * mezcla / (np.max(np.abs(mezcla)) + 1e-9)) / np.tanh(1.15)
     izq = mezcla
