@@ -1,6 +1,6 @@
 {
   "descripcion": "Calendario de contenidos de Ambulancias AHP (Región de Valparaíso, Chile). generar.py lo lee para decidir el tema de cada día. Prioridad: 1) fecha especial del día, 2) fecha próxima (anticipar), 3) tema del mes + foco del día de la semana. Las fechas marcadas 'confirmar' deben revisarse cuando se publique el decreto o la fecha oficial.",
-  "region": "Principalmente Región de Valparaíso (Casablanca, Valparaíso, Viña del Mar y alrededores) y Región Metropolitana; también se coordinan servicios hacia otras regiones a pedido",
+  "region": "Base en la provincia de San Antonio (Litoral Central), Región de Valparaíso; trabajamos en la Región de Valparaíso y la Región Metropolitana; también se coordinan servicios hacia otras regiones a pedido",
   "foco_semanal": {
     "lunes": "Primeros auxilios: un paso a paso claro para empezar la semana aprendiendo algo útil",
     "martes": "Servicios AHP: traslados programados, cobertura de eventos y urgencias, con un beneficio concreto",

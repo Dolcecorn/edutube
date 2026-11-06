@@ -114,9 +114,30 @@ def pedir_contenido(m, tipo, historial, dia=None, hora="", pub=None, zona=False)
 Servicios: {', '.join(m['servicios'])}.
 Contacto: teléfono {m['telefono']}; sitio web {m.get('web') or '(no tiene)'}.
 Tono: {m['tono']}
-Zona: somos de la Quinta Región (Región de Valparaíso) y trabajamos en la Quinta Región y la Región
-Metropolitana; otras regiones solo a pedido.
-{"- En ESTA publicación menciona de forma natural que somos de la Quinta Región y que trabajamos en la Quinta Región y la Región Metropolitana (en el texto o la descripción)." if zona else "- En esta publicación NO menciones la zona ni las regiones en que trabajamos."}
+Zona: somos de la provincia de San Antonio, Litoral Central, Quinta Región (Región de Valparaíso) y trabajamos
+en la Quinta Región y la Región Metropolitana; otras regiones solo a pedido.
+Datos reales de la empresa (confirmados por la empresa; úsalos cuando aporten, sin inventar más):
+- Empresa familiar fundada en 2005: más de 20 años de experiencia. Fundador: Augusto Henríquez Pacheco (de ahí
+  la sigla AHP), junto a su esposa Teresa Olivares Álvarez. Nombres solo de vez en cuando y con naturalidad.
+- Cifras aproximadas: más de 1.700 traslados de pacientes particulares y más de 500 coberturas de eventos
+  (siempre como "más de"; no des otras cifras).
+- Atención 24/7. Salida inmediata según disponibilidad de ambulancias (nunca prometas un tiempo de llegada);
+  también traslados programados y reservas para eventos con anticipación.
+- En cada traslado van un conductor y un TENS (técnico en enfermería). No digas que van médicos ni enfermeros.
+- Ambulancias equipadas con oxígeno, DEA (desfibrilador externo automático), saturómetro, toma presión,
+  silla de ruedas y camilla. No menciones otro equipamiento ni la cantidad de ambulancias.
+- Todos los permisos sanitarios para operar al día (se puede decir "con todos los permisos sanitarios al día").
+- Traslados a hospitales, clínicas y domicilios; viajes a Santiago y a otras regiones; ida y vuelta con espera;
+  traslados frecuentes (diálisis, controles, exámenes). Puede ir un acompañante.
+- Pago en efectivo o transferencia. Entregamos boleta o factura, que sirve para pedir reembolso a la Isapre o
+  al seguro (según el plan de cada persona).
+- Servicios para eventos: cobertura médica de eventos deportivos y masivos, y arriendo de ambulancia para
+  automovilismo, motocross, fútbol, conciertos y festivales. No nombres clientes ni eventos específicos.
+- Reseña real en Google (puedes citarla o resumirla, siempre como reseña de un cliente): "Tuve que trasladar a
+  mi madre desde el Hospital de San Antonio al Hospital Clínico U. de Chile, Santiago, excelente atención por
+  parte del conductor de la ambulancia y la TENS. El mejor precio que encontré (hice varias cotizaciones).
+  Don Augusto Henríquez, conductor muy atento, preocupado y muy empático. Lo recomiendo 100 %".
+{"- En ESTA publicación menciona de forma natural que somos de la provincia de San Antonio, Litoral Central, Quinta Región, y que trabajamos en la Quinta Región y la Región Metropolitana (en el texto o la descripción)." if zona else "- En esta publicación NO menciones la zona ni las regiones en que trabajamos."}
 - Hashtags: además de los temáticos, incluye 3 a 5 locales de la zona, variando entre publicaciones (ej. #Valparaiso
   #VinaDelMar #QuintaRegion #Quilpue #VillaAlemana #SanAntonio #Santiago #RegionMetropolitana).
 
