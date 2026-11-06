@@ -172,22 +172,6 @@
       "zona": true
     },
     {
-      "fecha": "2026-11-06 18:30",
-      "tipo": "reel",
-      "tema": "Teletón e inclusión: acompañamiento durante traslados de rehabilitación",
-      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-trasera.mp4",
-      "fotos": [
-        "noche-urgencias-centro-medico-vertical.jpg",
-        "punto-atencion-ruta-vertical.jpg",
-        "clinica-atardecer-balizas.jpg"
-      ],
-      "clips": [
-        "dron-equipo-toldo-evento.mp4",
-        "noche-autopista-trasera.mp4",
-        "noche-autopista-frente.mp4"
-      ]
-    },
-    {
       "fecha": "2026-11-06 11:30",
       "tipo": "historia",
       "tema": "Teletón e inclusión: cómo ayudar correctamente",
@@ -211,23 +195,6 @@
       "tema": "Teletón 2026: dona por canales oficiales y evita fraudes",
       "foto": "equipo-toldo-dos-ambulancias.jpg",
       "fotos": []
-    },
-    {
-      "fecha": "2026-11-07 18:30",
-      "tipo": "reel",
-      "tema": "Teletón 2026: solidaridad que respeta la autonomía",
-      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
-      "fotos": [
-        "evento-downhill-ninos-2.jpg",
-        "interior-ambulancia-camilla.jpg",
-        "puerto-crucero-vertical.jpg"
-      ],
-      "clips": [
-        "noche-ciudad-frente.mp4",
-        "noche-clinica-las-condes-dron.mp4",
-        "noche-autopista-frente.mp4"
-      ],
-      "zona": true
     },
     {
       "fecha": "2026-11-07 11:30",
