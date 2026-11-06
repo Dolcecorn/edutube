@@ -1,0 +1,57 @@
+name: Preparar voz de referencia
+
+# Toma un audio real (marca/voz/fuente*.mp3), separa la voz de la música con Demucs y guarda
+# marca/voz/referencia.wav (los primeros segundos de habla limpia, que es lo que usa el clonador).
+on:
+  workflow_dispatch:
+    inputs:
+      perfil:
+        description: "Carpeta de instagram/perfiles/ (ej. legalmain)"
+        type: string
+        required: true
+      fuente:
+        description: "Archivo de audio dentro de marca/voz/"
+        type: string
+        required: true
+      inicio:
+        description: "Segundo desde donde tomar la voz"
+        type: string
+        default: "0"
+      duracion:
+        description: "Segundos de voz a guardar"
+        type: string
+        default: "15"
+
+permissions:
+  contents: write
+
+jobs:
+  voz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q demucs soundfile
+      - name: Separar voz
+        env:
+          DIR: instagram/perfiles/${{ inputs.perfil }}/marca/voz
+          FUENTE: ${{ inputs.fuente }}
+          INICIO: ${{ inputs.inicio }}
+          DURACION: ${{ inputs.duracion }}
+        run: |
+          python3 -m demucs --two-stems=vocals -n htdemucs -o /tmp/sep "$DIR/$FUENTE"
+          voz=$(find /tmp/sep -name vocals.wav | head -1)
+          ffmpeg -y -loglevel error -ss "$INICIO" -i "$voz" -t "$DURACION" \
+            -af "highpass=f=70,silenceremove=start_periods=1:start_threshold=-45dB,loudnorm=I=-18:TP=-2" \
+            -ac 1 -ar 44100 "$DIR/referencia.wav"
+          ffprobe -v error -show_entries format=duration -of csv=p=0 "$DIR/referencia.wav"
+      - name: Guardar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add instagram
+          git commit -m "Voz de referencia (${{ inputs.perfil }}) desde ${{ inputs.fuente }}"
+          for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push && break; sleep 5; done
