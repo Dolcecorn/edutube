@@ -8,7 +8,6 @@ Variables: OPENAI_API_KEY (usa OpenAI) o ANTHROPIC_API_KEY (usa Claude); si est�
 Opcional: TIPO=post|reel|carrusel para forzar el tipo; TEMA=... para pedir un tema. Los modelos se eligen en marca.json.
 """
 import argparse
-import random
 import datetime as dt
 import json
 import os
@@ -71,10 +70,14 @@ def cargar_estado():
     return {"ultimo_tipo": None, "historial": []}
 
 
-def siguiente_tipo(estado):
+def siguiente_tipo(estado, m=None, hora=""):
     forzado = os.environ.get("TIPO")
     if forzado:
         return forzado
+    opciones = (m or {}).get("tipos_por_horario", {}).get(hora)
+    if opciones:  # ej. 18:30 siempre reel; 9:00 alterna carrusel y post
+        previos = [h["tipo"] for h in estado["historial"] if h.get("fecha", "").endswith(hora) and h["tipo"] in opciones]
+        return opciones[(opciones.index(previos[-1]) + 1) % len(opciones)] if previos else opciones[0]
     if estado["ultimo_tipo"] not in ORDEN:
         return ORDEN[0]
     return ORDEN[(ORDEN.index(estado["ultimo_tipo"]) + 1) % len(ORDEN)]
@@ -98,7 +101,12 @@ Reglas de contenido:
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
 
 
-def pedir_contenido(m, tipo, historial, dia=None, hora="", pub=None):
+def toca_zona(m, historial):
+    """AHP: 1 de cada 6 piezas menciona la zona (Quinta Región y RM). Pedido de Eleva, 2026-11-06."""
+    return not m.get("rubro") and not any(h.get("zona") for h in historial[-5:])
+
+
+def pedir_contenido(m, tipo, historial, dia=None, hora="", pub=None, zona=False):
     recientes = "\n".join(f"- {h['fecha']}: {h['tema']}" for h in historial[-30:]) or "(ninguna todavía)"
     if m.get("rubro"):
         return _pedir(m, tipo, historial, recientes, sistema_marca(m), dia, hora, pub)
@@ -108,7 +116,9 @@ Contacto: teléfono {m['telefono']}; sitio web {m.get('web') or '(no tiene)'}.
 Tono: {m['tono']}
 Zona: somos de la Quinta Región (Región de Valparaíso) y trabajamos en la Quinta Región y la Región
 Metropolitana; otras regiones solo a pedido.
-{"- En ESTA publicación menciona de forma natural que somos de la Quinta Región y que trabajamos en la Quinta Región y la Región Metropolitana (en el texto o la descripción)." if random.random() < 0.35 else ""}
+{"- En ESTA publicación menciona de forma natural que somos de la Quinta Región y que trabajamos en la Quinta Región y la Región Metropolitana (en el texto o la descripción)." if zona else "- En esta publicación NO menciones la zona ni las regiones en que trabajamos."}
+- Hashtags: además de los temáticos, incluye 3 a 5 locales de la zona, variando entre publicaciones (ej. #Valparaiso
+  #VinaDelMar #QuintaRegion #Quilpue #VillaAlemana #SanAntonio #Santiago #RegionMetropolitana).
 
 Reglas de contenido:
 - La información de salud debe ser correcta, prudente y alineada con recomendaciones oficiales vigentes
@@ -174,6 +184,16 @@ palabra por palabra; frases cortas y fáciles de decir. No dictes números de te
 si (y solo si) hay riesgo vital, nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
 palabra en una frase o entre frases seguidas (por ejemplo, no "con este calor, un golpe de calor"); usa
 sinónimos."""
+    if not generico and tipo == "reel":
+        voz += """
+Gancho: la PRIMERA escena debe detener el scroll en los primeros 2 segundos, con una pregunta o un dato
+sorprendente y concreto de máximo 7 palabras en pantalla (los reels los ven sobre todo personas que aún no nos
+siguen)."""
+    if not generico and tipo == "carrusel":
+        voz += """
+Formato para GUARDAR: el carrusel es una guía práctica que la persona querrá guardar o compartir (checklist,
+pasos, qué llevar, qué preguntar antes de contratar). Cada lámina interior trae un punto concreto. La última
+lámina invita a guardar el carrusel y compartirlo con quien lo necesite, y a contactarnos."""
     pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
 {eleccion}
 {guia_fotos}
@@ -300,7 +320,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
     if reuso:
         c = (Historia if tipo == "historia" else Contenido).model_validate_json(Path(reuso).read_text(encoding="utf-8"))
     else:
-        c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub)
+        zona = toca_zona(m, estado["historial"])
+        c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub, zona)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
         if c.foto not in validas:
@@ -321,7 +342,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
                                foto=c.foto or None, musica=pista)
         (carpeta / "fecha.txt").write_text(f"{dia} {hora}\n")
         (carpeta / "contenido.json").write_text(c.model_dump_json(indent=2), encoding="utf-8")
-        estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema, "foto": c.foto})
+        estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema, "foto": c.foto,
+                                    **({"zona": True} if not reuso and zona else {})})
         estado["historial"] = estado["historial"][-120:]
         return carpeta, c
     for l in c.laminas:
@@ -412,7 +434,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
     estado["historial"].append({"fecha": f"{dia} {hora}", "tipo": tipo, "tema": c.tema,
                                 "foto": c.laminas[0].foto if c.laminas else "",
                                 "fotos": [l.foto for l in c.laminas[1:] if l.foto and not l.foto.endswith(".mp4")],
-                                **({"clips": clips} if clips else {})})
+                                **({"clips": clips} if clips else {}),
+                                **({"zona": True} if not reuso and zona else {})})
     estado["historial"] = estado["historial"][-120:]
     return carpeta, c
 
@@ -454,7 +477,7 @@ def main():
         if tipo is None and fijadas and not os.environ.get("TEMA"):
             pub = fijadas.pop(0)
             tipo = os.environ.get("TIPO") or pub.get("formato")
-        tipo = tipo or siguiente_tipo(estado)
+        tipo = tipo or siguiente_tipo(estado, m, hora)
         carpeta, c = crear(m, estado, tipo, dia, hora, args.salida, pub)
         hechas.append((carpeta, tipo, c.tema, hora))
         ESTADO.write_text(json.dumps(estado, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
