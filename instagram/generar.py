@@ -123,6 +123,9 @@ Reglas de contenido:
 - Si el día tiene una fecha especial, intégrala con naturalidad en el tema; no la pegues como frase suelta al final.
 - En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
+- No afirmes procesos ni coordinaciones que no estén descritos aquí: por ejemplo, NO digas que confirmamos o
+  coordinamos ingresos, camas o recepción con clínicas, hospitales o centros de salud. Habla de lo que hace el
+  equipo de la ambulancia (traslado, personal de salud, equipamiento) o de consejos para la familia.
 - Español neutro de Chile, con tildes correctas. Sin emojis en las láminas; en la descripción, pocos y sobrios."""
     return _pedir(m, tipo, historial, recientes, sistema, dia, hora, pub)
 
