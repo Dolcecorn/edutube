@@ -8,6 +8,7 @@ Variables: OPENAI_API_KEY (usa OpenAI) o ANTHROPIC_API_KEY (usa Claude); si est�
 Opcional: TIPO=post|reel|carrusel para forzar el tipo; TEMA=... para pedir un tema. Los modelos se eligen en marca.json.
 """
 import argparse
+import random
 import datetime as dt
 import json
 import os
@@ -105,6 +106,9 @@ def pedir_contenido(m, tipo, historial, dia=None, hora="", pub=None):
 Servicios: {', '.join(m['servicios'])}.
 Contacto: teléfono {m['telefono']}; sitio web {m.get('web') or '(no tiene)'}.
 Tono: {m['tono']}
+Zona: somos de la Quinta Región (Región de Valparaíso) y trabajamos en la Quinta Región y la Región
+Metropolitana; otras regiones solo a pedido.
+{"- En ESTA publicación menciona de forma natural que somos de la Quinta Región y que trabajamos en la Quinta Región y la Región Metropolitana (en el texto o la descripción)." if random.random() < 0.35 else ""}
 
 Reglas de contenido:
 - La información de salud debe ser correcta, prudente y alineada con recomendaciones oficiales vigentes
