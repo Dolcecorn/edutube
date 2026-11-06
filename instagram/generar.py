@@ -156,6 +156,9 @@ Reglas de contenido:
   "cuidamos a tu familiar"). Cada pieza aporta algo que la persona no sabía o no había pensado: un dato práctico,
   un detalle de cómo se hace, una situación concreta o qué preguntar antes de contratar.
 - Si el día tiene una fecha especial, intégrala con naturalidad en el tema; no la pegues como frase suelta al final.
+- Llamados propios de una fecha (ej. "dona a la Teletón"): solo si la pieza COMPLETA trata de esa fecha (ej. "Planifica
+  tu traslado a los puntos de donación"). Nunca los mezcles con otro tema (ej. consejos de cómo ayudar o mover a
+  una persona y al final "dona"). No des consejos de cómo mover, levantar o empujar a una persona.
 - En la descripción, cuando invites a contactar o a conocer los servicios, menciona el sitio web y el teléfono.
 - No inventes datos de la empresa (precios, cifras, nombres, convenios) que no estén aquí.
 - No afirmes procesos ni coordinaciones que no estén descritos aquí: por ejemplo, NO digas que confirmamos o
