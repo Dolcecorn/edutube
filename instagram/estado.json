@@ -204,6 +204,48 @@
       "tipo": "historia",
       "tema": "Cobertura para actividades solidarias por Teletón 2026",
       "foto": "evento-ciclistas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-07 09:00",
+      "tipo": "post",
+      "tema": "Teletón 2026: dona por canales oficiales y evita fraudes",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-07 18:30",
+      "tipo": "reel",
+      "tema": "Teletón 2026: solidaridad que respeta la autonomía",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "fotos": [
+        "evento-downhill-ninos-2.jpg",
+        "interior-ambulancia-camilla.jpg",
+        "puerto-crucero-vertical.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-autopista-frente.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-07 11:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: espacios accesibles",
+      "foto": "punto-atencion-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-07 15:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: traslados inclusivos a rehabilitación",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-07 20:30",
+      "tipo": "historia",
+      "tema": "Teletón 2026: apoyar la rehabilitación y la inclusión también es construir comunidad",
+      "foto": "evento-downhill-ninos-1.jpg"
     }
   ]
 }
