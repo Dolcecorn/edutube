@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 import perfil
 
@@ -22,6 +22,49 @@ REEL = (1080, 1920)   # 9:16
 
 FOTOS_DIR = MARCA_DIR / "fotos"
 VIDEOS_DIR = MARCA_DIR / "videos"
+FONDOS_DIR = MARCA_DIR / "fondos"
+
+
+def fondos_especiales(dia):
+    """Fondos de una fecha especial para ese día (marca.json "fondos_especiales": [{desde, hasta, archivos}]).
+    Son artes cerrados (ej. logo de la Teletón) sobre un color liso: se recompone el arte y el contenido va
+    en el espacio libre."""
+    for f in marca().get("fondos_especiales", []):
+        if f["desde"] <= dia <= f["hasta"]:
+            return [FONDOS_DIR / a for a in f["archivos"] if (FONDOS_DIR / a).exists()]
+    return []
+
+
+def _arte(ruta):
+    """(arte recortado, máscara con borde difuminado, color de fondo) de un fondo especial."""
+    im = Image.open(ruta).convert("RGB")
+    w, h = im.size
+    bg = im.getpixel((5, h // 2))
+    zona = im.crop((0, 0, w, int(h * 0.9)))   # el 10 % inferior es adorno (ej. corazones): se descarta
+    dif = ImageChops.difference(zona, Image.new("RGB", zona.size, bg)).convert("L").point(lambda v: 255 if v > 40 else 0)
+    x0, y0, x1, y1 = dif.getbbox() or (0, 0, w, h)
+    pad = 24
+    arte = im.crop((max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)))
+    mascara = Image.new("L", arte.size, 0)
+    ImageDraw.Draw(mascara).rectangle([pad // 2, pad // 2, arte.width - pad // 2, arte.height - pad // 2], fill=255)
+    return arte, mascara.filter(ImageFilter.GaussianBlur(pad / 3)), bg
+
+
+def es_oscuro(ruta):
+    return sum(_arte(ruta)[2]) < 450
+
+
+def pegar_arte(img, ruta, y0, alto_max, ancho_max):
+    """Pega el arte del fondo especial centrado desde y0, dentro de ancho_max x alto_max. Devuelve y final."""
+    arte, mascara, _ = _arte(ruta)
+    k = min(ancho_max / arte.width, alto_max / arte.height)
+    tam = (max(1, int(arte.width * k)), max(1, int(arte.height * k)))
+    img.paste(arte.resize(tam, Image.LANCZOS), ((img.width - tam[0]) // 2, int(y0)), mascara.resize(tam, Image.LANCZOS))
+    return int(y0) + tam[1]
+
+
+def lienzo_especial(ruta, W, H):
+    return Image.new("RGB", (W, H), _arte(ruta)[2])
 
 
 def fotos():
@@ -111,7 +154,7 @@ def _logo(blanco, ancho_max, alto_max):
     return lg
 
 
-def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada=False, foto=None):
+def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada=False, foto=None, especial=None):
     """Una lámina. Normal: fondo blanco, logo arriba, título rojo, detalle cyan, pie rojo con teléfono.
     Portada: fondo rojo, logo y textos en blanco, detalle cyan.
     Con foto (nombre de archivo en marca/fotos/): en portadas, posts sueltos y reels la foto va de fondo
@@ -126,7 +169,12 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     modo = None
     if ruta_foto:
         modo = "fondo" if (portada or reel or not numero) else "franja"
-    if modo == "fondo":
+    if especial and (portada or reel or not numero):  # fondo de fecha especial: arte arriba, contenido abajo
+        modo = "especial"
+        img = lienzo_especial(especial, W, H)
+        portada = es_oscuro(especial)       # sobre rojo, textos y logo en blanco
+        fondo = img.getpixel((0, 0))
+    elif modo == "fondo":
         img = _cubrir(ruta_foto, W, H)
         img = _degradado(img, 0, int(H * 0.22), 150, 0)              # arriba, para el logo
         if m.get("degradado_continuo"):  # fondos lisos (ilustraciones): sin borde visible entre degradados
@@ -162,8 +210,8 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     # Pie: franja con teléfono y cuenta
     alto_pie = 110 if not reel else 130
     y_pie = H - alto_pie - (300 if reel else 0)
-    color_pie = c["claro"] if portada and modo != "fondo" else c["principal"]
-    texto_pie_color = c["principal"] if portada and modo != "fondo" else c["claro"]
+    color_pie = c["claro"] if portada and modo not in ("fondo",) else c["principal"]
+    texto_pie_color = c["principal"] if portada and modo not in ("fondo",) else c["claro"]
     d.rectangle([0, y_pie, W, y_pie + alto_pie], fill=color_pie)
     tam_pie = 38 if not reel else 44
     f_pie = _fuente(True, tam_pie)
@@ -188,10 +236,14 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
     if modo == "fondo":  # el texto va en la mitad inferior, sobre la parte oscurecida
         arriba = max(arriba, int(H * 0.36))
         disponible = y_pie - arriba - 60
+    tope_arte = arriba - 40
+    if modo == "especial":  # el arte ocupa al menos un tercio; el texto, lo que queda abajo
+        arriba = max(arriba, tope_arte + int(H * (0.30 if reel else 0.34)))
+        disponible = y_pie - arriba - 60
     ancho = W - 2 * margen
     color_tit = c["claro"] if portada else c["principal"]
     color_txt = c["claro"] if portada else c["oscuro"]
-    parte_titulo = 0.8 if not texto else (0.5 if modo == "fondo" else (0.8 if portada else 0.45))
+    parte_titulo = 0.8 if not texto else (0.5 if modo in ("fondo", "especial") else (0.8 if portada else 0.45))
     f_t, l_t, tam_t, alto_t = _ajustar(d, titulo, True, int((104 if portada else 84) * esc), 48, ancho,
                                        disponible * parte_titulo)
     alto_x, l_x, f_x, tam_x = 0, [], None, 0
@@ -199,9 +251,12 @@ def lamina(titulo, texto, destino, tamano=POST, numero=None, total=None, portada
         f_x, l_x, tam_x, alto_x = _ajustar(d, texto, False, int(56 * esc), 36, ancho,
                                            disponible - alto_t - 120, 1.4)
     alto_total = alto_t + 85 + alto_x
-    centrar = (portada or not texto or reel) and modo != "fondo"
-    if modo == "fondo":  # pegado abajo, justo sobre el pie
+    centrar = (portada or not texto or reel) and modo not in ("fondo", "especial")
+    if modo in ("fondo", "especial"):  # pegado abajo, justo sobre el pie
         y = arriba + max(0, disponible - alto_total)
+    if modo == "especial":
+        pegar_arte(img, especial, tope_arte, y - 50 - tope_arte, W - 2 * margen)
+        d = ImageDraw.Draw(img)
     else:
         y = arriba + (max(0, (disponible - alto_total) // 2) if centrar else 0)
     for linea in l_t:
@@ -254,7 +309,7 @@ def reel(escenas, destino):
     return destino
 
 
-def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=False):
+def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=False, especial=None):
     """Historia 9:16: foto de fondo oscurecida, etiqueta cyan, gancho grande, texto y tarjeta blanca con
     el llamado a la acción, teléfono y sitio web. Deja libres las zonas de la interfaz de Instagram
     (~250 px arriba y ~300 px abajo).
@@ -265,7 +320,11 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
     margen = 80
     ancho = W - 2 * margen
     ruta = FOTOS_DIR / foto if foto and (FOTOS_DIR / foto).exists() else None
-    if ruta:
+    oscuro = True
+    if especial:  # fecha especial: arte arriba (se pega al final, en el espacio que quede) y color liso
+        fondo = lienzo_especial(especial, W, H)
+        oscuro = es_oscuro(especial)
+    elif ruta:
         fondo = _cubrir(ruta, W, H)
         fondo = _degradado(fondo, 0, H, 70, 70)            # oscurece parejo
         fondo = _degradado(fondo, 0, 520, 140, 0)          # arriba, para el logo
@@ -280,7 +339,11 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
         elementos.append((nombre, im))
         return ImageDraw.Draw(im), im
 
-    lg = _logo(True, 470, 150)
+    lg = _logo(oscuro, 470, 150) if not especial else None   # en fecha especial, el logo va en la tarjeta
+    if especial:
+        etiqueta = ""                                   # el arte de la fecha ya hace de etiqueta
+    col_gan = c["claro"] if oscuro else c["principal"]
+    col_txt = c["claro"] if oscuro else c["oscuro"]
     if lg:
         _, im = capa("logo")
         im.paste(lg, (margen, 250), lg)
@@ -294,7 +357,8 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
     alto_card = 50 + len(lin_cta) * 62 + 20 + 80 + 56 + 45
     y_card = H - 320 - alto_card
     d, _ = capa("tarjeta")
-    d.rounded_rectangle([margen, y_card, W - margen, y_card + alto_card], radius=36, fill=c["claro"])
+    d.rounded_rectangle([margen, y_card, W - margen, y_card + alto_card], radius=36,
+                        fill=c["claro"] if oscuro else (242, 242, 242))
     d.rectangle([margen, y_card + 36, margen + 14, y_card + alto_card - 36], fill=c["acento"])
     y = y_card + 50
     for ln in lin_cta:
@@ -308,14 +372,22 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
     d.text((margen + 50, y), tel, font=f_tel, fill=c["principal"])
     y += 80
     d.text((margen + 50, y), web, font=f_web, fill=c["acento"])
+    if especial:
+        lgc = _logo(False, 300, 74)
+        if lgc:
+            _, im = capa("tarjeta")
+            im.paste(lgc, (W - margen - 40 - lgc.width, y_card + alto_card - 40 - lgc.height), lgc)
 
     # Gancho y texto (encima de la tarjeta)
-    f_txt, lin_txt, tam_c, alto_txt = _ajustar(medir, texto, False, 50, 38, ancho, 330, 1.35)
+    f_txt, lin_txt, tam_c, alto_txt = _ajustar(medir, texto, False, 50, 38, ancho, 330 if not especial else 270, 1.35)
     f_tag = _fuente(True, 36)
     y_txt = y_card - 60 - alto_txt
     y_bar = y_txt - 40
     tope = 250 + (lg.height if lg else 60) + 60 + 92   # bajo el logo y la etiqueta
-    f_gan, lin_gan, tam_g, alto_gan = _ajustar(medir, gancho, True, 104, 56, ancho, max(150, y_bar - 26 - tope), 1.12)
+    if especial:  # se reserva espacio para el arte de la fecha
+        tope = max(250 + 480, y_bar - 26 - 230)
+    f_gan, lin_gan, tam_g, alto_gan = _ajustar(medir, gancho, True, 104 if not especial else 88, 56, ancho,
+                                               max(150, y_bar - 26 - tope), 1.12)
     y_gan = y_bar - 26 - alto_gan
     y_tag = y_gan - 92
     if etiqueta:
@@ -326,16 +398,20 @@ def historia(etiqueta, gancho, texto, llamado, destino=None, foto=None, capas=Fa
     y = y_gan
     for ln in lin_gan:
         d, _ = capa("gancho")
-        d.text((margen + 3, y + 3), ln, font=f_gan, fill=(0, 0, 0))
-        d.text((margen, y), ln, font=f_gan, fill=c["claro"])
+        if oscuro:
+            d.text((margen + 3, y + 3), ln, font=f_gan, fill=(0, 0, 0))
+        d.text((margen, y), ln, font=f_gan, fill=col_gan)
         y += int(tam_g * 1.12)
     d, _ = capa("barra")
     d.rectangle([margen, y_bar, margen + 120, y_bar + 10], fill=c["acento"])
     y = y_txt
     for ln in lin_txt:
         d, _ = capa("texto")
-        d.text((margen, y), ln, font=f_txt, fill=c["claro"])
+        d.text((margen, y), ln, font=f_txt, fill=col_txt)
         y += int(tam_c * 1.35)
+    if especial:
+        y_arte = 240
+        pegar_arte(fondo, especial, y_arte, (y_tag if etiqueta else y_gan) - 40 - y_arte, ancho)
 
     if capas:
         res = []
