@@ -219,6 +219,22 @@
       "tipo": "historia",
       "tema": "Qué incluye cada traslado con Ambulancias AHP",
       "foto": "evento-downhill-ninos-1.jpg"
+    },
+    {
+      "fecha": "2026-11-06 18:30",
+      "tipo": "reel",
+      "tema": "Teletón e inclusión: acompañamiento durante traslados de rehabilitación",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "punto-atencion-ruta-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
     }
   ]
 }
