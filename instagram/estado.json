@@ -252,6 +252,50 @@
         "noche-autopista-trasera.mp4"
       ],
       "zona": true
+    },
+    {
+      "fecha": "2026-11-08 09:00",
+      "tipo": "carrusel",
+      "tema": "Caída de un adulto mayor en casa: checklist para actuar",
+      "foto": "evento-downhill-ninos-2.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-08 18:30",
+      "tipo": "reel",
+      "tema": "Piscina segura: supervisión activa y respuesta ante una emergencia",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "evento-downhill-ninos-3.jpg",
+        "noche-clinica-las-condes-vertical.jpg",
+        "urgencias-noche-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-08 11:30",
+      "tipo": "historia",
+      "tema": "Cobertura médica para actividades familiares",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-08 15:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un atragantamiento infantil",
+      "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-08 20:30",
+      "tipo": "historia",
+      "tema": "Seguridad vial familiar: silla infantil adecuada para cada viaje",
+      "foto": "clinica-dia-vertical.jpg"
     }
   ]
 }
