@@ -9,6 +9,8 @@ final class WebViewController: UIViewController {
         static let url = "url"
         static let smooth = "smooth"
         static let background = "background"
+        static let freeTVStart = "freeTVStart"
+        static let freeTVHint = "freeTVHint"
     }
 
     private let prefs = UserDefaults.standard
@@ -20,6 +22,9 @@ final class WebViewController: UIViewController {
     private var bufferingWork: DispatchWorkItem?
     private let castButton = UIButton(type: .system)
     private var urlObserver: NSKeyValueObservation?
+    /// false mientras se ve un servicio gratis con publicidad (Pluto, Plex, canales chilenos…).
+    private var blockingOn = true
+    private var freeTVStart: Bool { prefs.bool(forKey: Pref.freeTVStart) }
 
     private var homeURL: String { prefs.string(forKey: Pref.url) ?? Self.defaultURL }
     private var smooth: Bool { prefs.bool(forKey: Pref.smooth) }
@@ -112,7 +117,7 @@ final class WebViewController: UIViewController {
         // Las reglas de bloqueo se agregan a medida que se compilan; la primera (anuncios de video) tarda poco.
         AdBlocker.shared.onRuleList { [weak self] list in
             guard let self = self else { return }
-            ucc.add(list)
+            if self.blockingOn { ucc.add(list) }
             self.loadHomeIfNeeded()
         }
     }
@@ -132,6 +137,12 @@ final class WebViewController: UIViewController {
     }
 
     private var loadedOnce = false
+    /// Se abrió desde el acceso directo "TV gratis" del ícono, antes de terminar la animación.
+    private var pendingFreeTV = false
+
+    func openFreeTVFromShortcut() {
+        if splashDone { showFreeTV() } else { pendingFreeTV = true }
+    }
 
     private func loadHomeIfNeeded() {
         guard !loadedOnce else { return }
@@ -141,7 +152,41 @@ final class WebViewController: UIViewController {
 
     private func loadHome() {
         guard let url = URL(string: homeURL) else { return }
+        setBlocking(!FreeTV.isAdSupported(url.host))
         webView.load(URLRequest(url: url))
+    }
+
+    /// Activa o quita el bloqueo de anuncios (se quita solo en los servicios gratis que viven de la publicidad).
+    private func setBlocking(_ on: Bool) {
+        guard on != blockingOn else { return }
+        blockingOn = on
+        let ucc = webView.configuration.userContentController
+        ucc.removeAllContentRuleLists()
+        if on { AdBlocker.shared.ruleLists.forEach { ucc.add($0) } }
+    }
+
+    // MARK: - TV gratis
+
+    func showFreeTV() {
+        if presentedViewController != nil { return }
+        let list = FreeTVViewController()
+        list.onOpen = { [weak self] item in self?.open(item) }
+        list.onMirror = { [weak self] in self?.startMirror() }
+        let nav = UINavigationController(rootViewController: list)
+        nav.navigationBar.prefersLargeTitles = true
+        nav.overrideUserInterfaceStyle = .dark
+        present(nav, animated: true)
+    }
+
+    private func open(_ item: FreeTV.Item) {
+        guard let url = URL(string: item.url) else { return }
+        loadedOnce = true
+        setBlocking(!FreeTV.isAdSupported(url.host))
+        webView.load(URLRequest(url: url))
+        Chromecast.shared.startDiscovery()
+        if item.kind == .web {
+            toast("Dale play y toca el botón rojo para la TV")
+        }
     }
 
     @objc private func pullToRefresh(_ sender: UIRefreshControl) {
@@ -195,6 +240,7 @@ final class WebViewController: UIViewController {
             mediaTime = 0
         }
         castButton.isHidden = currentVideoId() == nil && pageMedia.isEmpty && XVideo.postId(webView.url) == nil
+            && !FreeTV.isAdSupported(webView.url?.host)
         // Empieza a buscar Chromecast apenas se abre un video, para tenerlos listos al tocar el botón.
         if !castButton.isHidden { Chromecast.shared.startDiscovery() }
     }
@@ -333,7 +379,15 @@ final class WebViewController: UIViewController {
 
     private func pickDevice(for preferred: String?) {
         guard let url = preferred ?? bestMedia() else {
-            return toast("Dale play al video de la página y vuelve a tocar el botón")
+            // Sin video a la vista: se ofrece el espejo, que sirve con cualquier página.
+            let alert = UIAlertController(
+                title: "Aún no encuentro el video",
+                message: "Dale play al video de la página y vuelve a tocar el botón rojo. Si la página no deja enviar "
+                    + "su video, usa el espejo de pantalla: muestra todo el iPhone en la TV.",
+                preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Espejo de pantalla", style: .default) { _ in self.startMirror() })
+            alert.addAction(UIAlertAction(title: "OK", style: .cancel))
+            return present(alert, animated: true)
         }
         Chromecast.shared.startDiscovery()
         let show = { [weak self] in
@@ -562,6 +616,9 @@ final class WebViewController: UIViewController {
         guard presentedViewController == nil else { return }
         let title = "edutube · \(codecInfo) · \(AdBlocker.shared.blockedCount) dominios bloqueados"
         let sheet = UIAlertController(title: title, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "📺 TV gratis: canales, deportes, películas", style: .default) { _ in
+            self.showFreeTV()
+        })
         sheet.addAction(UIAlertAction(title: "Ir a la página fija", style: .default) { _ in self.loadHome() })
         sheet.addAction(UIAlertAction(title: "Recargar", style: .default) { _ in self.webView.reload() })
         sheet.addAction(UIAlertAction(title: "Ir a una página…", style: .default) { _ in self.askGo() })
@@ -570,6 +627,10 @@ final class WebViewController: UIViewController {
         sheet.addAction(UIAlertAction(title: "Fijar la página actual", style: .default) { _ in
             self.prefs.set(self.webView.url?.absoluteString, forKey: Pref.url)
             self.toast("Página fijada")
+        })
+        sheet.addAction(UIAlertAction(title: "Abrir TV gratis al iniciar: \(freeTVStart ? "Sí" : "No")", style: .default) { _ in
+            self.prefs.set(!self.freeTVStart, forKey: Pref.freeTVStart)
+            self.toast(self.freeTVStart ? "edutube abrirá TV gratis al iniciar" : "edutube abrirá YouTube al iniciar")
         })
         sheet.addAction(UIAlertAction(title: "Seguir sonando en segundo plano: \(backgroundPlay ? "Sí" : "No")",
                                       style: .default) { _ in
@@ -688,7 +749,11 @@ extension WebViewController: WKNavigationDelegate, WKUIDelegate {
         // Bloquea redirecciones a apps (youtube://, itms-apps://, intent:) y a dominios de anuncios.
         if scheme == "about" || scheme == "blob" || scheme == "data" { return decisionHandler(.allow) }
         if scheme != "http" && scheme != "https" { return decisionHandler(.cancel) }
-        if AdBlocker.shared.isBlocked(url.host) { return decisionHandler(.cancel) }
+        // En los servicios gratis con publicidad no se bloquea nada (sus reproductores dependen de los anuncios).
+        if action.targetFrame?.isMainFrame == true, scheme == "http" || scheme == "https" {
+            setBlocking(!FreeTV.isAdSupported(url.host))
+        }
+        if blockingOn && AdBlocker.shared.isBlocked(url.host) { return decisionHandler(.cancel) }
         // "allow + 2" = permitir sin abrir la app oficial de YouTube por enlace universal (valor interno de WebKit).
         decisionHandler(WKNavigationActionPolicy(rawValue: WKNavigationActionPolicy.allow.rawValue + 2) ?? .allow)
     }
@@ -698,7 +763,10 @@ extension WebViewController: WKNavigationDelegate, WKUIDelegate {
             splashDone = true
             becomeFirstResponder()
             // Deja que YouTube dibuje su pantalla antes de quitar la animación de inicio.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in self?.loading.hide() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
+                self?.loading.hide()
+                self?.afterSplash()
+            }
         }
     }
 
@@ -714,6 +782,18 @@ extension WebViewController: WKNavigationDelegate, WKUIDelegate {
         if !splashDone {
             splashDone = true
             loading.hide()
+            afterSplash()
+        }
+    }
+
+    /// Abre TV gratis si se pidió (ajuste o acceso directo del ícono) y avisa una vez dónde está.
+    private func afterSplash() {
+        if freeTVStart || pendingFreeTV {
+            pendingFreeTV = false
+            showFreeTV()
+        } else if !prefs.bool(forKey: Pref.freeTVHint) {
+            prefs.set(true, forKey: Pref.freeTVHint)
+            toast("Nuevo: TV gratis. Mantén con dos dedos para abrir el menú")
         }
     }
 

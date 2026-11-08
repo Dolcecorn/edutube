@@ -20,13 +20,25 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let scene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: scene)
         window.rootViewController = WebViewController()
         window.overrideUserInterfaceStyle = .dark
         window.makeKeyAndVisible()
         self.window = window
+        if connectionOptions.shortcutItem?.type == Self.freeTVShortcut { root?.openFreeTVFromShortcut() }
+    }
+
+    static let freeTVShortcut = "cl.eleva.tvweb.tvgratis"
+    private var root: WebViewController? { window?.rootViewController as? WebViewController }
+
+    /// Mantener el ícono de edutube → "TV gratis".
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        let ok = shortcutItem.type == Self.freeTVShortcut
+        if ok { root?.openFreeTVFromShortcut() }
+        completionHandler(ok)
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {

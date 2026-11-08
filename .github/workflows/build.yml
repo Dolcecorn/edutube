@@ -4,6 +4,7 @@ name: Compilar edutube.ipa
 on:
   push:
     branches: [main]
+  # También se puede compilar a mano desde otra rama: queda como versión de prueba, sin tocar la última.
     paths-ignore: ['instagram/**', '.github/workflows/instagram*.yml']
   workflow_dispatch:
 
@@ -41,7 +42,8 @@ jobs:
       - name: Publicar en "Releases" (descarga directa)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ultima
-          name: edutube para iPhone (última versión)
+          tag_name: ${{ github.ref_name == 'main' && 'ultima' || 'prueba' }}
+          name: ${{ github.ref_name == 'main' && 'edutube para iPhone (última versión)' || 'edutube para iPhone (versión de prueba)' }}
           files: edutube.ipa
-          make_latest: true
+          prerelease: ${{ github.ref_name != 'main' }}
+          make_latest: ${{ github.ref_name == 'main' }}
