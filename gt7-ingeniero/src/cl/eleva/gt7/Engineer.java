@@ -18,6 +18,9 @@ final class Engineer {
     private final Voice voice;
     boolean midLapCalls = true;
     boolean tyreCalls = true;
+    boolean coachCalls = true;
+    final Coach coach = new Coach();
+    private float tipSaidAt = -1000;
 
     // ---- estado visible en el dashboard ----
     float lapTimeS;            // vuelta actual (medida por la app)
@@ -51,11 +54,6 @@ final class Engineer {
     private boolean pendingObserved;
     private float pendingFuelUsed;
 
-    // trazas (distancia, tiempo) de la vuelta actual y de la mejor
-    private float[] curD = new float[8192], curT = new float[8192];
-    private int curN;
-    private float[] refD, refT;
-    private int refN;
 
     private final float[] hotSince = new float[4];
     private boolean flagPending;
@@ -68,7 +66,7 @@ final class Engineer {
     }
 
     void reset() {
-        prevLap = -1; prevPid = -1; lapObserved = false; lapDist = 0; curN = 0; refN = 0; refD = refT = null;
+        prevLap = -1; prevPid = -1; lapObserved = false; lapDist = 0; coach.ref = null; coach.nc = 0; coach.startLap();
         fuelHistN = 0; fuelPerLapPct = 0; fuelLapsLeft = -1; lapsToGo = -1; myBestMs = -1; deltaValid = false;
         lapTimeS = 0; pending = false; raceFinished = false; prevFuel = -1; fuelCriticalLap = -1; midLapSaid = false;
         for (int i = 0; i < 4; i++) hotSince[i] = -1;
@@ -105,8 +103,9 @@ final class Engineer {
             clock += dt;
             lapTimeS += dt;
             lapDist += t.speedMs * dt;
-            addSample(lapDist, lapTimeS);
+            String tip = coach.sample(t, lapTimeS, lapDist);
             updateDelta();
+            if (tip != null && coachCalls && !pending && clock - tipSaidAt > 3f) { tipSaidAt = clock; say(tip, false); }
             trackFuel(t);
             checkTyres(t);
             checkWater(t);
@@ -117,7 +116,8 @@ final class Engineer {
 
     private void startLap(Telemetry t, boolean sawTransition) {
         lapObserved = sawTransition;
-        lapTimeS = 0; lapDist = 0; curN = 0; midLapSaid = false;
+        lapTimeS = 0; lapDist = 0; midLapSaid = false;
+        coach.startLap();
         lapStartFuel = t.fuelPct(); lapFuelValid = t.hasFuel();
         lapStartLastLapMs = pending ? lapStartLastLapMs : t.lastLapMs;
         if (t.totalLaps > 0) {
@@ -139,20 +139,10 @@ final class Engineer {
         pendingMeasuredS = lapTimeS;
         pendingObserved = lapObserved;
         pendingFuelUsed = lapFuelValid ? lapStartFuel - t.fuelPct() : -1;
-        // la traza de esta vuelta queda guardada en cur*, la copiamos si resulta ser la mejor
-        lastTraceD = copy(curD, curN); lastTraceT = copy(curT, curN); lastTraceN = curN;
         // lapStartLastLapMs conserva el valor de cuando empezó la vuelta: si el juego ya lo
         // cambió en este mismo paquete, resolvePending lo detecta de inmediato.
     }
 
-    private float[] lastTraceD, lastTraceT;
-    private int lastTraceN;
-
-    private static float[] copy(float[] a, int n) {
-        float[] r = new float[Math.max(n, 1)];
-        System.arraycopy(a, 0, r, 0, n);
-        return r;
-    }
 
     private void resolvePending(Telemetry t) {
         if (t.lastLapMs > 0 && t.lastLapMs != lapStartLastLapMs) announce(t, t.lastLapMs);
@@ -180,10 +170,11 @@ final class Engineer {
             if (myBestMs < 0 || ms < myBestMs) {
                 boolean first = myBestMs < 0;
                 myBestMs = ms;
-                if (pendingObserved && lastTraceN > 10) { refD = lastTraceD; refT = lastTraceT; refN = lastTraceN; }
+                if (pendingObserved) coach.adoptLast();
                 if (!first) sb.append("¡Mejor vuelta! ");
             } else {
-                sb.append(speakDelta((ms - myBestMs) / 1000f)).append(" más lento que tu mejor. ");
+                String dl = speakDelta((ms - myBestMs) / 1000f);
+                sb.append(Character.toUpperCase(dl.charAt(0))).append(dl.substring(1)).append(" más lento que tu mejor. ");
             }
         }
         if (flagPending) { flagPending = false; sb.append(FLAG); }
@@ -236,28 +227,19 @@ final class Engineer {
 
     /** Fracción recorrida de la vuelta según la vuelta de referencia (0 si no hay referencia). */
     float lapFraction() {
-        if (refN < 2 || refD[refN - 1] <= 0) return 0;
-        return Math.min(1f, lapDist / refD[refN - 1]);
-    }
-
-    private void addSample(float d, float tm) {
-        if (curN == curD.length) {
-            float[] nd = new float[curN * 2], nt = new float[curN * 2];
-            System.arraycopy(curD, 0, nd, 0, curN); System.arraycopy(curT, 0, nt, 0, curN);
-            curD = nd; curT = nt;
-        }
-        curD[curN] = d; curT[curN] = tm; curN++;
+        float len = coach.refLength();
+        if (len <= 0) return 0;
+        if (coach.mapIdx >= 0) return Math.min(1f, coach.ref.d[coach.mapIdx] / len);
+        return Math.min(1f, lapDist / len);
     }
 
     private void updateDelta() {
-        if (refN < 10 || !lapObserved || lapDist > refD[refN - 1] || lapTimeS < 1f) { deltaValid = false; return; }
-        int lo = 0, hi = refN - 1;
-        while (hi - lo > 1) { int m = (lo + hi) >>> 1; if (refD[m] < lapDist) lo = m; else hi = m; }
-        float d0 = refD[lo], d1 = refD[hi];
-        float tRef = d1 > d0 ? refT[lo] + (refT[hi] - refT[lo]) * (lapDist - d0) / (d1 - d0) : refT[lo];
-        deltaS = lapTimeS - tRef;
+        Coach.Trace r = coach.ref;
+        int i = coach.mapIdx;
+        if (r == null || i <= 0 || i >= r.n - 1 || !lapObserved || lapTimeS < 1f) { deltaValid = false; return; }
+        deltaS = lapTimeS - r.t[i];
         deltaValid = true;
-        if (midLapCalls && !midLapSaid && lapDist > 0.5f * refD[refN - 1]) {
+        if (midLapCalls && !midLapSaid && lapFraction() > 0.5f) {
             midLapSaid = true;
             if (Math.abs(deltaS) < 0.05f) say("Mitad de vuelta, igual que tu mejor.", false);
             else say("Mitad de vuelta, " + speakDelta(Math.abs(deltaS)) + (deltaS > 0 ? " abajo." : " arriba, sigue así."), false);

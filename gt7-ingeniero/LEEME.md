@@ -15,6 +15,7 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
   (o cuánto ahorrar por vuelta / que planifiques parada).
 - A mitad de vuelta: cuántas décimas vas arriba o abajo.
 - Combustible crítico, neumáticos muy calientes, motor caliente, carga de combustible en boxes.
+- Consejos por curva: compara cada frenada con tu mejor vuelta (punto de frenada, velocidad en el vértice, cuándo aceleras a fondo y marcha de salida). Las curvas se numeran desde la meta por zonas de frenada.
 - "Quedan dos vueltas", "Última vuelta" y bandera a cuadros.
 - Tocando la barra de abajo te dice el estado completo cuando quieras.
 
@@ -35,7 +36,7 @@ instalar datos de voz en español.
 
 ## Compilar
 `./build.sh` (Ubuntu, sin Gradle). Pruebas en el computador:
-`javac -d /tmp/t src/cl/eleva/gt7/{Salsa20,Telemetry,Engineer,Simulator,Painter,Dashboard}.java test/cl/eleva/gt7/*.java && java -cp /tmp/t cl.eleva.gt7.SimTest`
+`javac -d /tmp/t src/cl/eleva/gt7/{Salsa20,Telemetry,Engineer,Coach,Simulator,Painter,Dashboard}.java test/cl/eleva/gt7/*.java && java -cp /tmp/t cl.eleva.gt7.SimTest`
 simula una carrera de 10 vueltas e imprime lo que diría el ingeniero; `Preview <carpeta>` dibuja el dashboard en PNG.
 
 Formato de la telemetría: paquete "A" de 296 bytes cifrado con Salsa20, documentado por la comunidad

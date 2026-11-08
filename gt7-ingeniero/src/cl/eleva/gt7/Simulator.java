@@ -8,7 +8,7 @@ final class Simulator {
     private final Random rnd = new Random(7);
     private final Telemetry t = new Telemetry();
     private int pid = 1000;
-    private float dist, lapTime, pace = 1f, preRace = 3f;
+    private float dist, lapTime, pace = 1f, preRace = 3f, shift;
     private int best = -1;
     private float heat;
 
@@ -21,7 +21,7 @@ final class Simulator {
     }
 
     private float target(float s) {
-        double a = 2 * Math.PI * s / LAP_M;
+        double a = 2 * Math.PI * (s + shift) / LAP_M;
         return (float) (24 + 46 * (0.5 + 0.5 * Math.sin(a * 5) * Math.cos(a * 2))) * pace;
     }
 
@@ -40,7 +40,7 @@ final class Simulator {
             float acc = (v - t.speedMs) / dt;
             t.speedMs += Math.max(-25f, Math.min(9f, acc)) * dt;
             t.throttle = acc > -1 ? (int) Math.min(255, 140 + acc * 15) : 0;
-            t.brake = acc < -3 ? (int) Math.min(255, -acc * 10) : 0;
+            t.brake = acc < -3 ? (int) Math.min(255, 60 - acc * 8) : 0;
             dist += t.speedMs * dt; lapTime += dt;
             float kmh = t.kmh();
             t.gear = Math.max(1, Math.min(6, 1 + (int) (kmh / 45f)));
@@ -63,6 +63,7 @@ final class Simulator {
                 t.lap++;
                 lapTime = 0;
                 pace = 0.985f + rnd.nextFloat() * 0.03f;
+                shift = (rnd.nextFloat() - 0.5f) * 50f;   // frena hasta 25 m antes o después
             }
         }
         t.posX = (float) Math.cos(2 * Math.PI * dist / LAP_M) * 500;

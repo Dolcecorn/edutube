@@ -186,6 +186,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private void applyPrefs() {
         engineer.midLapCalls = prefs.getBoolean("mitad", true);
         engineer.tyreCalls = prefs.getBoolean("neumaticos", true);
+        engineer.coachCalls = prefs.getBoolean("consejos", true);
     }
 
     @Override protected void onResume() {
@@ -335,6 +336,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         final CheckBox voz = check(box, "Voz del ingeniero", "voz", true);
         final CheckBox mitad = check(box, "Avisar el delta a mitad de vuelta", "mitad", true);
         final CheckBox neu = check(box, "Avisos de neumáticos y motor", "neumaticos", true);
+        final CheckBox cons = check(box, "Consejos por curva (contra tu mejor vuelta)", "consejos", true);
         final CheckBox grave = check(box, "Voz más grave", "grave", true);
         final CheckBox demo = check(box, "Modo demostración (sin PS5)", "demo", false);
 
@@ -365,7 +367,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     prefs.edit().putString("ip", ip.getText().toString().trim())
                         .putBoolean("voz", voz.isChecked()).putBoolean("mitad", mitad.isChecked())
                         .putBoolean("neumaticos", neu.isChecked()).putBoolean("demo", demo.isChecked())
-                        .putBoolean("grave", grave.isChecked()).commit();
+                        .putBoolean("grave", grave.isChecked()).putBoolean("consejos", cons.isChecked()).commit();
                     int sel = motores.getCheckedRadioButtonId() - 1000;
                     String nuevo = sel >= 0 && sel < pkgs.size() ? pkgs.get(sel) : "";
                     if (!nuevo.equals(prefs.getString("motor", "")) && nuevo.length() > 0) {
