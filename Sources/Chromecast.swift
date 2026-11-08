@@ -72,7 +72,11 @@ final class Chromecast {
      el video, a pantalla completa, sin la página ni sus anuncios.
      */
     func playMedia(_ media: Media, on device: Device, completion: @escaping (Result<String, Error>) -> Void) {
-        run(CastSession(endpoint: device.endpoint, mode: .media(media)), completion)
+        run(CastSession(endpoint: device.endpoint, mode: .media(media))) { result in
+            // Queda conectado para el control remoto (pausa, adelantar, subtítulos, audio).
+            if case .success = result, !media.live { CastRemote.shared.connect(device) }
+            completion(result)
+        }
     }
 
     struct Media {
@@ -295,7 +299,7 @@ private final class CastSession {
         }
     }
 
-    private static func varint(_ bytes: [UInt8], _ i: inout Int) -> Int? {
+    fileprivate static func varint(_ bytes: [UInt8], _ i: inout Int) -> Int? {
         var result = 0, shift = 0
         while i < bytes.count {
             let b = bytes[i]
@@ -329,5 +333,288 @@ private extension Data {
         appendVarint(field << 3 | 2)
         appendVarint(bytes.count)
         append(bytes)
+    }
+}
+
+// MARK: - Control remoto del reproductor del Chromecast
+
+/**
+ Conexión que queda abierta con el Chromecast mientras se ve un video enviado al reproductor incluido
+ (Pluto, canales, páginas…): lee el estado (tiempo, duración, pistas) y manda pausa, adelantar,
+ volumen, subtítulos y audio. Con YouTube el control va por TVCast.
+ */
+final class CastRemote {
+    static let shared = CastRemote()
+
+    struct Track: Equatable {
+        let id: Int
+        let name: String
+    }
+
+    private(set) var device: Chromecast.Device?
+    private(set) var title = ""
+    private(set) var playerState = "IDLE"
+    private(set) var duration: Double = 0
+    private(set) var isLive = false
+    private(set) var volume: Double = 1
+    private(set) var isMuted = false
+    private(set) var subtitles: [Track] = []
+    private(set) var audios: [Track] = []
+    private(set) var activeTracks: [Int] = []
+    var onChange: (() -> Void)?
+
+    private var conn: NWConnection?
+    private var buffer = Data()
+    private var transportId: String?
+    private var mediaSessionId: Int?
+    private var requestId = 100
+    private var position: (time: Double, at: Date) = (0, Date())
+    private var heartbeat: Timer?
+
+    private static let nsMedia = "urn:x-cast:com.google.cast.media"
+    private static let nsConnection = "urn:x-cast:com.google.cast.tp.connection"
+    private static let nsHeartbeat = "urn:x-cast:com.google.cast.tp.heartbeat"
+    private static let nsReceiver = "urn:x-cast:com.google.cast.receiver"
+
+    var isControlling: Bool { conn != nil && mediaSessionId != nil && playerState != "IDLE" }
+    var isPlaying: Bool { playerState == "PLAYING" || playerState == "BUFFERING" }
+
+    var currentPosition: Double {
+        let t = position.time + (playerState == "PLAYING" ? Date().timeIntervalSince(position.at) : 0)
+        return duration > 0 ? min(t, duration) : t
+    }
+
+    func connect(_ device: Chromecast.Device) {
+        disconnect()
+        self.device = device
+        let tls = NWProtocolTLS.Options()
+        sec_protocol_options_set_verify_block(tls.securityProtocolOptions, { _, _, complete in complete(true) }, .main)
+        let c = NWConnection(to: device.endpoint, using: NWParameters(tls: tls))
+        conn = c
+        c.stateUpdateHandler = { [weak self, weak c] state in
+            guard let self = self, c === self.conn else { return }
+            switch state {
+            case .ready:
+                self.send(Self.nsConnection, to: "receiver-0", ["type": "CONNECT"])
+                self.send(Self.nsReceiver, to: "receiver-0", ["type": "GET_STATUS", "requestId": self.nextRequest()])
+                self.receive()
+            case .failed, .cancelled:
+                self.disconnect()
+            default:
+                break
+            }
+        }
+        c.start(queue: .main)
+        heartbeat = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.send(Self.nsHeartbeat, to: "receiver-0", ["type": "PING"])
+            if let t = self.transportId {
+                self.send(Self.nsMedia, to: t, ["type": "GET_STATUS", "requestId": self.nextRequest()])
+            }
+        }
+    }
+
+    func disconnect() {
+        heartbeat?.invalidate()
+        heartbeat = nil
+        conn?.cancel()
+        conn = nil
+        buffer = Data()
+        transportId = nil
+        mediaSessionId = nil
+        playerState = "IDLE"
+        onChange?()
+    }
+
+    // MARK: Órdenes
+
+    func play() { mediaCommand(["type": "PLAY"]); playerState = "PLAYING"; position.at = Date(); onChange?() }
+
+    func pause() {
+        position = (currentPosition, Date())
+        mediaCommand(["type": "PAUSE"])
+        playerState = "PAUSED"
+        onChange?()
+    }
+
+    func seek(to t: Double) {
+        let time = max(0, duration > 0 ? min(t, duration - 1) : t)
+        position = (time, Date())
+        mediaCommand(["type": "SEEK", "currentTime": time, "resumeState": isPlaying ? "PLAYBACK_START" : "PLAYBACK_PAUSE"])
+        onChange?()
+    }
+
+    func setVolume(_ level: Double) {
+        volume = max(0, min(1, level))
+        send(Self.nsReceiver, to: "receiver-0",
+             ["type": "SET_VOLUME", "volume": ["level": volume], "requestId": nextRequest()])
+    }
+
+    func setMuted(_ on: Bool) {
+        isMuted = on
+        send(Self.nsReceiver, to: "receiver-0",
+             ["type": "SET_VOLUME", "volume": ["muted": on], "requestId": nextRequest()])
+        onChange?()
+    }
+
+    /// nil apaga los subtítulos.
+    func selectSubtitle(_ id: Int?) {
+        var ids = activeTracks.filter { a in !subtitles.contains { $0.id == a } }
+        if let id = id { ids.append(id) }
+        setTracks(ids)
+    }
+
+    func selectAudio(_ id: Int) {
+        var ids = activeTracks.filter { a in !audios.contains { $0.id == a } }
+        ids.append(id)
+        setTracks(ids)
+    }
+
+    func stop() {
+        mediaCommand(["type": "STOP"])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.disconnect() }
+    }
+
+    private func setTracks(_ ids: [Int]) {
+        activeTracks = ids
+        mediaCommand(["type": "EDIT_TRACKS_INFO", "activeTrackIds": ids])
+        onChange?()
+    }
+
+    private func mediaCommand(_ payload: [String: Any]) {
+        guard let t = transportId, let session = mediaSessionId else { return }
+        var p = payload
+        p["mediaSessionId"] = session
+        p["requestId"] = nextRequest()
+        send(Self.nsMedia, to: t, p)
+    }
+
+    private func nextRequest() -> Int {
+        requestId += 1
+        return requestId
+    }
+
+    // MARK: Mensajes
+
+    private func handle(namespace: String, source: String, payload: String) {
+        guard let json = (try? JSONSerialization.jsonObject(with: Data(payload.utf8))) as? [String: Any],
+              let type = json["type"] as? String else { return }
+        switch (namespace, type) {
+        case (Self.nsHeartbeat, "PING"):
+            send(Self.nsHeartbeat, to: source, ["type": "PONG"])
+        case (Self.nsReceiver, "RECEIVER_STATUS"):
+            let status = json["status"] as? [String: Any]
+            if let v = status?["volume"] as? [String: Any] {
+                if let l = v["level"] as? Double { volume = l }
+                if let m = v["muted"] as? Bool { isMuted = m }
+            }
+            let apps = status?["applications"] as? [[String: Any]] ?? []
+            guard let app = apps.first(where: { ($0["isIdleScreen"] as? Bool) != true }),
+                  let transport = app["transportId"] as? String else {
+                // Se cerró la app en la TV (o se abrió otra cosa).
+                transportId = nil
+                mediaSessionId = nil
+                playerState = "IDLE"
+                onChange?(); return
+            }
+            if transport != transportId {
+                transportId = transport
+                send(Self.nsConnection, to: transport, ["type": "CONNECT"])
+                send(Self.nsMedia, to: transport, ["type": "GET_STATUS", "requestId": nextRequest()])
+            }
+            onChange?()
+        case (Self.nsMedia, "MEDIA_STATUS"):
+            guard let status = (json["status"] as? [[String: Any]])?.first else {
+                mediaSessionId = nil
+                playerState = "IDLE"
+                onChange?(); return
+            }
+            if let id = status["mediaSessionId"] as? Int { mediaSessionId = id }
+            if let state = status["playerState"] as? String { playerState = state }
+            if let t = (status["currentTime"] as? NSNumber)?.doubleValue { position = (t, Date()) }
+            if let active = status["activeTrackIds"] as? [Int] { activeTracks = active } else if status["media"] != nil { activeTracks = [] }
+            if let media = status["media"] as? [String: Any] {
+                if let d = (media["duration"] as? NSNumber)?.doubleValue, d > 0 { duration = d }
+                isLive = (media["streamType"] as? String) == "LIVE"
+                if let meta = media["metadata"] as? [String: Any], let t = meta["title"] as? String { title = t }
+                if let tracks = media["tracks"] as? [[String: Any]] {
+                    subtitles = Self.tracks(tracks, type: "TEXT", fallback: "Subtítulos")
+                    audios = Self.tracks(tracks, type: "AUDIO", fallback: "Audio")
+                }
+            }
+            if let v = status["volume"] as? [String: Any] {
+                if let l = v["level"] as? Double { volume = l }
+                if let m = v["muted"] as? Bool { isMuted = m }
+            }
+            onChange?()
+        default:
+            break
+        }
+    }
+
+    private static func tracks(_ list: [[String: Any]], type: String, fallback: String) -> [Track] {
+        list.filter { ($0["type"] as? String) == type }.enumerated().compactMap { n, t in
+            guard let id = t["trackId"] as? Int else { return nil }
+            let lang = (t["language"] as? String).map { Locale(identifier: "es").localizedString(forIdentifier: $0) ?? $0 }
+            let name = (t["name"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? lang ?? "\(fallback) \(n + 1)"
+            return Track(id: id, name: name.prefix(1).uppercased() + name.dropFirst())
+        }
+    }
+
+    private func send(_ namespace: String, to destination: String, _ payload: [String: Any]) {
+        guard let conn = conn, let json = try? JSONSerialization.data(withJSONObject: payload),
+              let text = String(data: json, encoding: .utf8) else { return }
+        var msg = Data()
+        msg.appendVarintField(1, 0)
+        msg.appendStringField(2, "sender-remote")
+        msg.appendStringField(3, destination)
+        msg.appendStringField(4, namespace)
+        msg.appendVarintField(5, 0)
+        msg.appendStringField(6, text)
+        var frame = Data()
+        let len = UInt32(msg.count)
+        frame.append(contentsOf: [UInt8(len >> 24 & 0xFF), UInt8(len >> 16 & 0xFF), UInt8(len >> 8 & 0xFF), UInt8(len & 0xFF)])
+        frame.append(msg)
+        conn.send(content: frame, completion: .contentProcessed { _ in })
+    }
+
+    private func receive() {
+        conn?.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, isComplete, error in
+            guard let self = self else { return }
+            if let data = data { self.buffer.append(data); self.parseFrames() }
+            if error != nil || isComplete { self.disconnect() } else { self.receive() }
+        }
+    }
+
+    private func parseFrames() {
+        while buffer.count >= 4 {
+            let b = [UInt8](buffer.prefix(4))
+            let len = Int(b[0]) << 24 | Int(b[1]) << 16 | Int(b[2]) << 8 | Int(b[3])
+            guard buffer.count >= 4 + len else { return }
+            let body = [UInt8](buffer.dropFirst(4).prefix(len))
+            buffer = Data(buffer.dropFirst(4 + len))
+            var namespace = "", source = "", payload = ""
+            var i = 0
+            while i < body.count {
+                guard let key = CastSession.varint(body, &i) else { break }
+                let field = key >> 3, wire = key & 7
+                if wire == 0 {
+                    _ = CastSession.varint(body, &i)
+                } else if wire == 2 {
+                    guard let n = CastSession.varint(body, &i), i + n <= body.count else { break }
+                    let text = String(decoding: body[i..<i + n], as: UTF8.self)
+                    i += n
+                    switch field {
+                    case 2: source = text
+                    case 4: namespace = text
+                    case 6: payload = text
+                    default: break
+                    }
+                } else {
+                    break
+                }
+            }
+            handle(namespace: namespace, source: source, payload: payload)
+        }
     }
 }

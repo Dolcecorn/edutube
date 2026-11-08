@@ -95,6 +95,11 @@ final class TVCast {
             loungeToken = nil
             resetSession()
         }
+        if currentVideo != videoId {
+            duration = 0
+            activeSubtitle = nil
+            activeAudio = nil
+        }
         currentVideo = videoId
         position = (time, Date())
         playing = true
@@ -109,6 +114,92 @@ final class TVCast {
     private static func playlist(_ videoId: String, at time: Double) -> [String: String] {
         ["videoId": videoId, "currentTime": time < 1 ? "0" : String(Int(time)), "currentIndex": "0",
          "videoIds": videoId, "listId": "", "audioOnly": "false", "params": "", "playerParams": ""]
+    }
+
+    // MARK: - Control remoto (pausa, adelantar, volumen, subtítulos, audio)
+
+    /// Subtítulos y pistas de audio del video enviado (los lee edutube de la página antes de enviarlo).
+    var subtitleTracks: [RemoteTrack] = []
+    var audioTracks: [RemoteTrack] = []
+    private(set) var activeSubtitle: String?
+    private(set) var activeAudio: String?
+    private(set) var duration: Double = 0
+    private(set) var title = ""
+    /// Estado del reproductor de la TV según YouTube: 1 reproduciendo, 2 en pausa, 3 cargando, 0 terminado.
+    private(set) var playerState = "-1"
+    var onChange: (() -> Void)?
+
+    var isControlling: Bool { watching && currentVideo != nil }
+    var isPlaying: Bool { playing }
+    var volumeLevel: Double { (Double(volume) ?? 100) / 100 }
+    private(set) var isMuted = false
+
+    /// Segundo en que va el video en la TV (estimado entre avisos).
+    var currentPosition: Double {
+        guard let pos = position else { return 0 }
+        let t = pos.time + (playing && !inAd ? Date().timeIntervalSince(pos.at) : 0)
+        return duration > 0 ? min(t, duration) : t
+    }
+
+    func setTitle(_ t: String) { title = t }
+
+    func play() {
+        enqueue("play", params: [:]) { _ in }
+        if let p = position { position = (p.time, Date()) }
+        playing = true
+        onChange?()
+    }
+
+    func pause() {
+        position = (currentPosition, Date())
+        playing = false
+        enqueue("pause", params: [:]) { _ in }
+        onChange?()
+    }
+
+    func seek(to t: Double) {
+        let time = max(0, duration > 0 ? min(t, duration - 1) : t)
+        position = (time, Date())
+        enqueue("seekTo", params: ["newTime": String(Int(time))]) { _ in }
+        onChange?()
+    }
+
+    func setVolume(_ level: Double) {
+        volume = String(Int((max(0, min(1, level)) * 100).rounded()))
+        isMuted = false
+        mutedByUs = false
+        enqueue("setVolume", params: ["volume": volume, "muted": "false"]) { _ in }
+    }
+
+    func setMuted(_ on: Bool) {
+        isMuted = on
+        mutedByUs = false
+        enqueue("setVolume", params: ["volume": volume, "muted": on ? "true" : "false"]) { _ in }
+        onChange?()
+    }
+
+    /// nil apaga los subtítulos.
+    func selectSubtitle(_ code: String?) {
+        guard let video = currentVideo else { return }
+        activeSubtitle = code
+        var params = ["videoId": video, "languageCode": code ?? ""]
+        if let t = subtitleTracks.first(where: { $0.id == code }) { params["languageName"] = t.name }
+        enqueue("setSubtitlesTrack", params: params) { _ in }
+        onChange?()
+    }
+
+    func selectAudio(_ id: String) {
+        guard let video = currentVideo else { return }
+        activeAudio = id
+        enqueue("setAudioTrack", params: ["videoId": video, "audioTrackId": id]) { _ in }
+        onChange?()
+    }
+
+    func stop() {
+        enqueue("stopVideo", params: [:]) { _ in }
+        stopWatchingAds()
+        currentVideo = nil
+        onChange?()
     }
 
     // MARK: - Anuncios en la TV
@@ -269,16 +360,29 @@ final class TVCast {
             }
         case "onStateChange", "nowPlaying":
             if !str("videoId").isEmpty { currentVideo = str("videoId") }
+            if let d = Double(str("duration")), d > 0, !inAd { duration = d }
             let state = str("state")
+            if !state.isEmpty, !inAd { playerState = state }
+            defer { onChange?() }
             if state == "1" { inAd = false; mute(false) }
             // Durante un anuncio estos avisos traen el tiempo del anuncio, no el del video.
             if !inAd, let t = Double(str("currentTime")) { position = (t, Date()) }
             if !inAd, !state.isEmpty { playing = state == "1" }
         case "onVolumeChanged":
             if !mutedByUs, !str("volume").isEmpty { volume = str("volume") }
+            if !mutedByUs, !str("muted").isEmpty { isMuted = str("muted") == "true" }
+            onChange?()
+        case "onSubtitlesTrackChanged":
+            let code = str("languageCode")
+            activeSubtitle = code.isEmpty ? nil : code
+            onChange?()
+        case "onAudioTrackChanged":
+            if !str("audioTrackId").isEmpty { activeAudio = str("audioTrackId") }
+            onChange?()
         case "loungeScreenDisconnected":
             stopWatchingAds()
             resetSession()
+            onChange?()
         default:
             break
         }
@@ -500,4 +604,10 @@ private final class KeepAlive {
         d.append(Data(repeating: 128, count: samples))
         return d
     }()
+}
+
+/// Un subtítulo o una pista de audio que se puede elegir en el control remoto.
+struct RemoteTrack: Equatable {
+    let id: String
+    let name: String
 }

@@ -21,6 +21,7 @@ final class WebViewController: UIViewController {
     private var codecInfo = ""
     private var bufferingWork: DispatchWorkItem?
     private let castButton = UIButton(type: .system)
+    private let remoteButton = UIButton(type: .system)
     private var urlObserver: NSKeyValueObservation?
     /// false mientras se ve un servicio gratis con publicidad (Pluto, Plex, canales chilenos…).
     private var blockingOn = true
@@ -172,6 +173,7 @@ final class WebViewController: UIViewController {
         let list = FreeTVViewController()
         list.onOpen = { [weak self] item in self?.open(item) }
         list.onMirror = { [weak self] in self?.startMirror() }
+        list.onRemote = { [weak self] in self?.showRemote() }
         let nav = UINavigationController(rootViewController: list)
         nav.navigationBar.prefersLargeTitles = true
         nav.overrideUserInterfaceStyle = .dark
@@ -218,9 +220,80 @@ final class WebViewController: UIViewController {
             castButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             castButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -72),
         ])
+        // Control remoto: aparece encima mientras algo se está viendo en la TV.
+        remoteButton.setImage(UIImage(systemName: "playpause.fill", withConfiguration: config), for: .normal)
+        remoteButton.tintColor = .white
+        remoteButton.backgroundColor = UIColor(white: 0.15, alpha: 0.92)
+        remoteButton.layer.cornerRadius = 26
+        remoteButton.layer.shadowColor = UIColor.black.cgColor
+        remoteButton.layer.shadowOpacity = 0.4
+        remoteButton.layer.shadowRadius = 6
+        remoteButton.accessibilityLabel = "Control remoto de la TV"
+        remoteButton.addTarget(self, action: #selector(showRemote), for: .touchUpInside)
+        remoteButton.isHidden = true
+        remoteButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(remoteButton)
+        NSLayoutConstraint.activate([
+            remoteButton.widthAnchor.constraint(equalToConstant: 52),
+            remoteButton.heightAnchor.constraint(equalToConstant: 52),
+            remoteButton.trailingAnchor.constraint(equalTo: castButton.trailingAnchor),
+            remoteButton.bottomAnchor.constraint(equalTo: castButton.topAnchor, constant: -12),
+        ])
+        TVCast.shared.onChange = { [weak self] in self?.updateRemoteButton() }
+        CastRemote.shared.onChange = { [weak self] in self?.updateRemoteButton() }
+
         // YouTube cambia de página sin recargar; se mira la URL para mostrar el botón solo en los videos.
         urlObserver = webView.observe(\.url, options: [.new]) { [weak self] _, _ in
             DispatchQueue.main.async { self?.updateCastButton() }
+        }
+    }
+
+    private func updateRemoteButton() {
+        remoteButton.isHidden = !Remote.isActive
+    }
+
+    @objc func showRemote() {
+        guard Remote.target != nil else { return toast("No hay nada transmitiéndose") }
+        if let presented = presentedViewController {
+            if presented is RemoteViewController { return }
+            return presented.dismiss(animated: true) { [weak self] in self?.showRemote() }
+        }
+        let remote = RemoteViewController()
+        if let sheet = remote.sheetPresentationController {
+            sheet.prefersGrabberVisible = true
+        }
+        present(remote, animated: true)
+    }
+
+    /// Lee de la página los subtítulos y los idiomas de audio del video, para elegirlos desde el control remoto.
+    private func readYouTubeTracks(_ videoId: String, completion: @escaping () -> Void) {
+        TVCast.shared.setTitle(webView.title?.replacingOccurrences(of: " - YouTube", with: "") ?? "")
+        let js = """
+        (function(){try{var p=document.getElementById('movie_player');
+        var r=(p&&p.getPlayerResponse&&p.getPlayerResponse())||window.ytInitialPlayerResponse||{};
+        var out={id:(r.videoDetails||{}).videoId||'',title:(r.videoDetails||{}).title||'',subs:[],audio:[]},seen={};
+        var c=r.captions&&r.captions.playerCaptionsTracklistRenderer;
+        ((c&&c.captionTracks)||[]).forEach(function(t){if(seen['s'+t.languageCode])return;seen['s'+t.languageCode]=1;
+         var n=t.name&&(t.name.simpleText||(t.name.runs||[]).map(function(x){return x.text}).join(''));
+         out.subs.push({id:t.languageCode,name:n||t.languageCode});});
+        ((r.streamingData&&r.streamingData.adaptiveFormats)||[]).forEach(function(f){var a=f.audioTrack;
+         if(a&&a.id&&!seen['a'+a.id]){seen['a'+a.id]=1;out.audio.push({id:a.id,name:a.displayName||a.id});}});
+        return JSON.stringify(out);}catch(e){return '{}';}})()
+        """
+        webView.evaluateJavaScript(js) { result, _ in
+            let json = (result as? String).flatMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) } as? [String: Any]
+            let ok = (json?["id"] as? String) == videoId
+            func list(_ key: String) -> [RemoteTrack] {
+                guard ok else { return [] }
+                return (json?[key] as? [[String: String]] ?? []).compactMap { d in
+                    guard let id = d["id"], !id.isEmpty else { return nil }
+                    return RemoteTrack(id: id, name: d["name"] ?? id)
+                }
+            }
+            TVCast.shared.subtitleTracks = list("subs")
+            TVCast.shared.audioTracks = list("audio")
+            if ok, let t = json?["title"] as? String, !t.isEmpty { TVCast.shared.setTitle(t) }
+            completion()
         }
     }
 
@@ -463,6 +536,7 @@ final class WebViewController: UIViewController {
         switch result {
         case .success:
             webView.pauseAllMediaPlayback(completionHandler: nil)
+            Remote.target = .media
             castFinished(.success(device.name))
         case .failure(let error):
             castFinished(.failure(Chromecast.CastError.message(
@@ -474,11 +548,15 @@ final class WebViewController: UIViewController {
         guard let id = currentVideoId() else { return }
         castStarted()
         toast("Conectando con \(device.name)…")
+        readYouTubeTracks(id) {}
         currentTime { [weak self] time in
             Chromecast.shared.openYouTube(on: device) { result in
                 switch result {
                 case .success(let screenId):
-                    TVCast.shared.cast(videoId: id, at: time, screenId: screenId, name: device.name) { self?.castFinished($0) }
+                    TVCast.shared.cast(videoId: id, at: time, screenId: screenId, name: device.name) { r in
+                        if case .success = r { Remote.target = .youtube; CastRemote.shared.disconnect() }
+                        self?.castFinished(r)
+                    }
                 case .failure(let error):
                     self?.castFinished(.failure(error))
                 }
@@ -489,8 +567,12 @@ final class WebViewController: UIViewController {
     private func castToPairedTV() {
         guard let id = currentVideoId() else { return }
         castStarted()
+        readYouTubeTracks(id) {}
         currentTime { [weak self] time in
-            TVCast.shared.cast(videoId: id, at: time) { self?.castFinished($0) }
+            TVCast.shared.cast(videoId: id, at: time) { r in
+                if case .success = r { Remote.target = .youtube; CastRemote.shared.disconnect() }
+                self?.castFinished(r)
+            }
         }
     }
 
@@ -512,6 +594,9 @@ final class WebViewController: UIViewController {
         case .success(let name):
             webView.evaluateJavaScript("var v=document.querySelector('video');if(v)v.pause();")
             toast("Reproduciendo en \(name)")
+            updateRemoteButton()
+            remoteButton.isHidden = false
+            showRemote()
         case .failure(let error):
             showError(error.localizedDescription)
         }
@@ -619,6 +704,9 @@ final class WebViewController: UIViewController {
         sheet.addAction(UIAlertAction(title: "📺 TV gratis: canales, deportes, películas", style: .default) { _ in
             self.showFreeTV()
         })
+        if Remote.target != nil {
+            sheet.addAction(UIAlertAction(title: "Control remoto de la TV", style: .default) { _ in self.showRemote() })
+        }
         sheet.addAction(UIAlertAction(title: "Ir a la página fija", style: .default) { _ in self.loadHome() })
         sheet.addAction(UIAlertAction(title: "Recargar", style: .default) { _ in self.webView.reload() })
         sheet.addAction(UIAlertAction(title: "Ir a una página…", style: .default) { _ in self.askGo() })
