@@ -20,11 +20,15 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
 
 GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso no aparece.
 
+## Botones
+- Izquierda: RAD (estado completo), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.
+- Derecha: PIT (cuánto cargar en boxes), OK (repite el último mensaje), MUTE (silencia la voz), SET (ajustes), VOL+.
+
 ## Uso
 1. PS5 y tablet en el mismo wifi. En GT7 no hay que activar nada.
 2. Abre la app y entra a una carrera. La app busca la PS5 sola; si no la encuentra,
-   en AJUSTES escribe la IP de la PS5 (PS5: Ajustes > Red > Estado de la conexión).
-3. AJUSTES también tiene "Modo demostración" para ver la app funcionando sin PS5.
+   en SET escribe la IP de la PS5 (PS5: Ajustes > Red > Estado de la conexión).
+3. SET también tiene "Modo demostración" para ver la app funcionando sin PS5.
 
 Si la voz no habla en español: Ajustes de Android > Idioma y entrada > Salida de texto a voz >
 instalar datos de voz en español.

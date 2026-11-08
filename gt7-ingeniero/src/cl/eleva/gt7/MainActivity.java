@@ -80,10 +80,42 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         tts.speak(text, urgent ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p);
     }
 
-    void speakStatus() {
-        String s;
-        synchronized (lock) { s = engineer.status(telemetry); engineer.lastMessage = s; }
-        speak(s, true);
+    boolean isMuted() { return !prefs.getBoolean("voz", true); }
+
+    /** Botones redondos del dashboard. */
+    void onButton(int id) {
+        String s = null;
+        synchronized (lock) {
+            switch (id) {
+                case Dashboard.B_RAD: s = engineer.status(telemetry); break;
+                case Dashboard.B_FUEL: s = engineer.fuelReport(telemetry); break;
+                case Dashboard.B_TYR: s = engineer.tyreReport(telemetry); break;
+                case Dashboard.B_LAP: s = engineer.lapReport(telemetry); break;
+                case Dashboard.B_PIT: s = engineer.pitReport(telemetry); break;
+                case Dashboard.B_OK: s = engineer.lastMessage.length() > 0 ? engineer.lastMessage : null; break;
+                default: break;
+            }
+            if (s != null) { engineer.lastMessage = s; engineer.lastMessageAt = System.currentTimeMillis(); }
+        }
+        if (s != null) { speak(s, true); return; }
+        android.media.AudioManager am = (android.media.AudioManager) getSystemService(AUDIO_SERVICE);
+        switch (id) {
+            case Dashboard.B_VOLDN:
+            case Dashboard.B_VOLUP:
+                am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC,
+                        id == Dashboard.B_VOLUP ? android.media.AudioManager.ADJUST_RAISE : android.media.AudioManager.ADJUST_LOWER,
+                        android.media.AudioManager.FLAG_SHOW_UI);
+                speak("Radio", true);
+                break;
+            case Dashboard.B_MUTE:
+                boolean nowMuted = !isMuted();
+                prefs.edit().putBoolean("voz", !nowMuted).commit();
+                if (nowMuted) { if (tts != null) tts.stop(); }
+                else speak("Radio activada", true);
+                break;
+            case Dashboard.B_SET: showSettings(); break;
+            default: break;
+        }
     }
 
     private void applyPrefs() {

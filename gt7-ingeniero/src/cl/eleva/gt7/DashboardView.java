@@ -1,7 +1,10 @@
 package cl.eleva.gt7;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -30,6 +33,7 @@ final class DashboardView extends View implements Painter {
     @Override protected void onDraw(Canvas canvas) {
         c = canvas;
         boolean live;
+        dash.muted = act.isMuted();
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);
             live = System.currentTimeMillis() - act.lastPacketAt < 2000;
@@ -41,8 +45,16 @@ final class DashboardView extends View implements Painter {
     @Override public boolean onTouchEvent(MotionEvent e) {
         if (e.getAction() != MotionEvent.ACTION_UP) return true;
         float x = e.getX(), y = e.getY();
-        if (x >= dash.menuL && x <= dash.menuR && y >= dash.menuT && y <= dash.menuB) act.showSettings();
-        else if (x >= dash.engL && x <= dash.engR && y >= dash.engT && y <= dash.engB) act.speakStatus();
+        float r = dash.btnR * 1.25f;   // zona táctil un poco más grande que el botón
+        for (int i = 0; i < 10; i++) {
+            float dx = x - dash.btnX[i], dy = y - dash.btnY[i];
+            if (dx * dx + dy * dy <= r * r) {
+                dash.pressed = i;
+                dash.pressedAt = System.currentTimeMillis();
+                act.onButton(i);
+                return true;
+            }
+        }
         return true;
     }
 
@@ -63,6 +75,22 @@ final class DashboardView extends View implements Painter {
         txt.setColor(argb);
         txt.setTextAlign(align == CENTER ? Paint.Align.CENTER : align == RIGHT ? Paint.Align.RIGHT : Paint.Align.LEFT);
         c.drawText(s, x, y, txt);
+    }
+    public void circle(float cx, float cy, float r, int argb) { fill.setColor(argb); c.drawCircle(cx, cy, r, fill); }
+    public void ring(float cx, float cy, float r, float w, int argb) {
+        stroke.setColor(argb); stroke.setStrokeWidth(w); c.drawCircle(cx, cy, r, stroke);
+    }
+    private Bitmap emblem;
+    private final Rect src = new Rect();
+    private final Paint bmp = new Paint(Paint.FILTER_BITMAP_FLAG | Paint.ANTI_ALIAS_FLAG);
+    public void emblem(float l, float t, float r, float b) {
+        if (emblem == null) emblem = BitmapFactory.decodeResource(getResources(), R.drawable.emblema);
+        if (emblem == null) return;
+        float s = Math.min((r - l) / emblem.getWidth(), (b - t) / emblem.getHeight());
+        float w = emblem.getWidth() * s, h = emblem.getHeight() * s;
+        src.set(0, 0, emblem.getWidth(), emblem.getHeight());
+        rf.set((l + r - w) / 2, (t + b - h) / 2, (l + r + w) / 2, (t + b + h) / 2);
+        c.drawBitmap(emblem, src, rf, bmp);
     }
     public float width(String s, float size, boolean bold) { font(size, bold); return txt.measureText(s); }
 }

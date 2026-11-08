@@ -75,8 +75,11 @@ final class Engineer {
         tyreSaid = -1000; flagPending = false;
     }
 
+    long lastMessageAt;
+
     private void say(String s, boolean urgent) {
         lastMessage = s;
+        lastMessageAt = System.currentTimeMillis();
         if (voice != null) voice.say(s, urgent);
     }
 
@@ -290,6 +293,49 @@ final class Engineer {
             waterSaidAt = clock;
             say("Temperatura del motor alta, " + Math.round(t.waterTemp) + " grados.", false);
         }
+    }
+
+    /** % de estanque que falta cargar para terminar (con media vuelta de margen); -1 sin datos. */
+    float fuelToAdd(Telemetry t) {
+        if (fuelPerLapPct <= 0 || lapsToGo <= 0 || !t.hasFuel()) return -1;
+        float need = fuelPerLapPct * (lapsToGo - lapFraction() + 0.5f) - t.fuelPct();
+        return Math.max(0, need);
+    }
+
+    String fuelReport(Telemetry t) {
+        if (!t.hasFuel()) return "Este auto no gasta combustible en esta carrera.";
+        if (fuelLapsLeft < 0) return "Combustible " + Math.round(t.fuelPct()) + " por ciento. Necesito una vuelta completa para calcular el consumo.";
+        return ("Combustible " + Math.round(t.fuelPct()) + " por ciento, gastas " + num1(fuelPerLapPct)
+                + " por vuelta. " + fuelSentence()).trim();
+    }
+
+    String pitReport(Telemetry t) {
+        float add = fuelToAdd(t);
+        if (add < 0) return fuelReport(t);
+        if (add < 0.5f) return "No necesitas parar por combustible, llegas al final.";
+        return "Para terminar carga " + Math.round(add) + " por ciento de combustible en boxes.";
+    }
+
+    String tyreReport(Telemetry t) {
+        StringBuilder sb = new StringBuilder("Neumáticos: ");
+        String[] n = {"delantero izquierdo ", "delantero derecho ", "trasero izquierdo ", "trasero derecho "};
+        for (int i = 0; i < 4; i++) sb.append(n[i]).append(Math.round(t.tyreTemp[i])).append(i < 3 ? ", " : ". ");
+        float mx = Math.max(Math.max(t.tyreTemp[0], t.tyreTemp[1]), Math.max(t.tyreTemp[2], t.tyreTemp[3]));
+        float mn = Math.min(Math.min(t.tyreTemp[0], t.tyreTemp[1]), Math.min(t.tyreTemp[2], t.tyreTemp[3]));
+        if (mx > TYRE_HOT) sb.append("Hay neumáticos sobrecalentados, baja el ritmo en curvas.");
+        else if (mn < 60) sb.append("Todavía están fríos, caliéntalos.");
+        else sb.append("Temperaturas en rango.");
+        return sb.toString();
+    }
+
+    String lapReport(Telemetry t) {
+        StringBuilder sb = new StringBuilder();
+        if (t.lastLapMs > 0) sb.append("Última vuelta ").append(speakTime(t.lastLapMs)).append(". ");
+        if (myBestMs > 0) sb.append("Tu mejor ").append(speakTime(myBestMs)).append(". ");
+        if (deltaValid) sb.append(Math.abs(deltaS) < 0.05f ? "Ahora vas igual que tu mejor."
+                : "Ahora vas " + speakDelta(Math.abs(deltaS)) + (deltaS > 0 ? " abajo." : " arriba."));
+        if (sb.length() == 0) sb.append("Todavía no hay vueltas completas.");
+        return sb.toString().trim();
     }
 
     /** Resumen a pedido (cuando el piloto toca la barra del ingeniero). */

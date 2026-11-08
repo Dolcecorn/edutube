@@ -2,3 +2,4 @@ build/
 *.apk
 *.idsig
 *.keystore
+res/drawable/emblema.png

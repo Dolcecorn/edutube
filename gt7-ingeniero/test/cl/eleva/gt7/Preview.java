@@ -19,6 +19,16 @@ public class Preview implements Painter {
         float w = width(s, size, bold);
         g.drawString(s, align == CENTER ? x - w / 2 : align == RIGHT ? x - w : x, y);
     }
+    public void circle(float cx, float cy, float r, int a) { c(a); g.fill(new java.awt.geom.Ellipse2D.Float(cx - r, cy - r, 2 * r, 2 * r)); }
+    public void ring(float cx, float cy, float r, float w, int a) { c(a); g.setStroke(new BasicStroke(w)); g.draw(new java.awt.geom.Ellipse2D.Float(cx - r, cy - r, 2 * r, 2 * r)); }
+    static java.awt.Image em;
+    public void emblem(float l, float t, float r, float b) {
+        try { if (em == null) em = ImageIO.read(new File("res/drawable/emblema.png")); } catch (Exception e) { return; }
+        float s = Math.min((r - l) / em.getWidth(null), (b - t) / em.getHeight(null));
+        int w = Math.round(em.getWidth(null) * s), h = Math.round(em.getHeight(null) * s);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.drawImage(em, Math.round((l + r - w) / 2), Math.round((t + b - h) / 2), w, h, null);
+    }
     public float width(String s, float size, boolean bold) { return (float) g.getFontMetrics(f(size, bold)).getStringBounds(s, g).getWidth(); }
 
     static void shot(String file, int seconds, boolean live) throws Exception {
@@ -27,11 +37,12 @@ public class Preview implements Painter {
         Engineer e = new Engineer(null);
         for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); e.onPacket(t); }
         if (!live) { t = new Telemetry(); e = new Engineer(null); }
+        else e.lastMessageAt = System.currentTimeMillis();
         BufferedImage img = new BufferedImage(1024, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        new Dashboard().draw(new Preview(g), 1024, 600, t, e, live ? "Conectado a 192.168.1.20" : "Buscando la PS5 en la red…", live, 0);
+        new Dashboard().draw(new Preview(g), 1024, 600, t, e, live ? "Conectado a la PS5 192.168.1.20" : "Buscando la PS5 en la red…", live, System.currentTimeMillis() / 500 * 500);
         ImageIO.write(img, "png", new File(file));
     }
 

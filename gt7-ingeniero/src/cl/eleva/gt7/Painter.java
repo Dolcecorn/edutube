@@ -9,4 +9,8 @@ interface Painter {
     /** y es la línea base del texto. */
     void text(String s, float x, float y, float size, int argb, int align, boolean bold);
     float width(String s, float size, boolean bold);
+    void circle(float cx, float cy, float r, int argb);
+    void ring(float cx, float cy, float r, float width, int argb);
+    /** Dibuja el emblema (imagen) dentro del rectángulo. */
+    void emblem(float l, float t, float r, float b);
 }
