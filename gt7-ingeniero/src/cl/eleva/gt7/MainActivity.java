@@ -64,21 +64,45 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
         });
         applyPrefs();
+        engineer.setup = new Engineer.SetupProvider() {
+            public String reminder(int car) { return setupReminder(car); }
+        };
         view = new DashboardView(this);
         setContentView(view);
+        if (!prefs.getBoolean("sin_ayuda", false)) showHelp(true);
         String eng = prefs.getString("motor", "");
         tts = eng.length() > 0 ? new TextToSpeech(this, this, eng) : new TextToSpeech(this, this);
     }
 
     @Override public void onInit(int status) {
         if (status != TextToSpeech.SUCCESS) return;
-        Locale[] tries = {new Locale("es", "CL"), new Locale("es", "US"), new Locale("es", "ES"), new Locale("es")};
-        for (Locale l : tries) {
-            if (tts.isLanguageAvailable(l) >= TextToSpeech.LANG_AVAILABLE) { tts.setLanguage(l); break; }
-        }
-        tts.setSpeechRate(1.1f);
-        tts.setPitch(prefs.getBoolean("grave", true) ? 0.8f : 1.0f);
         ttsReady = true;
+        applyVoice(prefs.getString("acento", "es-CL"), prefs.getFloat("rapidez", 1.1f), prefs.getBoolean("grave", true));
+    }
+
+    static final String[] ACENTOS = {"es-CL", "es-US", "es-MX", "es-ES"};
+    static final String[] ACENTO_NOMBRE = {"Chile", "Latino (EE.UU.)", "México", "España"};
+    static final float[] RAPIDEZ = {0.9f, 1.1f, 1.3f};
+    static final String[] RAPIDEZ_NOMBRE = {"Lenta", "Normal", "Rápida"};
+
+    private static Locale loc(String tag) { String[] p = tag.split("-"); return new Locale(p[0], p.length > 1 ? p[1] : ""); }
+
+    private boolean available(String tag) {
+        try { return ttsReady && tts.isLanguageAvailable(loc(tag)) >= TextToSpeech.LANG_COUNTRY_AVAILABLE; } catch (Exception e) { return false; }
+    }
+
+    /** Usa el acento pedido; si la tablet no lo tiene, el primer español disponible. */
+    private void applyVoice(String acento, float rate, boolean grave) {
+        if (!ttsReady) return;
+        ArrayList<String> tries = new ArrayList<String>();
+        tries.add(acento);
+        for (String a : ACENTOS) tries.add(a);
+        tries.add("es");
+        for (String tag : tries) {
+            if (tts.isLanguageAvailable(loc(tag)) >= TextToSpeech.LANG_AVAILABLE) { tts.setLanguage(loc(tag)); break; }
+        }
+        tts.setSpeechRate(rate);
+        tts.setPitch(grave ? 0.8f : 1.0f);
     }
 
     void speak(String text, boolean urgent) {
@@ -130,7 +154,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     ArrayList<String> r = b.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     if (r == null || r.isEmpty()) { show("No te escuché. Toca RAD e intenta de nuevo."); return; }
                     String a;
-                    synchronized (lock) { a = engineer.answer(r.get(0), telemetry); }
+                    synchronized (lock) { a = engineer.answer(r.get(0), telemetry); saveEngineerPrefs(); }
                     show("«" + r.get(0) + "» " + a);
                     speak(a, true);
                 }
@@ -184,9 +208,53 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void applyPrefs() {
+        engineer.lapCalls = prefs.getBoolean("tiempos", true);
+        engineer.fuelCalls = prefs.getBoolean("combustible", true);
         engineer.midLapCalls = prefs.getBoolean("mitad", true);
         engineer.tyreCalls = prefs.getBoolean("neumaticos", true);
         engineer.coachCalls = prefs.getBoolean("consejos", true);
+    }
+
+    /** Guarda lo que el piloto prendió o apagó por voz. */
+    private void saveEngineerPrefs() {
+        prefs.edit().putBoolean("tiempos", engineer.lapCalls).putBoolean("combustible", engineer.fuelCalls)
+            .putBoolean("mitad", engineer.midLapCalls).putBoolean("neumaticos", engineer.tyreCalls)
+            .putBoolean("consejos", engineer.coachCalls).commit();
+    }
+
+    /** Recordatorio de parrilla con el TCS y el balance de frenos guardados para este auto. */
+    String setupReminder(int car) {
+        String tcs = prefs.getString("tcs_" + car, "").trim(), bb = prefs.getString("bb_" + car, "").trim();
+        if (tcs.length() == 0 && bb.length() == 0) return null;
+        StringBuilder sb = new StringBuilder("Antes de largar: ");
+        if (tcs.length() > 0) sb.append("TCS en ").append(signed(tcs));
+        if (tcs.length() > 0 && bb.length() > 0) sb.append(" y ");
+        if (bb.length() > 0) sb.append("balance de frenos en ").append(signed(bb));
+        return sb.append(".").toString();
+    }
+
+    private static String signed(String v) {
+        if (v.startsWith("-")) return "menos " + v.substring(1);
+        if (v.startsWith("+")) return "más " + v.substring(1);
+        return v;
+    }
+
+    private void showHelp(boolean first) {
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+            .setTitle("Habla con tu ingeniero")
+            .setMessage("Toca el botón RAD y di lo que quieres:\n\n"
+                + "• \"Desactiva los consejos\" / \"Activa los consejos\"\n"
+                + "• \"Apaga los tiempos\", \"el combustible\", \"los neumáticos\" o \"el delta\" (y \"activa…\" para volver)\n"
+                + "• \"No me digas nada\": sólo el plan de combustible, lo crítico y la bandera\n"
+                + "• \"Activa todo\": te habla de todo\n\n"
+                + "Preguntas: \"¿Cuándo entro a boxes?\", \"¿Cuánta bencina queda?\", \"¿Cómo voy?\", "
+                + "\"¿Cuántas vueltas faltan?\", \"¿Cómo están los neumáticos?\"\n\n"
+                + "Di \"ayuda\" para escuchar esto. En SET guardas el TCS y el balance de frenos de cada auto.")
+            .setPositiveButton("Entendido", null);
+        if (first) b.setNegativeButton("No mostrar más", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface di, int w) { prefs.edit().putBoolean("sin_ayuda", true).commit(); }
+        });
+        b.show();
     }
 
     @Override protected void onResume() {
@@ -333,16 +401,49 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         ip.setText(prefs.getString("ip", ""));
         box.addView(ip);
 
-        final CheckBox voz = check(box, "Voz del ingeniero", "voz", true);
-        final CheckBox mitad = check(box, "Avisar el delta a mitad de vuelta", "mitad", true);
-        final CheckBox neu = check(box, "Avisos de neumáticos y motor", "neumaticos", true);
-        final CheckBox cons = check(box, "Consejos por curva (contra tu mejor vuelta)", "consejos", true);
-        final CheckBox grave = check(box, "Voz más grave", "grave", true);
         final CheckBox demo = check(box, "Modo demostración (sin PS5)", "demo", false);
 
+        section(box, "Qué te dice el ingeniero (también por voz con RAD)", pad);
+        final CheckBox voz = check(box, "Voz del ingeniero", "voz", true);
+        final CheckBox tiempos = check(box, "Tiempo de cada vuelta", "tiempos", true);
+        final CheckBox comb = check(box, "Combustible en cada vuelta (el plan y lo crítico siempre)", "combustible", true);
+        final CheckBox mitad = check(box, "Delta a mitad de vuelta", "mitad", true);
+        final CheckBox neu = check(box, "Neumáticos y motor", "neumaticos", true);
+        final CheckBox cons = check(box, "Consejos por curva (contra tu mejor vuelta)", "consejos", true);
+
+        final int car;
+        synchronized (lock) { car = telemetry.carCode; }
+        section(box, car != 0 ? "Este auto (código " + car + "): te lo recuerdo en la parrilla" : "Auto: entra a una carrera para guardar sus valores", pad);
+        final EditText tcs = field(box, "TCS que te acomoda, ej. 2", prefs.getString("tcs_" + car, ""));
+        final EditText bb = field(box, "Balance de frenos, ej. -1", prefs.getString("bb_" + car, ""));
+        tcs.setEnabled(car != 0); bb.setEnabled(car != 0);
+
+        section(box, "Voz", pad);
+        final RadioGroup acentos = new RadioGroup(this);
+        String ac = prefs.getString("acento", "es-CL");
+        for (int i = 0; i < ACENTOS.length; i++) {
+            RadioButton rb = new RadioButton(this);
+            rb.setText(ACENTO_NOMBRE[i] + (available(ACENTOS[i]) ? "" : " (no instalada)"));
+            rb.setId(2000 + i);
+            acentos.addView(rb);
+            if (ACENTOS[i].equals(ac)) acentos.check(rb.getId());
+        }
+        box.addView(acentos);
+        final RadioGroup rapidez = new RadioGroup(this);
+        rapidez.setOrientation(LinearLayout.HORIZONTAL);
+        float rp = prefs.getFloat("rapidez", 1.1f);
+        for (int i = 0; i < RAPIDEZ.length; i++) {
+            RadioButton rb = new RadioButton(this);
+            rb.setText(RAPIDEZ_NOMBRE[i]);
+            rb.setId(3000 + i);
+            rapidez.addView(rb);
+            if (Math.abs(RAPIDEZ[i] - rp) < 0.01f) rapidez.check(rb.getId());
+        }
+        box.addView(rapidez);
+        final CheckBox grave = check(box, "Voz más grave", "grave", true);
+
         TextView le = new TextView(this);
-        le.setText("Motor de voz:");
-        le.setPadding(0, pad / 2, 0, 0);
+        le.setText("Motor de voz instalado:");
         box.addView(le);
         final RadioGroup motores = new RadioGroup(this);
         final ArrayList<String> pkgs = new ArrayList<String>();
@@ -359,38 +460,77 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         } catch (Exception ignored) { }
         box.addView(motores);
 
-        new AlertDialog.Builder(this)
+        final String oldIp = prefs.getString("ip", "");
+        final boolean oldDemo = prefs.getBoolean("demo", false);
+        AlertDialog dlg = new AlertDialog.Builder(this)
             .setTitle("Ingeniero GT7")
             .setView(scroll(box))
-            .setPositiveButton("Guardar", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface di, int w) {
-                    prefs.edit().putString("ip", ip.getText().toString().trim())
-                        .putBoolean("voz", voz.isChecked()).putBoolean("mitad", mitad.isChecked())
-                        .putBoolean("neumaticos", neu.isChecked()).putBoolean("demo", demo.isChecked())
-                        .putBoolean("grave", grave.isChecked()).putBoolean("consejos", cons.isChecked()).commit();
-                    int sel = motores.getCheckedRadioButtonId() - 1000;
-                    String nuevo = sel >= 0 && sel < pkgs.size() ? pkgs.get(sel) : "";
-                    if (!nuevo.equals(prefs.getString("motor", "")) && nuevo.length() > 0) {
-                        prefs.edit().putString("motor", nuevo).commit();
-                        ttsReady = false;
-                        tts.shutdown();
-                        tts = new TextToSpeech(MainActivity.this, MainActivity.this, nuevo);
-                    } else if (ttsReady) tts.setPitch(grave.isChecked() ? 0.8f : 1.0f);
-                    synchronized (lock) { applyPrefs(); engineer.reset(); lastPacketAt = 0; }
-                    start();
-                }
-            })
-            .setNeutralButton("Probar voz", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface di, int w) {
-                    if (!ttsReady) Toast.makeText(MainActivity.this, "La voz aún no está lista", Toast.LENGTH_SHORT).show();
-                    boolean was = prefs.getBoolean("voz", true);
-                    prefs.edit().putBoolean("voz", true).commit();
-                    speak("Radio OK. Te escucho fuerte y claro, vamos por esa carrera.", true);
-                    prefs.edit().putBoolean("voz", was).commit();
-                }
-            })
+            .setPositiveButton("Guardar", null)
+            .setNeutralButton("Probar voz", null)
             .setNegativeButton("Cerrar", null)
-            .show();
+            .create();
+        dlg.setOnShowListener(new DialogInterface.OnShowListener() {
+            public void onShow(final DialogInterface di) {
+                final AlertDialog a = (AlertDialog) di;
+                a.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {   // prueba la voz elegida sin cerrar
+                        if (!ttsReady) { Toast.makeText(MainActivity.this, "La voz aún no está lista", Toast.LENGTH_SHORT).show(); return; }
+                        applyVoice(ACENTOS[Math.max(0, acentos.getCheckedRadioButtonId() - 2000)],
+                            RAPIDEZ[Math.max(0, rapidez.getCheckedRadioButtonId() - 3000)], grave.isChecked());
+                        HashMap<String, String> p = new HashMap<String, String>();
+                        tts.speak("Radio OK. Te escucho fuerte y claro, vamos por esa carrera.", TextToSpeech.QUEUE_FLUSH, p);
+                    }
+                });
+                a.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        String acento = ACENTOS[Math.max(0, acentos.getCheckedRadioButtonId() - 2000)];
+                        float rate = RAPIDEZ[Math.max(0, rapidez.getCheckedRadioButtonId() - 3000)];
+                        SharedPreferences.Editor e = prefs.edit().putString("ip", ip.getText().toString().trim())
+                            .putBoolean("voz", voz.isChecked()).putBoolean("tiempos", tiempos.isChecked())
+                            .putBoolean("combustible", comb.isChecked()).putBoolean("mitad", mitad.isChecked())
+                            .putBoolean("neumaticos", neu.isChecked()).putBoolean("consejos", cons.isChecked())
+                            .putBoolean("demo", demo.isChecked()).putBoolean("grave", grave.isChecked())
+                            .putString("acento", acento).putFloat("rapidez", rate);
+                        if (car != 0) e.putString("tcs_" + car, tcs.getText().toString().trim()).putString("bb_" + car, bb.getText().toString().trim());
+                        e.commit();
+                        int sel = motores.getCheckedRadioButtonId() - 1000;
+                        String nuevo = sel >= 0 && sel < pkgs.size() ? pkgs.get(sel) : "";
+                        if (!nuevo.equals(prefs.getString("motor", "")) && nuevo.length() > 0) {
+                            prefs.edit().putString("motor", nuevo).commit();
+                            ttsReady = false;
+                            tts.shutdown();
+                            tts = new TextToSpeech(MainActivity.this, MainActivity.this, nuevo);
+                        } else applyVoice(acento, rate, grave.isChecked());
+                        boolean reconnect = !oldIp.equals(prefs.getString("ip", "")) || oldDemo != demo.isChecked();
+                        synchronized (lock) {
+                            applyPrefs();
+                            if (reconnect) { engineer.reset(); lastPacketAt = 0; }
+                        }
+                        if (reconnect) start();
+                        a.dismiss();
+                    }
+                });
+            }
+        });
+        dlg.show();
+    }
+
+    private void section(LinearLayout box, String title, int pad) {
+        TextView t = new TextView(this);
+        t.setText(title);
+        t.setTextColor(0xffffe34d);
+        t.setPadding(0, pad, 0, pad / 4);
+        box.addView(t);
+    }
+
+    private EditText field(LinearLayout box, String hint, String value) {
+        EditText e = new EditText(this);
+        e.setSingleLine(true);
+        e.setHint(hint);
+        e.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        e.setText(value);
+        box.addView(e);
+        return e;
     }
 
     private View scroll(View v) {

@@ -21,6 +21,16 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
 
 GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso no aparece.
 
+## Comandos de voz (botón RAD)
+- "Desactiva/activa los consejos", "los tiempos", "el combustible", "los neumáticos", "el delta".
+- "No me digas nada" (sólo plan de combustible, lo crítico y la bandera) / "Activa todo".
+- "Ayuda" repite la lista. Lo que prendes o apagas queda guardado.
+
+## En la parrilla y durante la carrera
+- Recuerda el TCS y el balance de frenos guardados para ese auto (SET, por código de auto).
+- Plan de combustible al cerrar la 1ª vuelta y cuando cambia (sin parar / parar en la vuelta N y cuánto cargar).
+- Neumáticos en momentos clave: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada.
+
 ## Botones
 - Izquierda: RAD (preguntarle por voz: combustible, boxes, neumáticos, tiempos, vueltas que faltan), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.
 - Derecha: PIT (cuánto cargar en boxes), OK (repite el último mensaje), MUTE (silencia la voz), SET (ajustes), VOL+.

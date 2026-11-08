@@ -16,6 +16,12 @@ final class Engineer {
     static final String FLAG = "Bandera a cuadros. Terminaste la carrera, buen trabajo.";
 
     private final Voice voice;
+    interface SetupProvider { String reminder(int carCode); }
+    SetupProvider setup;
+
+    // funciones que el piloto puede prender/apagar por voz
+    boolean lapCalls = true;     // tiempo al cerrar cada vuelta
+    boolean fuelCalls = true;    // combustible en cada vuelta (el plan y lo crítico siempre se dicen)
     boolean midLapCalls = true;
     boolean tyreCalls = true;
     boolean coachCalls = true;
@@ -57,6 +63,9 @@ final class Engineer {
 
     private final float[] hotSince = new float[4];
     private boolean flagPending;
+    private boolean startReminded;
+    private int planState = -1;     // -1 sin plan, 0 llega sin parar, 1 hay que parar
+    private int tyreMoments;        // bits de momentos clave ya avisados
     private float clock;      // segundos de carrera (sólo corre en pista y sin pausa)
     private float waterSaidAt = -1000;
 
@@ -71,6 +80,7 @@ final class Engineer {
         lapTimeS = 0; pending = false; raceFinished = false; prevFuel = -1; fuelCriticalLap = -1; midLapSaid = false;
         for (int i = 0; i < 4; i++) hotSince[i] = -1;
         tyreSaid = -1000; flagPending = false;
+        startReminded = false; planState = -1; tyreMoments = 0; flagPending = false;
     }
 
     long lastMessageAt;
@@ -87,6 +97,15 @@ final class Engineer {
         if (dt < 0 || dt > 2f) dt = 0;   // salto raro: no lo contamos
         prevPid = t.packetId;
         boolean running = t.onTrack() && !t.paused() && !t.loading();
+
+        // en la parrilla: recordatorio de TCS y balance de frenos
+        if (!startReminded && t.lap == 0 && running && t.speedMs < 1f) {
+            startReminded = true;
+            String r = setup != null ? setup.reminder(t.carCode) : null;
+            if (r == null) r = "Antes de largar revisa el TCS y el balance de frenos. Puedes guardar tus valores para este auto en SET.";
+            if (t.hasFuel() && t.totalLaps > 1) r += " El plan de combustible te lo doy al cerrar la primera vuelta.";
+            say(r, false);
+        }
 
         // ---- cambios de vuelta ----
         if (t.lap != prevLap) {
@@ -166,26 +185,66 @@ final class Engineer {
 
         StringBuilder sb = new StringBuilder();
         if (ms > 0) {
-            sb.append("Vuelta ").append(pendingLap).append(": ").append(speakTime(ms)).append(". ");
-            if (myBestMs < 0 || ms < myBestMs) {
-                boolean first = myBestMs < 0;
-                myBestMs = ms;
-                if (pendingObserved) coach.adoptLast();
-                if (!first) sb.append("¡Mejor vuelta! ");
-            } else {
-                String dl = speakDelta((ms - myBestMs) / 1000f);
-                sb.append(Character.toUpperCase(dl.charAt(0))).append(dl.substring(1)).append(" más lento que tu mejor. ");
-            }
+            boolean newBest = myBestMs < 0 || ms < myBestMs, first = myBestMs < 0;
+            if (newBest) { myBestMs = ms; if (pendingObserved) coach.adoptLast(); }
+            if (lapCalls) {
+                sb.append("Vuelta ").append(pendingLap).append(": ").append(speakTime(ms)).append(". ");
+                if (newBest && !first) sb.append("¡Mejor vuelta! ");
+                else if (!newBest) {
+                    String dl = speakDelta((ms - myBestMs) / 1000f);
+                    sb.append(Character.toUpperCase(dl.charAt(0))).append(dl.substring(1)).append(" más lento que tu mejor. ");
+                }
+            } else if (newBest && !first) sb.append("Mejor vuelta, ").append(speakTime(ms)).append(". ");
         }
         if (flagPending) { flagPending = false; sb.append(FLAG); }
-        else if (raceFinished) { /* nada más que decir */ }
-        else if (fuelLapsLeft >= 0) {
-            sb.append(fuelSentence());
+        else if (!raceFinished) {
+            String plan = fuelPlan(t);
+            if (plan != null) sb.append(plan).append(' ');
+            else if (fuelCalls && fuelLapsLeft >= 0) sb.append(fuelSentence());
+            if (tyreCalls && tyreKeyMoment(t)) sb.append(tyreShort(t)).append(' ');
+            if (lapsToGo == 1) sb.append("Última vuelta, a fondo.");
+            else if (lapsToGo == 2) sb.append("Quedan dos vueltas.");
         }
-        if (!raceFinished && lapsToGo == 1) sb.append("Última vuelta, a fondo.");
-        else if (!raceFinished && lapsToGo == 2) sb.append("Quedan dos vueltas.");
         String msg = sb.toString().trim();
         if (msg.length() > 0) say(msg, false);
+    }
+
+    /** Plan de combustible: se dice la primera vez que se puede calcular y cuando cambia. */
+    private String fuelPlan(Telemetry t) {
+        if (fuelLapsLeft < 0 || lapsToGo <= 0 || !t.hasFuel()) return null;
+        boolean ok = fuelLapsLeft >= lapsToGo - lapFraction();
+        int st = ok ? 0 : 1;
+        if (st == planState) return null;
+        boolean firstPlan = planState < 0;
+        planState = st;
+        if (ok) return (firstPlan ? "Plan de combustible: llegamos al final sin parar" : "Cambio de plan: ahora llegamos sin parar")
+                + ", con margen de " + num1(fuelLapsLeft - (lapsToGo - lapFraction())) + " vueltas.";
+        float add = fuelToAdd(t);
+        int stops = add > 0 ? (int) Math.ceil(add / 95f) : 1;
+        return (firstPlan ? "Plan de combustible: " : "Cambio de plan: ")
+                + (stops > 1 ? "vamos a tener que parar " + stops + " veces. " : "vamos a tener que parar a repostar. ")
+                + pitReport(t);
+    }
+
+    /** Momentos clave para hablar de neumáticos: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada. */
+    private boolean tyreKeyMoment(Telemetry t) {
+        int bit = 0;
+        if (pendingLap == 1) bit = 1;
+        else if (t.totalLaps >= 6 && pendingLap == t.totalLaps / 2) bit = 2;
+        else if (lapsToGo == 3) bit = 4;
+        else if (planState == 1 && pitLap(t) == t.lap) bit = 8;
+        if (bit == 0 || (tyreMoments & bit) != 0) return false;
+        tyreMoments |= bit;
+        return true;
+    }
+
+    String tyreShort(Telemetry t) {
+        float[] c = t.tyreTemp;
+        float mx = Math.max(Math.max(c[0], c[1]), Math.max(c[2], c[3]));
+        float mn = Math.min(Math.min(c[0], c[1]), Math.min(c[2], c[3]));
+        String st = mx > TYRE_HOT ? "Hay calor de más, cuídalos." : mn < 60 ? "Todavía fríos." : "En rango.";
+        return "Neumáticos: delanteros " + Math.round(c[0]) + " y " + Math.round(c[1]) + ", traseros "
+                + Math.round(c[2]) + " y " + Math.round(c[3]) + " grados. " + st;
     }
 
     String fuelSentence() {
@@ -208,6 +267,7 @@ final class Engineer {
         if (prevFuel >= 0 && f > prevFuel + 1f) {
             // repostaje en boxes: esta vuelta no sirve para medir consumo
             lapFuelValid = false;
+            planState = -1;
             if (f - prevFuel > 3f) say("Carga de combustible registrada.", false);
         }
         prevFuel = f;
@@ -288,7 +348,7 @@ final class Engineer {
         if (!t.hasFuel()) return "Este auto no gasta combustible en esta carrera.";
         if (fuelLapsLeft < 0) return "Combustible " + Math.round(t.fuelPct()) + " por ciento. Necesito una vuelta completa para calcular el consumo.";
         return ("Combustible " + Math.round(t.fuelPct()) + " por ciento, gastas " + num1(fuelPerLapPct)
-                + " por vuelta. " + fuelSentence()).trim();
+                + " por ciento por vuelta. " + fuelSentence()).trim();
     }
 
     /** Última vuelta que alcanzas a completar con el combustible actual; -1 sin datos, 0 si no alcanzas a cerrar esta. */
@@ -325,8 +385,37 @@ final class Engineer {
     }
 
     /** Responde una pregunta hablada (texto reconocido). */
+    static final String HELP = "Toca RAD y dime: activa o desactiva consejos, tiempos, combustible, neumáticos o delta. "
+            + "También: activa todo, o no me digas nada. Y pregúntame cuándo entro a boxes, cuánta bencina queda, cómo voy o cuántas vueltas faltan.";
+
+    /** Comandos para prender/apagar funciones. Devuelve la respuesta o null si no es un comando. */
+    String command(String q) {
+        boolean off = has(q, "desactiva", "apaga", "no me des", "no me digas", "silencia", "quita", "basta", "deja de", "callate", "sin consejo", "nada");
+        boolean on = !off && has(q, "activa", "enciende", "prende", "dame consejo", "vuelve a", "todo");
+        if (has(q, "ayuda", "comandos", "que puedo decir")) return HELP;
+        if (!off && !on) return null;
+        boolean all = has(q, "todo", "nada", "todas", "silencio");
+        boolean any = false;
+        StringBuilder what = new StringBuilder();
+        if (all || has(q, "consejo", "curva", "mejorar", "frenada", "telemetria")) { coachCalls = on; any = true; what.append("consejos por curva, "); }
+        if (all || has(q, "delta", "mitad")) { midLapCalls = on; any = true; what.append("delta a mitad de vuelta, "); }
+        if (all || has(q, "neumatic", "goma", "rueda")) { tyreCalls = on; any = true; what.append("neumáticos, "); }
+        if (all || has(q, "combustible", "bencina", "gasolina")) { fuelCalls = on; any = true; what.append("combustible, "); }
+        if (all || has(q, "tiempo", "vuelta")) { lapCalls = on; any = true; what.append("tiempos de vuelta, "); }
+        if (!any) return null;
+        if (all && !on) return "Listo, me quedo callado. Sólo te aviso lo importante: plan de combustible, combustible crítico y bandera. Di activa todo para volver.";
+        if (all) return "Listo, te doy todo: tiempos, delta, consejos, combustible y neumáticos.";
+        String w = what.substring(0, what.length() - 2);
+        int k = w.lastIndexOf(", ");
+        boolean many = k >= 0;
+        if (many) w = w.substring(0, k) + " y " + w.substring(k + 2);
+        return "Listo, " + w + (on ? (many ? " activados." : " activado.") : (many ? " desactivados." : " desactivado."));
+    }
+
     String answer(String question, Telemetry t) {
         String q = fold(question);
+        String cmd = command(q);
+        if (cmd != null) return cmd;
         if (has(q, "adelante", "atras", "rival", "distancia", "paralelo", "posicion", "lugar", "acerca", "otro auto", "los autos"))
             return "No puedo ver a los otros autos: GT7 sólo me manda los datos de tu auto. Para eso mira el mapa y los espejos.";
         if (has(q, "clima", "lluvia", "llover", "llueve", "mojad", "tiempo atmosf"))
@@ -350,7 +439,7 @@ final class Engineer {
                     + (t.waterTemp > WATER_HOT ? ". El motor está caliente." : ". Todo normal.");
         if (has(q, "vuelta", "tiempo", "mejor", "ultima", "delta", "rapid")) return lapReport(t);
         if (has(q, "como voy", "como vamos", "estado", "resumen", "como estoy")) return status(t);
-        return "No te entendí. Pregúntame por combustible, boxes, neumáticos, tiempos o vueltas que faltan.";
+        return "No te entendí. " + HELP;
     }
 
     String tyreReport(Telemetry t) {

@@ -19,6 +19,7 @@ public class SimTest {
                 System.out.println(String.format("[%6.1fs]%s %s", now[0], urgent ? " !!" : "", s));
             }
         });
+        eng.setup = new Engineer.SetupProvider() { public String reminder(int car) { return "Antes de largar: TCS en 2 y balance de frenos en menos 1."; } };
         Telemetry t = new Telemetry();
         int bad = 0;
         for (int i = 0; i < 60 * 60 * 15; i++) {
@@ -34,7 +35,7 @@ public class SimTest {
                 System.out.println("ESTADO: " + eng.status(t));
                 String[] qs = {"¿Cuándo tengo que entrar a boxes?", "a cuánto estoy del auto de adelante", "cuál es la vuelta rápida de la carrera",
                     "en qué vuelta debo parar a cambiar neumáticos", "cómo está el clima, viene lluvia", "cuánta bencina me queda",
-                    "cuántas vueltas faltan", "cómo voy", "hola"};
+                    "cuántas vueltas faltan", "cómo voy", "hola", "desactiva los consejos", "no me digas nada", "activa todo", "apaga el combustible y los neumáticos", "ayuda"};
                 for (String q : qs) System.out.println("P: " + q + "\nR: " + eng.answer(q, t));
             }
         }
