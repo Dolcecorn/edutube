@@ -296,6 +296,48 @@
       "tipo": "historia",
       "tema": "Seguridad vial familiar: silla infantil adecuada para cada viaje",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-09 09:00",
+      "tipo": "post",
+      "tema": "Primeros auxilios ante un golpe de calor",
+      "foto": "evento-downhill-ninos-4.jpg",
+      "fotos": [],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-09 18:30",
+      "tipo": "reel",
+      "tema": "Primeros auxilios ante un sangrado nasal",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "noche-costanera-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-09 11:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante una quemadura térmica leve",
+      "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-09 15:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un corte con sangrado",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-09 20:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante una baja de azúcar",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
     }
   ]
 }
