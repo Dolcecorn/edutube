@@ -21,7 +21,7 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
 GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso no aparece.
 
 ## Botones
-- Izquierda: RAD (estado completo), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.
+- Izquierda: RAD (preguntarle por voz: combustible, boxes, neumáticos, tiempos, vueltas que faltan), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.
 - Derecha: PIT (cuánto cargar en boxes), OK (repite el último mensaje), MUTE (silencia la voz), SET (ajustes), VOL+.
 
 ## Uso

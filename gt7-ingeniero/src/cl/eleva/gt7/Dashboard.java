@@ -24,7 +24,7 @@ final class Dashboard {
     /** Centros de los botones en coordenadas de pantalla (para la vista táctil). */
     final float[] btnX = new float[10], btnY = new float[10];
     float btnR;
-    boolean muted;
+    boolean muted, listening;
     int pressed = -1;
     long pressedAt;
 
@@ -142,7 +142,7 @@ final class Dashboard {
         box(376, 144, 648, 330, BLUE);
         String g = t.gear == 0 ? "R" : t.gear == 15 ? "N" : String.valueOf(t.gear);
         if (t.speedMs < 0.5f && t.gear == 0 && t.rpm < 100) g = "-";
-        p.emblem(X(384), Y(152), X(432), Y(212));
+        p.emblem(X(384), Y(150), X(436), Y(216));
         text(g, 512, 312, 200, GEAR, Painter.CENTER, true);
         if (t.suggestedGear > 0 && t.suggestedGear < 15 && t.suggestedGear != t.gear)
             text("SUG " + t.suggestedGear, 640, 170, 16, LABEL, Painter.RIGHT, true);
@@ -220,7 +220,7 @@ final class Dashboard {
     private void drawEngineer(Engineer e, long now) {
         boolean fresh = now - e.lastMessageAt < 6000;
         box(120, 518, 904, 562, fresh ? LABEL : TEAL);
-        String msg = e.lastMessage.length() > 0 ? e.lastMessage : "Ingeniero listo. Te hablo al cerrar cada vuelta.";
+        String msg = e.lastMessage.length() > 0 ? e.lastMessage : "Ingeniero listo. Toca RAD para preguntarme algo.";
         float size = 17;
         ArrayList<String> lines = wrap(msg, size, 768);
         while (lines.size() > 2 && size > 12) { size -= 1; lines = wrap(msg, size, 768); }
@@ -234,7 +234,7 @@ final class Dashboard {
         for (int i = 0; i < 10; i++) {
             float cx = i < 5 ? 56 : 968, cy = B_Y[i % 5];
             btnX[i] = X(cx); btnY[i] = Y(cy);
-            boolean down = i == pressed && now - pressedAt < 200;
+            boolean down = (i == pressed && now - pressedAt < 200) || (i == B_RAD && listening && (now / 300) % 2 == 0);
             int c = B_COLOR[i];
             String label = B_LABEL[i];
             if (i == B_MUTE && muted) { c = RED; label = "VOZ"; }

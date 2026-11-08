@@ -309,11 +309,66 @@ final class Engineer {
                 + " por vuelta. " + fuelSentence()).trim();
     }
 
+    /** Última vuelta que alcanzas a completar con el combustible actual; -1 sin datos, 0 si no alcanzas a cerrar esta. */
+    int pitLap(Telemetry t) {
+        if (fuelLapsLeft < 0 || t.lap <= 0) return -1;
+        float rest = 1f - lapFraction();             // lo que falta de la vuelta actual
+        if (fuelLapsLeft < rest) return 0;
+        return t.lap + (int) Math.floor(fuelLapsLeft - rest);
+    }
+
     String pitReport(Telemetry t) {
         float add = fuelToAdd(t);
         if (add < 0) return fuelReport(t);
         if (add < 0.5f) return "No necesitas parar por combustible, llegas al final.";
-        return "Para terminar carga " + Math.round(add) + " por ciento de combustible en boxes.";
+        StringBuilder sb = new StringBuilder();
+        int pl = pitLap(t);
+        if (pl == 0) sb.append("No alcanzas a cerrar esta vuelta, entra a boxes ahora. ");
+        else if (pl == t.lap) sb.append("Entra a boxes al final de esta vuelta. ");
+        else if (pl > 0) sb.append("Entra a boxes a más tardar al final de la vuelta ").append(pl).append(". ");
+        sb.append("Carga ").append(Math.round(add)).append(" por ciento de combustible para terminar.");
+        return sb.toString();
+    }
+
+    static String fold(String s) {
+        s = s.toLowerCase(Locale.US);
+        String a = "áéíóúüñ", b = "aeiouun";
+        for (int i = 0; i < a.length(); i++) s = s.replace(a.charAt(i), b.charAt(i));
+        return s;
+    }
+
+    private static boolean has(String q, String... words) {
+        for (String w : words) if (q.contains(w)) return true;
+        return false;
+    }
+
+    /** Responde una pregunta hablada (texto reconocido). */
+    String answer(String question, Telemetry t) {
+        String q = fold(question);
+        if (has(q, "adelante", "atras", "rival", "distancia", "paralelo", "posicion", "lugar", "acerca", "otro auto", "los autos"))
+            return "No puedo ver a los otros autos: GT7 sólo me manda los datos de tu auto. Para eso mira el mapa y los espejos.";
+        if (has(q, "clima", "lluvia", "llover", "llueve", "mojad", "tiempo atmosf"))
+            return "GT7 no me manda el clima. Mira el radar de lluvia en la pantalla del juego.";
+        if (has(q, "rapida de la carrera", "record", "de los demas", "del resto"))
+            return "Sólo veo tus vueltas, no las de los demás. " + lapReport(t);
+        if (has(q, "parar", "parada", "boxes", "box", "pits", "detener", "reposta", "cargar", "entrar"))
+            return (has(q, "neumatic", "goma", "rueda", "llanta")
+                    ? "GT7 no me manda el desgaste de los neumáticos, así que la parada te la calculo por combustible. " : "")
+                    + pitReport(t);
+        if (has(q, "combustible", "bencina", "gasolina", "nafta", "estanque", "consumo")) return fuelReport(t);
+        if (has(q, "neumatic", "goma", "rueda", "llanta", "desgaste"))
+            return (has(q, "desgaste", "cambiar") ? "El desgaste no viene en la telemetría, te doy las temperaturas. " : "") + tyreReport(t);
+        if (has(q, "faltan", "cuantas vueltas", "que vuelta", "vuelta voy", "en que vuelta")) {
+            if (t.lap <= 0) return "Todavía no empieza la carrera.";
+            if (t.totalLaps <= 0) return "Vas en la vuelta " + t.lap + ", sin límite de vueltas.";
+            return "Vas en la vuelta " + t.lap + " de " + t.totalLaps + ". Faltan " + Math.max(0, lapsToGo) + " contando esta.";
+        }
+        if (has(q, "motor", "agua", "aceite", "temperatura"))
+            return "Agua " + Math.round(t.waterTemp) + " grados, aceite " + Math.round(t.oilTemp) + " grados"
+                    + (t.waterTemp > WATER_HOT ? ". El motor está caliente." : ". Todo normal.");
+        if (has(q, "vuelta", "tiempo", "mejor", "ultima", "delta", "rapid")) return lapReport(t);
+        if (has(q, "como voy", "como vamos", "estado", "resumen", "como estoy")) return status(t);
+        return "No te entendí. Pregúntame por combustible, boxes, neumáticos, tiempos o vueltas que faltan.";
     }
 
     String tyreReport(Telemetry t) {

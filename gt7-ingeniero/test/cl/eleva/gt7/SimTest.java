@@ -30,7 +30,13 @@ public class SimTest {
                 System.out.println(String.format("   t=%.0f vuelta %d/%d %s delta=%s %.0fkm/h marcha %d rpm %.0f comb %.1f%% (%.1f vueltas) neum %.0f/%.0f/%.0f/%.0f",
                     now[0], t.lap, t.totalLaps, Engineer.clockText(eng.lapTimeS), eng.deltaValid ? String.format("%+.2f", eng.deltaS) : "-",
                     t.kmh(), t.gear, t.rpm, t.fuelPct(), eng.fuelLapsLeft, t.tyreTemp[0], t.tyreTemp[1], t.tyreTemp[2], t.tyreTemp[3]));
-            if (i == 60 * 60 * 5) System.out.println("ESTADO: " + eng.status(t));
+            if (i == 60 * 60 * 5) {
+                System.out.println("ESTADO: " + eng.status(t));
+                String[] qs = {"¿Cuándo tengo que entrar a boxes?", "a cuánto estoy del auto de adelante", "cuál es la vuelta rápida de la carrera",
+                    "en qué vuelta debo parar a cambiar neumáticos", "cómo está el clima, viene lluvia", "cuánta bencina me queda",
+                    "cuántas vueltas faltan", "cómo voy", "hola"};
+                for (String q : qs) System.out.println("P: " + q + "\nR: " + eng.answer(q, t));
+            }
         }
         System.out.println("paquetes inválidos: " + bad);
     }

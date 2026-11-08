@@ -34,6 +34,7 @@ final class DashboardView extends View implements Painter {
         c = canvas;
         boolean live;
         dash.muted = act.isMuted();
+        dash.listening = act.listening;
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);
             live = System.currentTimeMillis() - act.lastPacketAt < 2000;
