@@ -338,6 +338,52 @@
       "tipo": "historia",
       "tema": "Primeros auxilios ante una baja de azúcar",
       "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-10 09:00",
+      "tipo": "carrusel",
+      "tema": "Checklist para contratar un traslado en ambulancia",
+      "foto": "evento-downhill-ninos-5.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "clinica-dia-angulo-bajo.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-10 18:30",
+      "tipo": "reel",
+      "tema": "Cobertura de eventos: respaldo sanitario ante calor y descompensaciones",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "punto-atencion-ruta-vertical.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-10 11:30",
+      "tipo": "historia",
+      "tema": "Traslado de pacientes con acompañante",
+      "foto": "noche-costanera-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-10 15:30",
+      "tipo": "historia",
+      "tema": "Traslado de pacientes que no pueden viajar en auto",
+      "foto": "noche-vespucio-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-10 20:30",
+      "tipo": "historia",
+      "tema": "Atención de urgencias con traslado equipado",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
     }
   ]
 }

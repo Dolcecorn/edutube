@@ -1,0 +1,61 @@
+{
+  "tema": "Checklist para contratar un traslado en ambulancia",
+  "laminas": [
+    {
+      "titulo": "Antes de contratar una ambulancia",
+      "texto": "Checklist para pedir un traslado programado sin olvidar información importante.",
+      "foto": "evento-downhill-ninos-5.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "1. Explica la condición del paciente",
+      "texto": "Indica si puede caminar, necesita silla de ruedas o debe viajar en camilla. Así el equipo conoce el tipo de traslado requerido.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "2. Entrega origen y destino",
+      "texto": "Comparte la dirección de salida, hospital, clínica o domicilio de llegada, además de la fecha y hora necesarias.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "3. Aclara si necesitas acompañante",
+      "texto": "En los traslados AHP puede viajar un acompañante. Infórmalo al solicitar el servicio para planificar mejor el espacio.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "4. Pregunta por ida, vuelta o espera",
+      "texto": "Si necesitas regresar, esperar en el lugar o realizar viajes frecuentes, dilo desde el comienzo: controles, exámenes o diálisis.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "5. Confirma documentos y pago",
+      "texto": "AHP entrega boleta o factura para solicitar reembolso según tu plan. Puedes pagar en efectivo o mediante transferencia.",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "Guárdalo y compártelo",
+      "texto": "¿Necesitas un traslado? Llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl. Atención 24/7, según disponibilidad.",
+      "foto": "clinica-atardecer-balizas.jpg",
+      "locucion": ""
+    }
+  ],
+  "descripcion": "¿Vas a contratar una ambulancia? Estos datos te ayudarán a solicitar el servicio con mayor claridad.\n\nIndica la movilidad del paciente, el origen, el destino, la fecha y la hora. También informa si viajará un acompañante o si necesitas ida y vuelta con espera.\n\nAmbulancias AHP realiza traslados a domicilios, hospitales y clínicas, además de viajes a Santiago y otras regiones a pedido. En cada traslado viajan un conductor y un TENS.\n\nGuarda este carrusel y compártelo con quien pueda necesitarlo. Para consultar disponibilidad, llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladoEnAmbulancia",
+    "#TrasladoDePacientes",
+    "#Ambulancia",
+    "#Salud",
+    "#Atencion24Horas",
+    "#ServiciosDeSalud",
+    "#SanAntonio",
+    "#Valparaiso",
+    "#QuintaRegion",
+    "#Santiago",
+    "#RegionMetropolitana"
+  ]
+}
