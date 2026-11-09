@@ -13,4 +13,6 @@ interface Painter {
     void ring(float cx, float cy, float r, float width, int argb);
     /** Dibuja el emblema (imagen) dentro del rectángulo. */
     void emblem(float l, float t, float r, float b);
+    /** Rellena con textura de fibra de carbono. */
+    void carbon(float l, float t, float r, float b);
 }

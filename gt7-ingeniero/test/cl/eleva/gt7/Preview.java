@@ -29,8 +29,20 @@ public class Preview implements Painter {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g.drawImage(em, Math.round((l + r - w) / 2), Math.round((t + b - h) / 2), w, h, null);
     }
+    static TexturePaint carbonPaint;
+    public void carbon(float l, float t, float r, float b) {
+        if (carbonPaint == null) {
+            int n = 16;
+            BufferedImage im = new BufferedImage(n, n, BufferedImage.TYPE_INT_ARGB);
+            im.setRGB(0, 0, n, n, Dashboard.carbonTile(n), 0, n);
+            carbonPaint = new TexturePaint(im, new java.awt.geom.Rectangle2D.Float(0, 0, n, n));
+        }
+        Paint old = g.getPaint(); g.setPaint(carbonPaint);
+        g.fill(new java.awt.geom.Rectangle2D.Float(l, t, r - l, b - t)); g.setPaint(old);
+    }
     public float width(String s, float size, boolean bold) { return (float) g.getFontMetrics(f(size, bold)).getStringBounds(s, g).getWidth(); }
 
+    static int W = 1024, H = 600;
     static void shot(String file, int seconds, boolean live) throws Exception {
         Simulator sim = new Simulator();
         Telemetry t = new Telemetry();
@@ -38,16 +50,19 @@ public class Preview implements Painter {
         for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); e.onPacket(t); }
         if (!live) { t = new Telemetry(); e = new Engineer(null); }
         else e.lastMessageAt = System.currentTimeMillis();
-        BufferedImage img = new BufferedImage(1024, 600, BufferedImage.TYPE_INT_RGB);
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        new Dashboard().draw(new Preview(g), 1024, 600, t, e, live ? "Conectado a la PS5 192.168.1.20" : "Buscando la PS5 en la red…", live, System.currentTimeMillis() / 500 * 500);
+        new Dashboard().draw(new Preview(g), W, H, t, e, live ? "Conectado a la PS5 192.168.1.20" : "Buscando la PS5 en la red…", live, System.currentTimeMillis() / 500 * 500);
         ImageIO.write(img, "png", new File(file));
     }
 
     public static void main(String[] a) throws Exception {
         shot(a[0] + "/dash-carrera.png", 300, true);
+        W = 1024; H = 552;   // tablet con barra de navegación
+        shot(a[0] + "/dash-1024x552.png", 300, true);
+        W = 1024; H = 600;
         shot(a[0] + "/dash-esperando.png", 0, false);
     }
 }

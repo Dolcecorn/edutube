@@ -93,5 +93,15 @@ final class DashboardView extends View implements Painter {
         rf.set((l + r - w) / 2, (t + b - h) / 2, (l + r + w) / 2, (t + b + h) / 2);
         c.drawBitmap(emblem, src, rf, bmp);
     }
+    private Paint carbonPaint;
+    public void carbon(float l, float t, float r, float b) {
+        if (carbonPaint == null) {
+            int n = 16;
+            Bitmap tile = Bitmap.createBitmap(Dashboard.carbonTile(n), n, n, Bitmap.Config.ARGB_8888);
+            carbonPaint = new Paint();
+            carbonPaint.setShader(new android.graphics.BitmapShader(tile, android.graphics.Shader.TileMode.REPEAT, android.graphics.Shader.TileMode.REPEAT));
+        }
+        c.drawRect(l, t, r, b, carbonPaint);
+    }
     public float width(String s, float size, boolean bold) { font(size, bold); return txt.measureText(s); }
 }

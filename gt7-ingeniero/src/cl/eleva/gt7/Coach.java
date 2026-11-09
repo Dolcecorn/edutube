@@ -65,43 +65,87 @@ final class Coach {
 
     float refLength() { return ref == null || ref.n == 0 ? 0 : ref.d[ref.n - 1]; }
 
+    // ventanas de evaluación de cada curva (distancia sobre la referencia)
+    private float[] wStart = new float[0], wEnd = new float[0];
+
+    /**
+     * Detecta curvas por la geometría de la pista (cambio de rumbo), no sólo por las frenadas:
+     * así una chicana o unas curvas enlazadas cuentan como curvas separadas.
+     */
     private void detectCorners() {
         Trace r = ref;
-        int[] b = new int[64], a = new int[64], e = new int[64];
-        int k = 0;
-        int i = 0;
-        while (i < r.n && k < 64) {
-            if (r.brk(i) > BRAKE_ON && (i == 0 || r.brk(i - 1) <= BRAKE_ON)) {
-                int start = i, apex = i, j = i, fullRun = 0;
-                while (j < r.n) {
-                    if (r.v[j] < r.v[apex]) apex = j;
-                    fullRun = r.thr(j) >= FULL_THROTTLE && r.brk(j) <= BRAKE_ON ? fullRun + 1 : 0;
-                    if (fullRun > 20 && j > apex) break;
-                    j++;
-                }
-                int exit = Math.min(j, r.n - 1);
-                // ignora toques de freno que no bajan la velocidad
-                if (r.v[start] - r.v[apex] > 12f) {
-                    if (k > 0 && r.d[start] - r.d[e[k - 1]] < 60f) { // une con la curva anterior (frenada en dos tiempos)
-                        if (r.v[apex] < r.v[a[k - 1]]) a[k - 1] = apex;
-                        e[k - 1] = exit;
-                    } else { b[k] = start; a[k] = apex; e[k] = exit; k++; }
-                }
-                i = Math.max(exit, i + 1);
-            } else i++;
+        final float STEP = 5f;
+        float len = r.d[r.n - 1];
+        int m = (int) (len / STEP);
+        if (m < 20) { nc = 0; alloc(0); return; }
+        // re-muestrea cada 5 m
+        float[] px = new float[m], pz = new float[m];
+        int[] idx = new int[m];
+        int j = 0;
+        for (int k = 0; k < m; k++) {
+            float d = k * STEP;
+            while (j < r.n - 1 && r.d[j] < d) j++;
+            px[k] = r.x[j]; pz[k] = r.z[j]; idx[k] = j;
         }
-        nc = k;
-        cBrake = new int[k]; cApex = new int[k]; cExit = new int[k]; cFull = new int[k]; cExitGear = new int[k]; cMinV = new float[k];
-        brakeD = new float[k]; minV = new float[k]; fullD = new float[k]; deltaIn = new float[k];
-        seen = new boolean[k]; done = new boolean[k];
-        for (int c = 0; c < k; c++) {
-            cBrake[c] = b[c]; cApex[c] = a[c]; cExit[c] = e[c]; cMinV[c] = r.v[a[c]];
-            int f = a[c];
+        // curvatura (rad/m) suavizada
+        float[] kap = new float[m];
+        for (int k = 1; k < m - 2; k++) {
+            double h0 = Math.atan2(pz[k] - pz[k - 1], px[k] - px[k - 1]);
+            double h1 = Math.atan2(pz[k + 2] - pz[k + 1], px[k + 2] - px[k + 1]);
+            double dh = h1 - h0;
+            while (dh > Math.PI) dh -= 2 * Math.PI;
+            while (dh < -Math.PI) dh += 2 * Math.PI;
+            kap[k] = (float) (dh / (3 * STEP));
+        }
+        float[] sm = new float[m];
+        for (int k = 2; k < m - 2; k++) sm[k] = (kap[k - 2] + kap[k - 1] + kap[k] + kap[k + 1] + kap[k + 2]) / 5f;
+        final float K_ON = 1f / 220f;   // radio menor a ~220 m = curva
+        int[] cs = new int[128], ce = new int[128];
+        int n = 0, k = 0;
+        while (k < m && n < 128) {
+            if (Math.abs(sm[k]) > K_ON) {
+                int sign = sm[k] > 0 ? 1 : -1, st = k;
+                float turn = 0;
+                while (k < m && Math.abs(sm[k]) > K_ON * 0.6f && (sm[k] > 0 ? 1 : -1) == sign) { turn += Math.abs(sm[k]) * STEP; k++; }
+                if (turn > 0.35f) {   // más de ~20° de giro
+                    // une con la anterior si gira para el mismo lado y casi sin recta entre medio
+                    if (n > 0 && (st - ce[n - 1]) * STEP < 20f && Math.signum(sm[ce[n - 1] - 1]) == sign) ce[n - 1] = k;
+                    else { cs[n] = st; ce[n] = k; n++; }
+                }
+            } else k++;
+        }
+        alloc(n);
+        nc = n;
+        for (int c = 0; c < n; c++) {
+            int s0 = idx[cs[c]], e0 = idx[Math.min(m - 1, ce[c])];
+            int prevEnd = c > 0 ? idx[Math.min(m - 1, ce[c - 1])] : 0;
+            int apex = s0;
+            for (int q = s0; q <= e0; q++) if (r.v[q] < r.v[apex]) apex = q;
+            // frenada que pertenece a esta curva: hasta 250 m antes, sin pasar la curva anterior
+            int b = -1;
+            float from = Math.max(r.d[prevEnd], r.d[s0] - 250f);
+            for (int q = idxAt(r, from, prevEnd); q <= apex; q++) if (r.brk(q) > BRAKE_ON) { b = q; break; }
+            if (b >= 0 && r.v[b] - r.v[apex] < 8f) b = -1;  // toque sin efecto
+            cBrake[c] = b; cApex[c] = apex; cExit[c] = e0; cMinV[c] = r.v[apex];
+            int f = apex;
             while (f < r.n - 1 && r.thr(f) < FULL_THROTTLE) f++;
             cFull[c] = f;
-            cExitGear[c] = r.gear[idxAt(r, r.d[e[c]] + 40f, e[c])];
+            cExitGear[c] = r.gear[idxAt(r, r.d[e0] + 40f, e0)];
+            wStart[c] = Math.max(r.d[prevEnd], (b >= 0 ? r.d[b] : r.d[s0]) - (b >= 0 ? 150f : 60f));
             brakeD[c] = -1; minV[c] = 1e9f; fullD[c] = -1;
         }
+        for (int c = 0; c < n; c++) {
+            float end = r.d[cExit[c]] + 40f;
+            if (c + 1 < n) end = Math.min(end, Math.max(r.d[cExit[c]], wStart[c + 1]));
+            wEnd[c] = end;
+            if (c + 1 < n && wStart[c + 1] < r.d[cExit[c]]) wStart[c + 1] = r.d[cExit[c]];
+        }
+    }
+
+    private void alloc(int k) {
+        cBrake = new int[k]; cApex = new int[k]; cExit = new int[k]; cFull = new int[k]; cExitGear = new int[k]; cMinV = new float[k];
+        brakeD = new float[k]; minV = new float[k]; fullD = new float[k]; deltaIn = new float[k];
+        seen = new boolean[k]; done = new boolean[k]; wStart = new float[k]; wEnd = new float[k];
     }
 
     private static int idxAt(Trace r, float dist, int from) {
@@ -136,9 +180,7 @@ final class Coach {
         if (mapIdx < 0 || nextCorner >= nc) return null;
         float rd = ref.d[mapIdx];
         int c = nextCorner;
-        float winStart = ref.d[cBrake[c]] - 150f;
-        if (c > 0) winStart = Math.max(winStart, ref.d[cExit[c - 1]]);
-        float winEnd = ref.d[cExit[c]] + 40f;
+        float winStart = wStart[c], winEnd = wEnd[c];
         if (rd < winStart) return null;
         float delta = lapTime - ref.t[mapIdx];
         if (!seen[c]) { seen[c] = true; deltaIn[c] = delta; }
@@ -161,14 +203,16 @@ final class Coach {
     /** Arma el consejo de la curva c; gained: segundos perdidos (+) o ganados (-) en la curva. */
     String advice(int c, float gained, int exitGear) {
         String name = "Curva " + (c + 1) + ": ";
-        float refB = ref.d[cBrake[c]];
-        float brakeDiff = brakeD[c] >= 0 ? brakeD[c] - refB : 0;   // + frenaste más tarde
+        boolean refBraked = cBrake[c] >= 0;
+        float brakeDiff = refBraked && brakeD[c] >= 0 ? brakeD[c] - ref.d[cBrake[c]] : 0;   // + frenaste más tarde
         float vDiff = minV[c] < 1e8f ? minV[c] - cMinV[c] : 0;       // + más rápido en el vértice
         float fullDiff = fullD[c] >= 0 ? fullD[c] - ref.d[cFull[c]] : 0; // + aceleraste más tarde
         boolean gearDiff = exitGear != cExitGear[c] && cExitGear[c] > 0 && exitGear > 0 && exitGear < 15;
         String gearTip = gearDiff ? " y sal en " + gearName(cExitGear[c]) : "";
 
         if (gained >= 0.12f) {
+            if (!refBraked && brakeD[c] >= 0)
+                return name + "en tu mejor vuelta la pasaste sin frenar, sólo levantando. Perdiste " + Engineer.speakDelta(gained) + ".";
             if (brakeD[c] >= 0 && brakeDiff < -12f && vDiff <= 3f)
                 return name + "frena " + m5(brakeDiff) + " metros más tarde" + gearTip + ". Perdiste " + Engineer.speakDelta(gained) + ".";
             if (brakeDiff > 12f && vDiff < -4f)
@@ -178,7 +222,7 @@ final class Coach {
             if (fullDiff > 15f)
                 return name + "aceleraste a fondo " + m5(fullDiff) + " metros más tarde. Acelera antes a la salida" + gearTip + ".";
             if (gearDiff)
-                return name + "en tu mejor vuelta saliste en " + gearName(cExitGear[c]) + ", hoy en " + gearName(exitGear) + ".";
+                return name + "en tu mejor vuelta saliste en " + gearName(cExitGear[c]) + " y ahora en " + gearName(exitGear) + ".";
             return name + "perdiste " + Engineer.speakDelta(gained) + ".";
         }
         if (gained <= -0.25f) {

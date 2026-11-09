@@ -12,7 +12,24 @@ final class Simulator {
     private int best = -1;
     private float heat;
 
-    Simulator() {
+    private final float[] tx = new float[(int) LAP_M + 2], tz = new float[(int) LAP_M + 2];
+
+    private final float fuelRate;
+
+    Simulator() { this(12f); }
+
+    Simulator(float fuelPerLap) {
+        fuelRate = fuelPerLap;
+        // trazado fijo: curva donde la velocidad objetivo es baja; el lado cambia para formar chicanas
+        double h = 0, x = 0, z = 0;
+        for (int i = 0; i < tx.length; i++) {
+            double a = 2 * Math.PI * i / LAP_M;
+            double v = 24 + 46 * (0.5 + 0.5 * Math.sin(a * 5) * Math.cos(a * 2));
+            double k = Math.max(0, 50 - v) / 50.0 * 0.03 * (Math.sin(a * 13) >= 0 ? 1 : -1);
+            h += k;
+            x += Math.cos(h); z += Math.sin(h);
+            tx[i] = (float) x; tz[i] = (float) z;
+        }
         t.fuelCapacity = 100f; t.fuel = 100f; t.totalLaps = 10; t.lap = 0; t.bestLapMs = -1; t.lastLapMs = -1;
         t.rpmAlertMin = 6500; t.rpmAlertMax = 7600; t.waterTemp = 85; t.oilTemp = 95; t.oilPressure = 4.5f;
         t.flags = Telemetry.FLAG_ON_TRACK | Telemetry.FLAG_IN_GEAR | Telemetry.FLAG_TURBO;
@@ -47,7 +64,7 @@ final class Simulator {
             float inGear = (kmh - (t.gear - 1) * 45f) / 45f;
             t.rpm = t.gear == 6 ? 4000 + kmh * 12 : 3800 + inGear * 4000;
             t.suggestedGear = 15;
-            if (t.fuel > 0) t.fuel -= 12f * t.speedMs * dt / LAP_M;  // ~12 % por vuelta: no alcanza
+            if (t.fuel > 0) t.fuel -= fuelRate * t.speedMs * dt / LAP_M;  // ~12 % por vuelta: no alcanza
             heat += ((t.brake > 0 ? 1.5f : 0) + Math.abs(acc) * 0.02f - 0.4f) * dt;
             heat = Math.max(0, Math.min(1.6f, heat));
             for (int i = 0; i < 4; i++) {
@@ -66,8 +83,8 @@ final class Simulator {
                 shift = (rnd.nextFloat() - 0.5f) * 50f;   // frena hasta 25 m antes o después
             }
         }
-        t.posX = (float) Math.cos(2 * Math.PI * dist / LAP_M) * 500;
-        t.posZ = (float) Math.sin(2 * Math.PI * dist / LAP_M) * 500;
+        int di = Math.max(0, Math.min(tx.length - 1, (int) dist));
+        t.posX = tx[di]; t.posZ = tz[di];
         t.timeOfDayMs += 17;
         return t.encode(0x1234567 + pid * 7919);
     }

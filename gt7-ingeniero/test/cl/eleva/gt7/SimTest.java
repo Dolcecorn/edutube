@@ -39,6 +39,13 @@ public class SimTest {
                 for (String q : qs) System.out.println("P: " + q + "\nR: " + eng.answer(q, t));
             }
         }
-        System.out.println("paquetes inválidos: " + bad);
+        System.out.println("paquetes inválidos: " + bad + "  curvas detectadas: " + eng.coach.nc);
+        for (float rate : new float[]{15.5f, 18f, 19.5f, 20.5f, 21.5f, 30f}) {
+            Simulator s2 = new Simulator(rate);
+            Engineer e2 = new Engineer(null);
+            Telemetry t2 = new Telemetry();
+            for (int i = 0; i < (int) (60 * 60 * 2.6f); i++) { byte[] p = s2.next(); t2.decrypt(p, p.length); e2.onPacket(t2); }
+            System.out.println("CONSUMO " + rate + "%/v, vuelta " + t2.lap + ", comb " + Math.round(t2.fuelPct()) + "%: " + e2.pitReport(t2));
+        }
     }
 }

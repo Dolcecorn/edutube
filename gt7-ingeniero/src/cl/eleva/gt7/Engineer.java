@@ -98,15 +98,6 @@ final class Engineer {
         prevPid = t.packetId;
         boolean running = t.onTrack() && !t.paused() && !t.loading();
 
-        // en la parrilla: recordatorio de TCS y balance de frenos
-        if (!startReminded && t.lap == 0 && running && t.speedMs < 1f) {
-            startReminded = true;
-            String r = setup != null ? setup.reminder(t.carCode) : null;
-            if (r == null) r = "Antes de largar revisa el TCS y el balance de frenos. Puedes guardar tus valores para este auto en SET.";
-            if (t.hasFuel() && t.totalLaps > 1) r += " El plan de combustible te lo doy al cerrar la primera vuelta.";
-            say(r, false);
-        }
-
         // ---- cambios de vuelta ----
         if (t.lap != prevLap) {
             if (prevLap > 0 && t.lap == prevLap + 1) {
@@ -115,6 +106,7 @@ final class Engineer {
                 if (prevLap > 0) reset();
             }
             if (t.lap > 0) startLap(t, prevLap >= 0);
+            if (t.lap == 1 && prevLap == 0 && !startReminded) raceStart(t);
             prevLap = t.lap;
         }
 
@@ -219,11 +211,10 @@ final class Engineer {
         planState = st;
         if (ok) return (firstPlan ? "Plan de combustible: llegamos al final sin parar" : "Cambio de plan: ahora llegamos sin parar")
                 + ", con margen de " + num1(fuelLapsLeft - (lapsToGo - lapFraction())) + " vueltas.";
-        float add = fuelToAdd(t);
-        int stops = add > 0 ? (int) Math.ceil(add / 95f) : 1;
-        return (firstPlan ? "Plan de combustible: " : "Cambio de plan: ")
-                + (stops > 1 ? "vamos a tener que parar " + stops + " veces. " : "vamos a tener que parar a repostar. ")
-                + pitReport(t);
+        Plan pl = plan(t);
+        String head = firstPlan ? "Plan de combustible: " : "Cambio de plan: ";
+        if (pl != null && pl.stops >= 2) return head + pitReport(t);
+        return head + "vamos a tener que parar a repostar. " + pitReport(t);
     }
 
     /** Momentos clave para hablar de neumáticos: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada. */
@@ -337,6 +328,54 @@ final class Engineer {
         }
     }
 
+    private static final String[] FIRST_LAP_TIPS = {
+        "Primera vuelta: los neumáticos están fríos, frena un poco antes y no arriesgues en la curva uno.",
+        "Primera vuelta: mucho tráfico, deja espacio en la primera frenada y busca ritmo de a poco.",
+        "Primera vuelta: neumáticos fríos, suave con el acelerador a la salida de las curvas lentas.",
+        "Primera vuelta: sobrevivir a la curva uno vale más que ganar un puesto ahí. Frena con margen."
+    };
+    private int tipSeed;
+
+    /** Saludo al largar: TCS y balance de frenos guardados, y un consejo de primera vuelta. */
+    private void raceStart(Telemetry t) {
+        startReminded = true;
+        StringBuilder sb = new StringBuilder("¡Luz verde, vamos! ");
+        String r = setup != null ? setup.reminder(t.carCode) : null;
+        if (r != null) sb.append(r).append(' ');
+        else sb.append("Revisa el TCS y el balance de frenos; puedes guardar tus valores para este auto en SET. ");
+        sb.append(FIRST_LAP_TIPS[((tipSeed++ + t.carCode + t.packetId) & 0x7fffffff) % FIRST_LAP_TIPS.length]);
+        say(sb.toString(), true);
+    }
+
+    /** Plan de paradas por combustible. */
+    static final class Plan {
+        int stops;        // 0 = llega sin parar
+        int pitLap = -1;  // última vuelta que alcanzas a cerrar antes de la 1ª parada (0 = ahora)
+        float load;       // % a cargar en la 1ª parada
+        float savePct;    // % de ahorro por vuelta que permite hacerlo con una sola parada (0 si no aplica)
+    }
+
+    /** Calcula el plan; null sin datos. */
+    Plan plan(Telemetry t) {
+        float add = fuelToAdd(t);
+        if (add < 0) return null;
+        Plan p = new Plan();
+        if (add < 0.5f) return p;
+        p.pitLap = pitLap(t);
+        float rest = 1f - lapFraction();
+        float lapsToPit = p.pitLap <= 0 ? 0 : (p.pitLap - t.lap) + rest;
+        float atPit = Math.max(0, t.fuelPct() - fuelPerLapPct * lapsToPit);
+        float space = 100f - atPit;                // lo que cabe en el estanque al parar
+        if (add <= space) { p.stops = 1; p.load = add; return p; }
+        p.load = space;
+        p.stops = 1 + (int) Math.ceil((add - space) / 100f);
+        float need = fuelPerLapPct * (lapsToGo - lapFraction() + 0.5f);
+        float have = t.fuelPct() + space;
+        float save = 100f * (1f - have / need);
+        if (save > 0 && save <= 10f) p.savePct = save;
+        return p;
+    }
+
     /** % de estanque que falta cargar para terminar (con media vuelta de margen); -1 sin datos. */
     float fuelToAdd(Telemetry t) {
         if (fuelPerLapPct <= 0 || lapsToGo <= 0 || !t.hasFuel()) return -1;
@@ -359,17 +398,25 @@ final class Engineer {
         return t.lap + (int) Math.floor(fuelLapsLeft - rest);
     }
 
+    private static String when(int pl, int lap) {
+        if (pl == 0) return "No alcanzas a cerrar esta vuelta, entra a boxes ahora. ";
+        if (pl == lap) return "Entra a boxes al final de esta vuelta. ";
+        if (pl > 0) return "Entra a boxes a más tardar al final de la vuelta " + pl + ". ";
+        return "";
+    }
+
     String pitReport(Telemetry t) {
-        float add = fuelToAdd(t);
-        if (add < 0) return fuelReport(t);
-        if (add < 0.5f) return "No necesitas parar por combustible, llegas al final.";
-        StringBuilder sb = new StringBuilder();
-        int pl = pitLap(t);
-        if (pl == 0) sb.append("No alcanzas a cerrar esta vuelta, entra a boxes ahora. ");
-        else if (pl == t.lap) sb.append("Entra a boxes al final de esta vuelta. ");
-        else if (pl > 0) sb.append("Entra a boxes a más tardar al final de la vuelta ").append(pl).append(". ");
-        sb.append("Carga ").append(Math.round(add)).append(" por ciento de combustible para terminar.");
-        return sb.toString();
+        Plan p = plan(t);
+        if (p == null) return fuelReport(t);
+        if (p.stops == 0) return "No necesitas parar por combustible, llegas al final.";
+        if (p.stops == 1)
+            return when(p.pitLap, t.lap) + "Carga " + Math.round(p.load) + " por ciento de combustible para terminar.";
+        if (p.savePct > 0)
+            return "Con una parada no alcanza ni llenando el estanque. Ahorra " + Math.max(1, Math.round(p.savePct))
+                    + " por ciento por vuelta y llenando el estanque en una sola parada llegas; si no, serán dos paradas. "
+                    + when(p.pitLap, t.lap).replace("Entra a boxes", "La parada:").replace("No alcanzas", "Ojo, no alcanzas");
+        return "Vamos a necesitar " + p.stops + " paradas. " + when(p.pitLap, t.lap).replace("Entra a boxes", "La primera")
+                + "Llena el estanque.";
     }
 
     static String fold(String s) {

@@ -15,7 +15,7 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
   (o cuánto ahorrar por vuelta / que planifiques parada).
 - A mitad de vuelta: cuántas décimas vas arriba o abajo.
 - Combustible crítico, neumáticos muy calientes, motor caliente, carga de combustible en boxes.
-- Consejos por curva: compara cada frenada con tu mejor vuelta (punto de frenada, velocidad en el vértice, cuándo aceleras a fondo y marcha de salida). Las curvas se numeran desde la meta por zonas de frenada.
+- Consejos por curva: compara cada frenada con tu mejor vuelta (punto de frenada, velocidad en el vértice, cuándo aceleras a fondo y marcha de salida). Las curvas se detectan por la forma de la pista (cambio de rumbo), así las chicanas y las enlazadas cuentan por separado; se numeran desde la meta.
 - "Quedan dos vueltas", "Última vuelta" y bandera a cuadros.
 - Tocando la barra de abajo te dice el estado completo cuando quieras.
 
@@ -27,8 +27,8 @@ GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso
 - "Ayuda" repite la lista. Lo que prendes o apagas queda guardado.
 
 ## En la parrilla y durante la carrera
-- Recuerda el TCS y el balance de frenos guardados para ese auto (SET, por código de auto).
-- Plan de combustible al cerrar la 1ª vuelta y cuando cambia (sin parar / parar en la vuelta N y cuánto cargar).
+- Al largar (vuelta 0 a 1): saludo, TCS y balance de frenos guardados para ese auto (SET, por código de auto) y un consejo de primera vuelta.
+- Plan de combustible (1 o más paradas; si con un poco de ahorro alcanza con una sola, te dice cuánto) al cerrar la 1ª vuelta y cuando cambia (sin parar / parar en la vuelta N y cuánto cargar).
 - Neumáticos en momentos clave: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada.
 
 ## Botones

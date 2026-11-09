@@ -29,22 +29,38 @@ final class Dashboard {
     long pressedAt;
 
     private Painter p;
-    private float u, ox, oy;
+    private float u, sx, sy, ox, oy;
 
-    private float X(float x) { return ox + x * u; }
-    private float Y(float y) { return oy + y * u; }
+    private float X(float x) { return ox + x * sx; }
+    private float Y(float y) { return oy + y * sy; }
     private void rect(float l, float t, float r, float b, int c) { p.rect(X(l), Y(t), X(r), Y(b), c); }
     private void round(float l, float t, float r, float b, float rad, int c) { p.round(X(l), Y(t), X(r), Y(b), rad * u, c); }
     private void box(float l, float t, float r, float b, int c) { p.outline(X(l), Y(t), X(r), Y(b), 5 * u, 2.2f * u, c); }
     private void text(String s, float x, float y, float size, int c, int align, boolean bold) { p.text(s, X(x), Y(y), size * u, c, align, bold); }
-    private float width(String s, float size, boolean bold) { return p.width(s, size * u, bold) / u; }
+    private float width(String s, float size, boolean bold) { return p.width(s, size * u, bold) / sx; }
+
+    /** Tejido de fibra de carbono (sarga 2x2) para usar como textura repetida. */
+    static int[] carbonTile(int n) {
+        int[] px = new int[n * n];
+        int h = n / 2;
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++) {
+                boolean horiz = ((x / h) + (y / h)) % 2 == 0;
+                float f = horiz ? (y % h) / (float) (h - 1) : (x % h) / (float) (h - 1);
+                float shade = (float) Math.sin(Math.PI * f);          // brillo de cada hebra
+                int v = (int) (20 + shade * (horiz ? 26 : 16));
+                px[y * n + x] = 0xff000000 | (v << 16) | (v << 8) | (v + 3);
+            }
+        return px;
+    }
 
     void draw(Painter painter, float w, float h, Telemetry t, Engineer e, String conn, boolean live, long now) {
         p = painter;
-        u = Math.min(w / 1024f, h / 600f);
-        ox = (w - 1024f * u) / 2f; oy = (h - 600f * u) / 2f;
-        p.rect(0, 0, w, h, BG);
-        round(4, 2, 1020, 598, 46, BODY);
+        // ocupa toda la pantalla: estira en X e Y por separado; textos y círculos usan la escala menor
+        sx = w / 1024f; sy = h / 600f;
+        u = Math.min(sx, sy);
+        ox = 0; oy = 0;
+        p.carbon(0, 0, w, h);
 
         drawLights(t, e, now);
         drawWordmark();
@@ -56,9 +72,10 @@ final class Dashboard {
         drawGear(t);
         drawDelta(t, e);
         drawFuel(t, e);
-        drawPit(t, e);
+        drawTyreGraphic(t);
         drawTimes(t, e);
-        drawTyresRow(t);
+        drawPitRow(t, e);
+        drawPedals(t);
         drawEngineer(e, now);
         drawButtons(now);
 
@@ -171,13 +188,44 @@ final class Dashboard {
             text("!", 230, 430, 19, RED, Painter.LEFT, true);
     }
 
-    private void drawPit(Telemetry t, Engineer e) {
+    /** Auto visto desde arriba con los 4 neumáticos pintados según su temperatura. */
+    private void drawTyreGraphic(Telemetry t) {
         box(376, 336, 648, 470, YELLOW);
-        text("CARGAR EN BOXES", 512, 362, 15, WHITE, Painter.CENTER, false);
-        float add = e.fuelToAdd(t);
-        String v = add < 0 ? "--" : String.valueOf(Math.round(add));
-        text(v, 512, 440, 72, add > 0.5f ? WHITE : GREEN, Painter.CENTER, false);
-        text("% del estanque", 512, 462, 14, DIM, Painter.CENTER, false);
+        text("NEUMÁTICOS °C", 384, 356, 13, LABEL, Painter.LEFT, true);
+        float cx = 512, top = 352, bot = 462;
+        // carrocería
+        round(cx - 32, top, cx + 32, bot, 18, 0xff2b2d33);
+        round(cx - 22, top + 30, cx + 22, top + 62, 8, 0xff15161a);   // cabina
+        round(cx - 26, top + 2, cx + 26, top + 10, 4, 0xff3a3c44);    // alerón delantero
+        round(cx - 30, bot - 10, cx + 30, bot - 2, 4, 0xff3a3c44);    // alerón trasero
+        float[][] pos = {{cx - 58, top + 12}, {cx + 34, top + 12}, {cx - 58, bot - 46}, {cx + 34, bot - 46}};
+        for (int i = 0; i < 4; i++) {
+            int c = tyreColor(t.tyreTemp[i]);
+            round(pos[i][0], pos[i][1], pos[i][0] + 24, pos[i][1] + 36, 6, c);
+            String v = String.valueOf(Math.round(t.tyreTemp[i]));
+            float ty = pos[i][1] + 28;
+            if (i % 2 == 0) text(v, cx - 66, ty, 26, c, Painter.RIGHT, true);
+            else text(v, cx + 66, ty, 26, c, Painter.LEFT, true);
+        }
+    }
+
+    /** Fila de boxes: plan de paradas por combustible. */
+    private void drawPitRow(Telemetry t, Engineer e) {
+        box(120, 476, 648, 512, ORANGE);
+        text("BOXES", 130, 500, 15, ORANGE, Painter.LEFT, true);
+        Engineer.Plan pl = e.plan(t);
+        String msg; int c = WHITE;
+        if (!t.hasFuel()) { msg = "Sin consumo de combustible"; c = DIM; }
+        else if (pl == null) { msg = "Midiendo consumo… (1 vuelta)"; c = DIM; }
+        else if (pl.stops == 0) { msg = "Sin parar: llegas al final"; c = GREEN; }
+        else {
+            String lap = pl.pitLap == 0 ? "ahora" : pl.pitLap == t.lap ? "esta vuelta" : "vuelta " + pl.pitLap;
+            if (pl.stops == 1) msg = "Parar " + lap + " · cargar " + Math.round(pl.load) + "%";
+            else if (pl.savePct > 0) msg = "Ahorra " + Math.max(1, Math.round(pl.savePct)) + "%/v y 1 parada (" + lap + "), o 2 paradas";
+            else msg = pl.stops + " paradas · 1ª " + lap + " · llenar estanque";
+            c = pl.pitLap >= 0 && pl.pitLap <= t.lap ? RED : WHITE;
+        }
+        text(msg, 640, 501, 18, c, Painter.RIGHT, false);
     }
 
     private void drawTimes(Telemetry t, Engineer e) {
@@ -196,16 +244,7 @@ final class Dashboard {
         return RED;
     }
 
-    private void drawTyresRow(Telemetry t) {
-        String[] n = {"DI", "DD", "TI", "TD"};
-        for (int i = 0; i < 4; i++) {
-            float l = 120 + i * 133.5f;
-            int c = tyreColor(t.tyreTemp[i]);
-            box(l, 476, l + 127.5f, 512, c);
-            text(n[i], l + 8, 500, 14, c, Painter.LEFT, true);
-            text(Math.round(t.tyreTemp[i]) + "°", l + 119, 502, 20, WHITE, Painter.RIGHT, false);
-        }
-        // pedales
+    private void drawPedals(Telemetry t) {
         box(654, 476, 904, 512, TEAL);
         bar(662, 483, 896, 492, t.throttle / 255f, GREEN);
         bar(662, 497, 896, 506, t.brake / 255f, RED);
