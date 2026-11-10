@@ -589,6 +589,210 @@ def sello(img, semilla):
     obj.alpha_composite(_oro(m, 120))
     cerrar()
 
+
+# ---------- motivos premium: protección de datos / filtraciones (2026-11-10) ----------
+
+def _cilindro(obj, cx, ytop, rx, ry, alto):
+    """Disco de vidrio (un nivel de base de datos) en vista 3/4."""
+    c = capa()
+    d = ImageDraw.Draw(c)
+    d.rectangle([(cx - rx) * S, ytop * S, (cx + rx) * S, (ytop + alto) * S], fill=(200, 214, 250, 26))
+    d.ellipse([(cx - rx) * S, (ytop + alto - ry) * S, (cx + rx) * S, (ytop + alto + ry) * S], fill=(200, 214, 250, 26))
+    d.arc([(cx - rx) * S, (ytop + alto - ry) * S, (cx + rx) * S, (ytop + alto + ry) * S], 0, 180,
+          fill=BLANCO + (150,), width=int(1.8 * S))
+    for x in (cx - rx, cx + rx):
+        d.line([(x * S, ytop * S), (x * S, (ytop + alto) * S)], fill=BLANCO + (130,), width=int(1.6 * S))
+    d.ellipse([(cx - rx) * S, (ytop - ry) * S, (cx + rx) * S, (ytop + ry) * S], fill=(225, 234, 255, 48),
+              outline=BLANCO + (210,), width=int(2 * S))
+    band = capa()                                                    # brillo vertical
+    ImageDraw.Draw(band).rectangle([(cx - rx * 0.55) * S, ytop * S, (cx - rx * 0.35) * S, (ytop + alto) * S],
+                                   fill=(255, 255, 255, 34))
+    c.alpha_composite(band.filter(ImageFilter.GaussianBlur(6 * S)))
+    for i in range(3):                                               # luces de estado
+        punto(d, cx + rx * 0.55 + i * 22, ytop + alto * 0.55, 5, BLANCO if i else DORADO, 220)
+    obj.alpha_composite(c)
+
+
+def filtracion(img, semilla):
+    """Base de datos de vidrio con una fuga de partículas doradas (filtración de datos personales)."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    cx = 470
+    for k, yt in enumerate((1080, 860, 640)):
+        _cilindro(obj, cx, yt, 250, 70, 150)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    dm.ellipse([(cx - 254) * S, (1010 - 74) * S, (cx + 254) * S, (1010 + 74) * S], outline=255, width=int(5 * S))
+    for _ in range(140):                                             # bits que escapan hacia arriba a la derecha
+        t = r.uniform(0, 1) ** 0.8
+        x = cx + 230 + t * 420 + r.normal(0, 18 + 60 * t)
+        y = 1000 - t * 560 + r.normal(0, 14 + 50 * t)
+        lado = r.uniform(4, 13) * (1 - 0.5 * t)
+        dm.rectangle([(x - lado) * S, (y - lado) * S, (x + lado) * S, (y + lado) * S], fill=int(255 * (1 - 0.7 * t)))
+    obj.alpha_composite(_oro(m, 30))
+    cerrar()
+
+
+def incidente(img, semilla):
+    """Panel de análisis de vidrio en perspectiva con un triángulo de alerta de oro (evaluar el incidente)."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    w, h = 700, 820
+    p, d = _vidrio(w, h)
+    d.rounded_rectangle([46 * S, 54 * S, 300 * S, 66 * S], radius=4 * S, fill=BLANCO + (190,))
+    pts = [(60 + i * 58, 520 - 140 * math.sin(i * 0.7) * math.exp(-i * 0.05) - (180 if i == 8 else 0))
+           for i in range(11)]
+    d.line([(x * S, y * S) for x, y in pts], fill=(220, 230, 255, 200), width=int(3 * S), joint="curve")
+    for x, y in pts:
+        d.ellipse([(x - 6) * S, (y - 6) * S, (x + 6) * S, (y + 6) * S], fill=(230, 236, 255, 220))
+    for i in range(6):
+        hh = r.uniform(40, 150)
+        d.rounded_rectangle([(70 + i * 100) * S, (760 - hh) * S, (120 + i * 100) * S, 760 * S], radius=6 * S,
+                            fill=(210, 222, 255, 60), outline=BLANCO + (120,))
+    quad = [(120, 420), (900, 480), (960, 1340), (80, 1300)]
+    obj.alpha_composite(_proyectar(p, quad))
+    f = _mapa(quad, w, h)
+    ax, ay = f(*pts[8])
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    cx, cy, L = 650, 640, 300
+    tri = [(cx, cy - L * 0.62), (cx + L * 0.58, cy + L * 0.38), (cx - L * 0.58, cy + L * 0.38)]
+    dm.polygon([(x * S, y * S) for x, y in tri], fill=255)
+    hueco = [(cx, cy - L * 0.42), (cx + L * 0.41, cy + L * 0.27), (cx - L * 0.41, cy + L * 0.27)]
+    dm.polygon([(x * S, y * S) for x, y in hueco], fill=0)
+    oro = _oro(m, 50)
+    obj.alpha_composite(oro)
+    v = capa()
+    dv = ImageDraw.Draw(v)
+    dv.polygon([(x * S, y * S) for x, y in hueco], fill=(20, 26, 50, 215))
+    dv.rounded_rectangle([(cx - 13) * S, (cy - 70) * S, (cx + 13) * S, (cy + 30) * S], radius=10 * S, fill=DORADO + (255,))
+    dv.ellipse([(cx - 15) * S, (cy + 50) * S, (cx + 15) * S, (cy + 80) * S], fill=DORADO + (255,))
+    obj.alpha_composite(v)
+    ImageDraw.Draw(obj).line([(ax * S, ay * S), ((cx - L * 0.3) * S, (cy + L * 0.3) * S)], fill=DORADO + (160,),
+                             width=int(2 * S))
+    punto(ImageDraw.Draw(obj), ax, ay, 12, DORADO, 255)
+    cerrar()
+
+
+def reporte(img, semilla):
+    """Informe de vidrio que viaja por una trayectoria dorada hasta una institución (reportar a la Agencia)."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    c = capa()                                                       # institución (columnas de vidrio)
+    d = ImageDraw.Draw(c)
+    bx, by, bw = 560, 520, 420
+    d.polygon([((bx - 20) * S, by * S), ((bx + bw / 2) * S, (by - 130) * S), ((bx + bw + 20) * S, by * S)],
+              fill=(214, 226, 255, 40), outline=BLANCO + (200,))
+    for i in range(5):
+        x = bx + 20 + i * (bw - 40) / 4
+        d.rounded_rectangle([(x - 22) * S, (by + 30) * S, (x + 22) * S, (by + 360) * S], radius=6 * S,
+                            fill=(214, 226, 255, 42), outline=BLANCO + (150,), width=int(1.4 * S))
+    d.rectangle([(bx - 40) * S, (by + 360) * S, (bx + bw + 40) * S, (by + 392) * S], fill=(214, 226, 255, 46),
+                outline=BLANCO + (180,))
+    obj.alpha_composite(c)
+    w, h = 360, 460
+    p, dp = _vidrio(w, h)
+    _texto(dp, w, 7, r, paso=40)
+    quad = [(90, 900), (420, 860), (470, 1300), (110, 1340)]
+    obj.alpha_composite(_proyectar(p, quad))
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    ruta = [(430 + t * 330, 900 - 330 * math.sin(t * math.pi * 0.62) - t * 60) for t in np.linspace(0, 1, 40)]
+    for i, (x, y) in enumerate(ruta[:-3]):
+        if i % 2 == 0:
+            dm.ellipse([(x - 6) * S, (y - 6) * S, (x + 6) * S, (y + 6) * S], fill=255)
+    x1, y1 = ruta[-1]
+    x0, y0 = ruta[-4]
+    a = math.atan2(y1 - y0, x1 - x0)
+    punta = [(x1 + 34 * math.cos(a), y1 + 34 * math.sin(a)), (x1 + 26 * math.cos(a + 2.4), y1 + 26 * math.sin(a + 2.4)),
+             (x1 + 26 * math.cos(a - 2.4), y1 + 26 * math.sin(a - 2.4))]
+    dm.polygon([(x * S, y * S) for x, y in punta], fill=255)
+    dm.line([((bx - 60) * S, (by + 420) * S), ((bx + bw + 60) * S, (by + 420) * S)], fill=255, width=int(3 * S))
+    obj.alpha_composite(_oro(m, 30))
+    cerrar()
+
+
+def titulares(img, semilla):
+    """Personas de vidrio conectadas a un nodo central de oro; algunas reciben un aviso (comunicar a titulares)."""
+    obj, cerrar = _escena(img, semilla)
+    cx, cy = 540, 860
+    posiciones = []
+    for k, (rad, n, esc) in enumerate(((300, 6, 1.0), (470, 9, 0.75))):
+        for i in range(n):
+            a = 2 * math.pi * i / n + k * 0.3
+            posiciones.append((cx + rad * math.cos(a), cy + rad * math.sin(a) * 0.62, esc))
+    lineas = capa()
+    dl = ImageDraw.Draw(lineas)
+    for x, y, e in posiciones:
+        dl.line([(cx * S, cy * S), (x * S, y * S)], fill=(200, 215, 255, 60), width=int(1.4 * S))
+    obj.alpha_composite(lineas)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    avisados = {0, 2, 4, 7, 11}
+    for i, (x, y, e) in enumerate(sorted(posiciones, key=lambda q: q[1])):
+        c = capa()
+        d = ImageDraw.Draw(c)
+        rr = 62 * e
+        d.ellipse([(x - rr) * S, (y - rr) * S, (x + rr) * S, (y + rr) * S], fill=(210, 224, 255, 40),
+                  outline=BLANCO + (190,), width=int(1.8 * S))
+        d.ellipse([(x - rr * 0.28) * S, (y - rr * 0.55) * S, (x + rr * 0.28) * S, (y - rr * 0.0) * S],
+                  fill=BLANCO + (200,))
+        d.chord([(x - rr * 0.55) * S, (y + rr * 0.08) * S, (x + rr * 0.55) * S, (y + rr * 0.9) * S], 180, 360,
+                fill=BLANCO + (200,))
+        if e < 1:
+            c = c.filter(ImageFilter.GaussianBlur(1.5 * S))
+        obj.alpha_composite(c)
+        if i in avisados:
+            bx, by = x + rr * 0.72, y - rr * 0.72
+            dm.ellipse([(bx - 17 * e) * S, (by - 17 * e) * S, (bx + 17 * e) * S, (by + 17 * e) * S], fill=255)
+    dm.ellipse([(cx - 46) * S, (cy - 46) * S, (cx + 46) * S, (cy + 46) * S], fill=255)
+    dm.ellipse([(cx - 80) * S, (cy - 80) * S, (cx + 80) * S, (cy + 80) * S], outline=255, width=int(4 * S))
+    obj.alpha_composite(_oro(m, 30))
+    v = capa()
+    ImageDraw.Draw(v).rounded_rectangle([(cx - 26) * S, (cy - 16) * S, (cx + 26) * S, (cy + 20) * S], radius=5 * S,
+                                        outline=(40, 30, 10, 220), width=int(4 * S))
+    ImageDraw.Draw(v).line([((cx - 24) * S, (cy - 14) * S), (cx * S, (cy + 4) * S), ((cx + 24) * S, (cy - 14) * S)],
+                           fill=(40, 30, 10, 220), width=int(4 * S))
+    obj.alpha_composite(v)
+    cerrar()
+
+
+def escudo_premium(img, semilla):
+    """Escudo de vidrio con aro y candado de oro sobre anillos de datos en perspectiva (estar preparados)."""
+    obj, cerrar = _escena(img, semilla)
+    cx, cy = 540, 820
+    an = capa()
+    d = ImageDraw.Draw(an)
+    for k, rad in enumerate((330, 420, 510)):
+        for i in range(60 + k * 20):
+            a = 2 * math.pi * i / (60 + k * 20)
+            punto(d, cx + rad * math.cos(a), cy + 300 + rad * 0.28 * math.sin(a), 2.6, DORADO if i % 9 == 0 else BLANCO,
+                  170 - k * 40)
+    obj.alpha_composite(an)
+    sh = [(cx, cy - 300), (cx + 240, cy - 205), (cx + 215, cy + 115), (cx, cy + 310), (cx - 215, cy + 115),
+          (cx - 240, cy - 205)]
+    bb = (cx - 260, cy - 320, cx + 260, cy + 330)
+    pw, ph = bb[2] - bb[0], bb[3] - bb[1]
+    p, _ = _vidrio(pw, ph, radio=1, alfa=(70, 26))
+    mk = Image.new("L", p.size, 0)
+    ImageDraw.Draw(mk).polygon([((x - bb[0]) * S, (y - bb[1]) * S) for x, y in sh], fill=255)
+    p.putalpha(ImageChops.multiply(p.split()[3], mk))
+    obj.alpha_composite(p, (bb[0] * S, bb[1] * S))
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    dm.line([(x * S, y * S) for x, y in sh + [sh[0]]], fill=255, width=int(10 * S), joint="curve")
+    dm.rounded_rectangle([(cx - 82) * S, (cy - 20) * S, (cx + 82) * S, (cy + 112) * S], radius=18 * S, fill=255)
+    dm.arc([(cx - 56) * S, (cy - 116) * S, (cx + 56) * S, (cy + 4) * S], 180, 360, fill=255, width=int(16 * S))
+    for x in (cx - 56, cx + 56):
+        dm.line([(x * S, (cy - 58) * S), (x * S, (cy - 16) * S)], fill=255, width=int(16 * S))
+    obj.alpha_composite(_oro(m, 40))
+    v = capa()
+    dv = ImageDraw.Draw(v)
+    dv.ellipse([(cx - 15) * S, (cy + 22) * S, (cx + 15) * S, (cy + 52) * S], fill=(40, 28, 8, 230))
+    dv.rectangle([(cx - 6) * S, (cy + 44) * S, (cx + 6) * S, (cy + 82) * S], fill=(40, 28, 8, 230))
+    obj.alpha_composite(v)
+    cerrar()
+
 AZULF = (50, 66, 120)
 CALIDO = (120, 95, 50)
 FONDOS = [
@@ -618,6 +822,16 @@ FONDOS = [
      "Reloj en línea fina con arco dorado que avanza (plazos, actuar a tiempo, vencimientos)"),
     ("sello-resolucion.jpg", sello, 15, [(0.75, 0.25, 0.5, AZULF, 0.9), (0.3, 0.75, 0.35, CALIDO, 0.2)],
      "Resolución con sello dorado (adjudicación, decisión de la autoridad, acto administrativo)"),
+    ("filtracion-datos.jpg", filtracion, 16, [(0.7, 0.3, 0.5, AZULF, 0.9), (0.25, 0.8, 0.35, CALIDO, 0.2)],
+     "Base de datos de vidrio con fuga de partículas doradas (filtración, vulneración de datos personales, Ley 21.719)"),
+    ("evaluar-incidente.jpg", incidente, 17, [(0.4, 0.25, 0.55, AZULF, 0.9), (0.8, 0.8, 0.3, CALIDO, 0.2)],
+     "Panel de análisis con triángulo de alerta de oro (evaluar un incidente, riesgos, auditoría)"),
+    ("reporte-agencia.jpg", reporte, 18, [(0.65, 0.2, 0.5, AZULF, 0.9), (0.2, 0.75, 0.35, CALIDO, 0.2)],
+     "Informe que viaja por una ruta dorada hasta una institución (reportar a la Agencia, autoridad, fiscalización)"),
+    ("notificar-titulares.jpg", titulares, 19, [(0.5, 0.3, 0.55, AZULF, 0.9), (0.5, 0.85, 0.3, CALIDO, 0.2)],
+     "Personas conectadas a un nodo de oro, algunas con aviso (comunicar a titulares, clientes, trabajadores)"),
+    ("escudo-protocolo.jpg", escudo_premium, 20, [(0.5, 0.3, 0.5, AZULF, 0.95), (0.3, 0.85, 0.3, CALIDO, 0.2)],
+     "Escudo de vidrio con candado de oro sobre anillos de datos (seguridad, protocolos, cumplimiento)"),
 ]
 
 
