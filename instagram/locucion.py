@@ -55,10 +55,7 @@ def _leer_wav(ruta):
     return np.frombuffer(datos, np.float32)
 
 
-def decir(texto, destino):
-    """Sintetiza un texto con la voz de referencia y lo guarda en destino (wav 44.1 kHz). Devuelve la duración."""
-    import torchaudio
-    m = _cargar()
+def _preparar(texto):
     # el nombre de la empresa se deletrea: A, H, P (si no, el modelo lo lee "ap")
     texto = re.sub(r"\bAHP\b", "A, Hache, Pe", texto)
     # pronunciaciones propias de la marca (marca.json "pronunciacion": {"LegalMain": "Ligalmein"})
@@ -67,6 +64,71 @@ def decir(texto, destino):
     texto = texto.strip()
     if texto and texto[-1] not in ".!?…":
         texto += "."   # sin punto final el modelo tiende a seguir "murmurando"
+    return texto
+
+
+_oido = None
+
+
+def _normalizar(t):
+    """Texto comparable: minúsculas, sin tildes ni signos; las formas de decir la sigla quedan como "ahp"."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", t.lower())
+    t = "".join(ch for ch in t if unicodedata.category(ch) != "Mn")
+    t = re.sub(r"[^\w\s]", " ", t)
+    t = re.sub(r"\ba\s*(hache|h|ache)\s*(pe|p)\b", " ahp ", t)
+    t = re.sub(r"\bahache\s*pe\b|\ba\s+h\s+p\b|\bahachepe\b", " ahp ", t)
+    return t.split()
+
+
+def _verificar(ruta, esperado):
+    """Escucha el audio con un reconocedor de voz (faster-whisper) y lo compara con el texto pedido.
+    Devuelve (ok, puntaje, lo_que_se_oyó). Si el reconocedor no está instalado, acepta el audio."""
+    global _oido
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        return True, 1.0, ""
+    if _oido is None:
+        _oido = WhisperModel("small", device="cpu", compute_type="int8")
+    segmentos, _ = _oido.transcribe(str(ruta), language="es", beam_size=5, vad_filter=False)
+    oido = " ".join(s.text for s in segmentos).strip()
+    import difflib
+    a, b = _normalizar(esperado), _normalizar(oido)
+    puntaje = difflib.SequenceMatcher(None, a, b).ratio()
+    sigla_ok = a.count("ahp") == b.count("ahp")
+    return sigla_ok and puntaje >= 0.8, puntaje + (0.5 if sigla_ok else 0), oido
+
+
+def decir(texto, destino, intentos=6):
+    """Sintetiza un texto con la voz de referencia y lo guarda en destino (wav 44.1 kHz). Devuelve la duración.
+    Cada toma se escucha con un reconocedor de voz: si no dice lo pedido (por ejemplo "Ambulancias Hache" en vez
+    de "A, Hache, Pe", o un ruido raro), se genera otra toma. Se queda con la mejor."""
+    import shutil
+    esperado = _preparar(texto)
+    mejor = None
+    with tempfile.TemporaryDirectory() as tmp:
+        for k in range(intentos):
+            toma = Path(tmp) / f"t{k}.wav"
+            dur = _sintetizar(esperado, toma, semilla=1000 + k * 97)
+            ok, puntaje, oido = _verificar(toma, esperado)
+            print(f"  voz toma {k + 1}: {'OK' if ok else 'repetir'} ({puntaje:.2f}) «{oido}»", flush=True)
+            if mejor is None or puntaje > mejor[0]:
+                mejor = (puntaje, toma, dur)
+            if ok:
+                break
+        else:
+            print(f"  AVISO: ninguna toma salió perfecta para «{texto}»; se usa la mejor", flush=True)
+        shutil.copy(mejor[1], destino)
+        return mejor[2]
+
+
+def _sintetizar(texto, destino, semilla=None):
+    import torchaudio
+    m = _cargar()
+    if semilla is not None:
+        import torch
+        torch.manual_seed(semilla)
     marca = diseno.marca()
     ajuste = {"exaggeration": 0.45, "cfg_weight": 0.5, "temperature": 0.7, **(marca.get("voz_ajustes") or {})}
     if marca.get("voz_por_frases"):
