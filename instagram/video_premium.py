@@ -125,6 +125,9 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             (diseno.FOTOS_DIR / foto if foto and (diseno.FOTOS_DIR / foto).exists() else
              (fotos[i % len(fotos)] if fotos else None))
         portada, cta = i == 0, i == len(escenas) - 1 and len(escenas) > 1
+        # última escena sin título ni texto: solo el logo (la animación del cierre dura lo que dura su locución)
+        solo_logo = cta and not titulo.strip() and not texto.strip()
+        cta = cta and not solo_logo
         f_tit, lin_t, tam_t, _ = diseno._ajustar(d0, titulo, True, 96 if portada else 84, 56, ANCHO_TEXTO, 460, 1.15)
         f_txt, lin_x, tam_c, _ = diseno._ajustar(d0, texto, False, 50, 38, ANCHO_TEXTO, 420, 1.4)
         tit = [_linea_texto(ln, f_tit, blanco, dorado) for ln in lin_t]
@@ -140,10 +143,15 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
         fondo = None
         if ruta:
             fondo = Clip(ruta, 0, dur, reparto=True) if es_clip else Fondo(ruta, 0, desenfoque=False, dir_paneo=1 if i % 2 == 0 else -1)
-        preparadas.append(dict(fondo=fondo, video=es_clip, tit=tit, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, cta=cta))
+        preparadas.append(dict(fondo=fondo, video=es_clip, tit=tit, cuerpo=cuerpo, lh_t=lh_t, lh_c=lh_c, y0=y0, dur=dur, cta=cta, logo=solo_logo))
 
-    total = sum(p["dur"] for p in preparadas) + DUR_CIERRE
-    fin_escenas = total - DUR_CIERRE
+    if preparadas[-1]["logo"]:
+        total = sum(p["dur"] for p in preparadas)
+        fin_escenas = total - preparadas[-1]["dur"]
+    else:
+        total = sum(p["dur"] for p in preparadas) + DUR_CIERRE
+        fin_escenas = total - DUR_CIERRE
+    n_num = sum(1 for p in preparadas if not p["logo"])
 
     def escena(p, tl, num):
         dur = p["dur"]
@@ -163,7 +171,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             dc = ImageDraw.Draw(capa)
             dc.text((0, 0), f"{num + 1:02d}", font=f_num, fill=dorado + (255,))
             dc.line([62, 18, 62 + int(80 * e), 18], fill=dorado + (255,), width=2)
-            dc.text((158, 0), f"{len(preparadas):02d}", font=f_num, fill=(200, 205, 220, 255))
+            dc.text((158, 0), f"{n_num:02d}", font=f_num, fill=(200, 205, 220, 255))
             img.alpha_composite(_con_alfa(capa, e), (MARGEN, y - 70))
         # título: cada línea sube desde su máscara
         for li, ln in enumerate(p["tit"]):
@@ -284,7 +292,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
             img = cierre(t - acc)
         else:
             i = max(j for j, s in enumerate(inicios) if s <= t)
-            img = pie(escena(preparadas[i], t - inicios[i], i), t)
+            img = cierre(t - inicios[i]) if preparadas[i]["logo"] else pie(escena(preparadas[i], t - inicios[i], i), t)
         # transición: fundido al azul y una línea dorada que cruza el centro
         for s in cortes:
             if s - TRANS / 2 <= t < s + TRANS / 2:
