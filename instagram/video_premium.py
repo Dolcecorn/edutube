@@ -33,11 +33,11 @@ DUR_CIERRE = 3.4
 
 # ---------- piezas gráficas ----------
 
-def _velo(color, base=0.55):
+def _velo(color, base=0.55, tope=0.93):
     """Velo del color principal: más denso abajo (texto) y en los bordes (viñeta). base menor deja ver más
     el fondo (videos reales)."""
     y, x = np.mgrid[0:H, 0:W]
-    vertical = base + (0.93 - base) * np.clip((y / H - 0.25) / 0.6, 0, 1)
+    vertical = base + (tope - base) * np.clip((y / H - 0.25) / 0.6, 0, 1)
     d = np.sqrt(((x / W - 0.5) * 1.2) ** 2 + ((y / H - 0.45) * 0.9) ** 2)
     u = np.clip((d - 0.3) / 0.5, 0, 1)
     vin = u * u * (3 - 2 * u) * 0.35                      # viñeta con borde suave (smoothstep)
@@ -103,7 +103,7 @@ def reel(escenas, destino, voz=None, musica=None, locuciones=None):
     azul, dorado = _hex(m["colores"]["principal"]), _hex(m["colores"]["acento"])
     blanco, gris = (255, 255, 255), (206, 211, 224)
     fotos = [diseno.FOTOS_DIR / f["archivo"] for f in diseno.fotos()]
-    velo = _velo(azul)
+    velo = _velo(azul, 0.30, 0.80)   # fondos ilustrados (premium): se ven más, el texto sigue legible
     velo_video = _velo(azul, 0.18)
     deco = _decoracion(dorado)
     logo = diseno._logo(True, 300, 120)
