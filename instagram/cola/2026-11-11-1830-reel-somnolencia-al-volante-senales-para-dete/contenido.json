@@ -1,0 +1,48 @@
+{
+  "tema": "Somnolencia al volante: señales para detenerse a tiempo",
+  "laminas": [
+    {
+      "titulo": "¿Bostezas al volante? Detente.",
+      "texto": "",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "locucion": "El cansancio al volante puede nublar tus decisiones antes de que lo notes."
+    },
+    {
+      "titulo": "Señales que exigen una pausa",
+      "texto": "Bostezos repetidos, párpados pesados, desvíos de trayectoria o no recordar los últimos kilómetros: detén el viaje.",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg",
+      "locucion": "Si pierdes tramos del recorrido o te cuesta mantener la pista, ya no es seguro continuar."
+    },
+    {
+      "titulo": "Dormir recupera tu alerta",
+      "texto": "Estaciónate en un lugar seguro y descansa. No confíes solo en café, música o bajar la ventana.",
+      "foto": "noche-autopista-trasera.mp4+noche-ciudad-frente.mp4",
+      "locucion": "La música y el café pueden ocultar el cansancio por un momento; dormir es lo que recupera tu atención."
+    },
+    {
+      "titulo": "Ante un accidente, no muevas",
+      "texto": "Si existe riesgo vital, pide ayuda y evita mover a la persona, salvo que haya peligro inmediato.",
+      "foto": "noche-frente-balizas-vertical.jpg",
+      "locucion": "Si alguien está inconsciente o respira con dificultad grave, llama al uno tres uno y evita moverlo."
+    },
+    {
+      "titulo": "¿Necesitas un traslado seguro?",
+      "texto": "Traslados de pacientes, atención de urgencias y coberturas. +56 9 8748 2705 · www.ambulanciasahp.cl",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "locucion": "Para un traslado o una cobertura, contáctanos. Sigue esta cuenta para más prevención clara y práctica."
+    }
+  ],
+  "descripcion": "¿Bostezas al volante? Detente antes de exponerte a un accidente.\n\nPárpados pesados, desvíos de trayectoria, bostezos repetidos o no recordar los últimos kilómetros son señales para interrumpir el viaje.\n\nBusca un lugar seguro, detente y descansa. El café, la música o el aire fresco no reemplazan dormir cuando la somnolencia ya apareció.\n\nSi ocurre un accidente con una persona inconsciente o con dificultad grave para respirar, llama al uno tres uno y evita moverla, salvo peligro inmediato.\n\nPara traslados de pacientes, atención de urgencias o coberturas, contacta a Ambulancias AHP al +56 9 8748 2705 o en www.ambulanciasahp.cl. Sigue la cuenta para más consejos prácticos de prevención.",
+  "hashtags": [
+    "#SeguridadVial",
+    "#ConduccionSegura",
+    "#SomnolenciaAlVolante",
+    "#PrevencionDeAccidentes",
+    "#PrevencionEnSalud",
+    "#PrimerosAuxilios",
+    "#AtencionDeUrgencias",
+    "#TrasladoDePacientes",
+    "#AmbulanciasAHP",
+    "#SaludEnRuta"
+  ]
+}
