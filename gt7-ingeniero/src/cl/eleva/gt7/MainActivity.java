@@ -90,9 +90,55 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     @Override public void onInit(int status) {
-        if (status != TextToSpeech.SUCCESS) return;
+        if (status != TextToSpeech.SUCCESS) { ui.postDelayed(new Runnable() { public void run() { restartTts(); } }, 3000); return; }
         ttsReady = true;
         applyVoice(prefs.getString("acento", "es-CL"), prefs.getFloat("rapidez", 1.1f), prefs.getBoolean("grave", true));
+        flushPending();
+    }
+
+    // ---- voz robusta: con poca memoria Android puede cerrar el motor de voz; se reintenta ----
+    private final ArrayList<String> pending = new ArrayList<String>();
+    private final ArrayList<Long> pendingAt = new ArrayList<Long>();
+    private long lastRestart;
+
+    private void queuePending(String part) {
+        if (pending.size() > 12) { pending.remove(0); pendingAt.remove(0); }
+        pending.add(part); pendingAt.add(System.currentTimeMillis());
+    }
+
+    private void flushPending() {
+        long now = System.currentTimeMillis();
+        ArrayList<String> todo = new ArrayList<String>();
+        for (int i = 0; i < pending.size(); i++) if (now - pendingAt.get(i) < 30000) todo.add(pending.get(i));   // lo viejo ya no sirve
+        pending.clear(); pendingAt.clear();
+        for (String part : todo) speakPart(part, false);
+    }
+
+    private void restartTts() {
+        long now = System.currentTimeMillis();
+        if (now - lastRestart < 4000) return;
+        lastRestart = now;
+        ttsReady = false;
+        try { if (tts != null) tts.shutdown(); } catch (Exception ignored) { }
+        String eng = prefs.getString("motor", "");
+        tts = eng.length() > 0 ? new TextToSpeech(this, this, eng) : new TextToSpeech(this, this);
+    }
+
+    private int speakFailures;
+
+    private void speakPart(String part, boolean flush) {
+        if (!ttsReady) { queuePending(part); return; }
+        HashMap<String, String> p = new HashMap<String, String>();
+        p.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(android.media.AudioManager.STREAM_MUSIC));
+        int r;
+        try { r = tts.speak(part, flush ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p); }
+        catch (Exception e) { r = TextToSpeech.ERROR; }
+        if (r == TextToSpeech.SUCCESS) { speakFailures = 0; return; }
+        // el motor de voz se cayó: guarda el texto y lo vuelve a intentar
+        queuePending(part);
+        speakFailures++;
+        if (speakFailures >= 2) restartTts();
+        else ui.postDelayed(new Runnable() { public void run() { if (ttsReady && !pending.isEmpty()) flushPending(); } }, 1500);
     }
 
     static final String[] ACENTOS = {"es-CL", "es-US", "es-MX", "es-ES"};
@@ -121,14 +167,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     void speak(String text, boolean urgent) {
-        if (!ttsReady || !prefs.getBoolean("voz", true)) return;
-        HashMap<String, String> p = new HashMap<String, String>();
-        p.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(android.media.AudioManager.STREAM_MUSIC));
-        // los textos largos (como el resumen final) se dicen por partes: algunos motores de voz
-        // no leen nada si el texto es muy largo
+        if (!prefs.getBoolean("voz", true)) return;
+        // los textos largos (como el resumen final) se dicen por partes
         boolean first = true;
         for (String part : chunks(text, 220)) {
-            tts.speak(part, urgent && first ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p);
+            speakPart(part, urgent && first);
             first = false;
         }
     }
@@ -330,9 +373,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     // ---- recepción ----
+    private WifiManager.WifiLock wifiLock;
+
     private void start() {
         stop();
         running = true;
+        // sin esto el wifi de la tablet entra en ahorro de energía y los paquetes llegan a tirones
+        try {
+            if (wifiLock == null) {
+                WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "gt7");
+                wifiLock.setReferenceCounted(false);
+            }
+            wifiLock.acquire();
+        } catch (Exception ignored) { }
         final boolean demo = prefs.getBoolean("demo", false);
         worker = new Thread(new Runnable() { public void run() { if (demo) runDemo(); else runUdp(); } }, "gt7");
         worker.start();
@@ -340,6 +394,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void stop() {
         running = false;
+        try { if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); } catch (Exception ignored) { }
         DatagramSocket s = socket;
         if (s != null) s.close();
         if (worker != null) { try { worker.join(1500); } catch (InterruptedException ignored) { } }
@@ -404,6 +459,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 s.setBroadcast(true);
                 s.bind(new InetSocketAddress(PORT_RECV));
                 s.setSoTimeout(500);
+                try { s.setReceiveBufferSize(256 * 1024); } catch (Exception ignored) { }
                 socket = s;
                 long lastHb = 0;
                 while (running) {

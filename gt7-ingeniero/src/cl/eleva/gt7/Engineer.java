@@ -578,6 +578,9 @@ final class Engineer {
         if (m != null && m.builtin) {
             track = m;
             coach.useTrack(m.ax, m.az, m.turns);
+            // deja fijas las curvas encontradas: con cada mejor vuelta no se vuelve a buscar (es pesado en la tablet)
+            float[][] sg = coach.segments();
+            coach.useSegments(sg[0], sg[1]);
             session.trackName = m.name;
             return "Circuito reconocido: " + m.name + ". Numeré " + coach.nc + (coach.nc == 1 ? " curva" : " curvas")
                     + (coach.nc == m.turns ? ", igual que el juego. " : "; el juego cuenta " + m.turns + ". ");

@@ -70,7 +70,7 @@ public class Preview implements Painter {
         final long[] clk = {0};
         e.time = new Engineer.Clock() { public long now() { return clk[0]; } };
         for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); clk[0] = Math.round(i / 59.94 * 1000); e.onPacket(t); }
-        if (e.track != null) e.renameTrack("Circuito de prueba");
+        if (e.track != null) e.renameTrack("Tokyo Expressway - East Clockwise");
         Analysis an = new Analysis();
         an.csvPath = "/sdcard/IngenieroGT7/carrera.csv";
         for (int tab = 0; tab < Analysis.TABS.length; tab++) {

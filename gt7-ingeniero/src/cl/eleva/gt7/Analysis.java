@@ -237,8 +237,19 @@ final class Analysis {
         text("Amarillo: inicio de sector 2 y 3", lx, 466, 14, Dashboard.DIM, Painter.LEFT, false);
         if (e.track != null) {
             text("CIRCUITO", lx, 504, 14, Dashboard.LABEL, Painter.LEFT, true);
-            text(e.track.label(), lx, 532, 19, Dashboard.YELLOW, Painter.LEFT, true);
-            if (e.track.builtin) text(e.coach.nc + " curvas (oficial: " + e.track.turns + ")", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
+            // el nombre puede ser largo: se achica y, si no cabe, va en dos líneas
+            String nm = e.track.label();
+            float fs = 19, maxW = 1000 - lx;
+            String l1 = nm, l2 = null;
+            if (width(nm, fs, true) > maxW) {
+                int k = nm.indexOf(" - ");
+                if (k < 0) { k = nm.lastIndexOf(' ', nm.length() / 2 + 6); }
+                if (k > 0) { l1 = nm.substring(0, k).trim(); l2 = nm.substring(k).replaceFirst("^\\s*-?\\s*", ""); }
+                while (fs > 12 && (width(l1, fs, true) > maxW || (l2 != null && width(l2, fs, true) > maxW))) fs -= 1;
+            }
+            text(l1, lx, 528, fs, Dashboard.YELLOW, Painter.LEFT, true);
+            if (l2 != null) text(l2, lx, 528 + fs * 1.2f, fs, Dashboard.YELLOW, Painter.LEFT, true);
+            if (e.track.builtin) text(e.coach.nc + " curvas (oficial: " + e.track.turns + ")", lx, 578, 13, Dashboard.DIM, Painter.LEFT, false);
             else if (e.track.name.length() == 0) text("ponle nombre en SET", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
         }
     }

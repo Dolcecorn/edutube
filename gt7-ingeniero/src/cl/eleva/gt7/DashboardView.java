@@ -43,7 +43,7 @@ final class DashboardView extends View implements Painter {
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);
             act.engineer.tick();   // el resumen final sale aunque ya no lleguen paquetes
-            live = System.currentTimeMillis() - act.lastPacketAt < 2000;
+            live = System.currentTimeMillis() - act.lastPacketAt < 3500;   // tolera pausas cortas del wifi
             if (act.engineer.raceEnds != seenRaceEnds) {   // terminó la carrera: abre el análisis
                 seenRaceEnds = act.engineer.raceEnds;
                 showAnalysis = true;
