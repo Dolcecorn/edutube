@@ -60,7 +60,7 @@ def decir(texto, destino):
     import torchaudio
     m = _cargar()
     # el nombre de la empresa se deletrea: A, H, P (si no, el modelo lo lee "ap")
-    texto = re.sub(r"\bAHP\b", "A, hache, pe", texto)
+    texto = re.sub(r"\bAHP\b", "A, Hache, Pe", texto)
     # pronunciaciones propias de la marca (marca.json "pronunciacion": {"LegalMain": "Ligalmein"})
     for palabra, dicha in (diseno.marca().get("pronunciacion") or {}).items():
         texto = re.sub(re.escape(palabra).replace("\\ ", "\\s*"), dicha, texto, flags=re.IGNORECASE)
