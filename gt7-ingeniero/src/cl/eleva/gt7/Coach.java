@@ -173,7 +173,20 @@ final class Coach {
      * Agrega una muestra de la vuelta actual. Devuelve un consejo cuando se termina de pasar una curva
      * (o null). lapTime en segundos.
      */
+    // resultado de la última curva evaluada (para el ingeniero y el historial)
+    boolean evaluatedNow;
+    int lastCorner = -1;
+    float lastGain, lastMinKmh;
+
+    /** Curva en la que está el auto ahora (índice desde 0), o -1 en recta / sin referencia. */
+    int cornerNow() {
+        if (ref == null || mapIdx < 0 || nextCorner >= nc) return -1;
+        float rd = ref.d[mapIdx];
+        return rd >= wStart[nextCorner] ? nextCorner : -1;
+    }
+
     String sample(Telemetry t, float lapTime, float dist) {
+        evaluatedNow = false;
         cur.add(t.posX, t.posZ, dist, lapTime, t.kmh(), t.throttle, t.brake, t.gear);
         if (ref == null) return null;
         map(t.posX, t.posZ);
@@ -190,7 +203,8 @@ final class Coach {
         if (rd < winEnd) return null;
         done[c] = true;
         nextCorner++;
-        return advice(c, delta - deltaIn[c], t.gear);
+        evaluatedNow = true; lastCorner = c; lastGain = delta - deltaIn[c]; lastMinKmh = minV[c] < 1e8f ? minV[c] : 0;
+        return advice(c, lastGain, t.gear);
     }
 
     static String gearName(int g) {

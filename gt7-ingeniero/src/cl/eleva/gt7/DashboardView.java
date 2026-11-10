@@ -16,6 +16,10 @@ final class DashboardView extends View implements Painter {
 
     private final MainActivity act;
     private final Dashboard dash = new Dashboard();
+    private final Analysis analysis = new Analysis();
+    private boolean showAnalysis;
+    private int seenRaceEnds;
+    private float downX, downY;
     private final Telemetry snap = new Telemetry();
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -38,18 +42,40 @@ final class DashboardView extends View implements Painter {
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);
             live = System.currentTimeMillis() - act.lastPacketAt < 2000;
-            dash.draw(this, getWidth(), getHeight(), snap, act.engineer, act.connText, live, System.currentTimeMillis());
+            if (act.engineer.raceEnds != seenRaceEnds) {   // terminó la carrera: abre el análisis
+                seenRaceEnds = act.engineer.raceEnds;
+                showAnalysis = true;
+                analysis.tab = 0;
+                new Thread(new Runnable() { public void run() { analysis.csvPath = act.exportCsv(); } }).start();
+            }
+            if (showAnalysis) analysis.draw(this, getWidth(), getHeight(), snap, act.engineer, System.currentTimeMillis());
+            else dash.draw(this, getWidth(), getHeight(), snap, act.engineer, act.connText, live, System.currentTimeMillis());
         }
         postInvalidateDelayed(40);
     }
 
     @Override public boolean onTouchEvent(MotionEvent e) {
+        if (e.getAction() == MotionEvent.ACTION_DOWN) { downX = e.getX(); downY = e.getY(); return true; }
         if (e.getAction() != MotionEvent.ACTION_UP) return true;
         float x = e.getX(), y = e.getY();
+        float dx = x - downX, dy = y - downY;
+        if (Math.abs(dx) > getWidth() * 0.12f && Math.abs(dx) > Math.abs(dy) * 1.5f) {   // deslizar
+            if (dx < 0 && !showAnalysis) showAnalysis = true;
+            else if (dx > 0 && showAnalysis) showAnalysis = false;
+            return true;
+        }
+        if (showAnalysis) {
+            if (y >= analysis.tabT && y <= analysis.tabB) {
+                if (x >= analysis.backL && x <= analysis.backR) { showAnalysis = false; return true; }
+                for (int i = 0; i < Analysis.TABS.length; i++)
+                    if (x >= analysis.tabL[i] && x <= analysis.tabR[i]) { analysis.tab = i; return true; }
+            }
+            return true;
+        }
         float r = dash.btnR * 1.25f;   // zona táctil un poco más grande que el botón
         for (int i = 0; i < 10; i++) {
-            float dx = x - dash.btnX[i], dy = y - dash.btnY[i];
-            if (dx * dx + dy * dy <= r * r) {
+            float bx = x - dash.btnX[i], by = y - dash.btnY[i];
+            if (bx * bx + by * by <= r * r) {
                 dash.pressed = i;
                 dash.pressedAt = System.currentTimeMillis();
                 act.onButton(i);
@@ -92,6 +118,11 @@ final class DashboardView extends View implements Painter {
         src.set(0, 0, emblem.getWidth(), emblem.getHeight());
         rf.set((l + r - w) / 2, (t + b - h) / 2, (l + r + w) / 2, (t + b + h) / 2);
         c.drawBitmap(emblem, src, rf, bmp);
+    }
+    private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    public void line(float x1, float y1, float x2, float y2, float w, int argb) {
+        linePaint.setColor(argb); linePaint.setStrokeWidth(w); linePaint.setStrokeCap(Paint.Cap.ROUND);
+        c.drawLine(x1, y1, x2, y2, linePaint);
     }
     private Paint carbonPaint;
     public void carbon(float l, float t, float r, float b) {

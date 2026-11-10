@@ -29,6 +29,10 @@ public class Preview implements Painter {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g.drawImage(em, Math.round((l + r - w) / 2), Math.round((t + b - h) / 2), w, h, null);
     }
+    public void line(float x1, float y1, float x2, float y2, float w, int a) {
+        c(a); g.setStroke(new BasicStroke(w, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(new java.awt.geom.Line2D.Float(x1, y1, x2, y2));
+    }
     static TexturePaint carbonPaint;
     public void carbon(float l, float t, float r, float b) {
         if (carbonPaint == null) {
@@ -58,7 +62,27 @@ public class Preview implements Painter {
         ImageIO.write(img, "png", new File(file));
     }
 
+    static void analysis(String dir, int seconds) throws Exception {
+        Simulator sim = new Simulator();
+        Telemetry t = new Telemetry();
+        Engineer e = new Engineer(null);
+        for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); e.onPacket(t); }
+        Analysis an = new Analysis();
+        an.csvPath = "/sdcard/IngenieroGT7/carrera.csv";
+        for (int tab = 0; tab < Analysis.TABS.length; tab++) {
+            an.tab = tab;
+            BufferedImage img = new BufferedImage(1024, 552, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = img.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            an.draw(new Preview(g), 1024, 552, t, e, 0);
+            ImageIO.write(img, "png", new File(dir + "/analisis-" + tab + ".png"));
+        }
+        java.nio.file.Files.write(new File(dir + "/carrera.csv").toPath(), e.session.csv().getBytes("UTF-8"));
+    }
+
     public static void main(String[] a) throws Exception {
+        analysis(a[0], a.length > 1 ? Integer.parseInt(a[1]) : 720);
         shot(a[0] + "/dash-carrera.png", 300, true);
         W = 1024; H = 552;   // tablet con barra de navegación
         shot(a[0] + "/dash-1024x552.png", 300, true);

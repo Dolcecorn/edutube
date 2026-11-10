@@ -170,6 +170,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         recognizer.startListening(i);
     }
 
+    /** Guarda el historial de la carrera en /sdcard/IngenieroGT7/ (se saca con adb pull). */
+    String exportCsv() {
+        final String csv;
+        synchronized (lock) { csv = engineer.session.csv(); }
+        try {
+            java.io.File dir = new java.io.File(android.os.Environment.getExternalStorageDirectory(), "IngenieroGT7");
+            dir.mkdirs();
+            String name = "carrera-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(new java.util.Date()) + ".csv";
+            java.io.File f = new java.io.File(dir, name);
+            java.io.FileOutputStream out = new java.io.FileOutputStream(f);
+            try { out.write(csv.getBytes("UTF-8")); } finally { out.close(); }
+            return f.getAbsolutePath();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     /** Botones redondos del dashboard. */
     void onButton(int id) {
         String s = null;
@@ -339,7 +356,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         connText = ip.length() > 0 ? "Conectando con la PS5 " + ip + "…" : "Buscando la PS5 en la red…";
         Telemetry t = new Telemetry();
         byte[] buf = new byte[2048];
-        byte[] hb = {'A'};
+        byte[] hb = {'B'};   // "B" trae el volante; si la PS5 no responde, se prueba con "A"
+        long hbSince = System.currentTimeMillis();
         InetAddress locked = null;
         while (running) {
             try {
@@ -352,8 +370,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 long lastHb = 0;
                 while (running) {
                     long now = System.currentTimeMillis();
-                    if (now - lastHb > 1000) {   // GT7 deja de mandar si no recibe "A" cada ~100 paquetes
+                    if (now - lastHb > 1000) {   // GT7 deja de mandar si no recibe el latido cada ~100 paquetes
                         lastHb = now;
+                        if (now - lastPacketAt > 6000 && now - hbSince > 6000) {
+                            hb[0] = hb[0] == 'B' ? (byte) 'A' : (byte) 'B';
+                            hbSince = now;
+                        }
                         for (InetAddress a : targets(locked)) {
                             try { s.send(new DatagramPacket(hb, 1, a, PORT_SEND)); } catch (Exception ignored) { }
                         }

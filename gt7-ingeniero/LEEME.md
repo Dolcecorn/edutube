@@ -31,6 +31,17 @@ GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso
 - Plan de combustible (1 o más paradas; si con un poco de ahorro alcanza con una sola, te dice cuánto) al cerrar la 1ª vuelta y cuando cambia (sin parar / parar en la vuelta N y cuánto cargar).
 - Neumáticos en momentos clave: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada.
 
+## Análisis (desliza a la izquierda)
+Pestañas RESUMEN, MAPA, CURVAS, VUELTAS y AUTO. Al terminar la carrera se abre solo en RESUMEN,
+el ingeniero da el resumen hablado y guarda el historial en /sdcard/IngenieroGT7/carrera-FECHA.csv
+(sacarlo con `adb pull /sdcard/IngenieroGT7/`). Desliza a la derecha o toca "< VOLANTE" para volver.
+
+## Dinámica que vigila el ingeniero
+- Bloqueo de ruedas al frenar y patinaje al acelerar (velocidad de cada rueda contra la del auto).
+- Sobreviraje: la carrocería gira más rápido que la trayectoria.
+- Subviraje: mucho volante para poca curva (necesita el paquete "B" de GT7 1.42+, que trae el volante).
+- Velocidad máxima de cada vuelta contra la de tu mejor vuelta.
+
 ## Botones
 - Izquierda: RAD (preguntarle por voz: combustible, boxes, neumáticos, tiempos, vueltas que faltan), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.
 - Derecha: PIT (cuánto cargar en boxes), OK (repite el último mensaje), MUTE (silencia la voz), SET (ajustes), VOL+.

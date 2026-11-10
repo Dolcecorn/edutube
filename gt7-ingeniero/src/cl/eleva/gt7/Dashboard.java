@@ -11,7 +11,7 @@ final class Dashboard {
     static final int BG = 0xff000000, BODY = 0xff131417, KNOB = 0xff1b1c21, OFF = 0xff2a2b30,
             WHITE = 0xffffffff, DIM = 0xff8a8f9c, LABEL = 0xffffe34d, GEAR = 0xffffe600,
             YELLOW = 0xffe8d44d, RED = 0xffe5483e, BLUE = 0xff3d7bff, PURPLE = 0xffa071ff,
-            TEAL = 0xff2ad4b0, ORANGE = 0xffff8a2a, GREEN = 0xff2fdc6e, SILVER = 0xffc9ccd3;
+            TEAL = 0xff2ad4b0, ORANGE = 0xffff8a2a, GREEN = 0xff2fdc6e, SILVER = 0xffc9ccd3, CYAN_DOT = 0xff4fd8ff;
 
     // botones: id, etiqueta, color
     static final int B_RAD = 0, B_FUEL = 1, B_TYR = 2, B_LAP = 3, B_VOLDN = 4,

@@ -26,6 +26,14 @@ final class Engineer {
     boolean tyreCalls = true;
     boolean coachCalls = true;
     final Coach coach = new Coach();
+    final Dynamics dyn = new Dynamics();
+    final Session session = new Session();
+    int raceEnds;              // sube cada vez que termina una carrera (la vista salta al análisis)
+    String debriefText = "";
+    private float lapMaxKmh, pendingMaxKmh, bestLapMaxKmh;
+    private final int[] lapEvMask = new int[Session.MAXC];
+    private final int[] lapEvWheels = new int[Session.MAXC];
+    private float evSaidAt = -1000;
     private float tipSaidAt = -1000;
 
     // ---- estado visible en el dashboard ----
@@ -81,6 +89,7 @@ final class Engineer {
         for (int i = 0; i < 4; i++) hotSince[i] = -1;
         tyreSaid = -1000; flagPending = false;
         startReminded = false; planState = -1; tyreMoments = 0; flagPending = false;
+        dyn.reset(); session.clear(); lapMaxKmh = 0; bestLapMaxKmh = 0;
     }
 
     long lastMessageAt;
@@ -110,12 +119,22 @@ final class Engineer {
             prevLap = t.lap;
         }
 
+        dyn.update(t, dt, running && t.lap > 0);
         if (running && t.lap > 0 && !raceFinished) {
             clock += dt;
             lapTimeS += dt;
             lapDist += t.speedMs * dt;
+            if (t.kmh() > lapMaxKmh) lapMaxKmh = t.kmh();
             String tip = coach.sample(t, lapTimeS, lapDist);
             updateDelta();
+            if (dyn.evType >= 0) onDynEvent(t);
+            if (coach.evaluatedNow) {
+                int c = coach.lastCorner;
+                if (lapObserved) session.cornerResult(c, coach.lastGain, coach.lastMinKmh);
+                String ev = c < Session.MAXC ? eventTip(c) : null;
+                if (ev != null) tip = "Curva " + (c + 1) + ": " + ev
+                        + (coach.lastGain >= 0.12f ? " Perdiste " + speakDelta(coach.lastGain) + "." : "");
+            }
             if (tip != null && coachCalls && !pending && clock - tipSaidAt > 3f) { tipSaidAt = clock; say(tip, false); }
             trackFuel(t);
             checkTyres(t);
@@ -125,7 +144,42 @@ final class Engineer {
         updateFuelEstimate(t);
     }
 
+    private void onDynEvent(Telemetry t) {
+        int c = coach.cornerNow();
+        session.addEvent(t.lap, c, dyn.evType, dyn.evWheels, t.kmh(), t.posX, t.posZ);
+        if (c >= 0 && c < Session.MAXC) {
+            lapEvMask[c] |= 1 << dyn.evType;
+            if (dyn.evType == Dynamics.LOCK) lapEvWheels[c] |= dyn.evWheels;
+            return;   // se comenta al salir de la curva
+        }
+        if (!coachCalls || pending || clock - evSaidAt < 8f) return;
+        evSaidAt = clock;
+        String m = dyn.evType == Dynamics.LOCK ? "Bloqueaste " + Dynamics.wheels(dyn.evWheels) + "."
+                : dyn.evType == Dynamics.SPIN ? "Patinas, cuidado con el acelerador."
+                : dyn.evType == Dynamics.OVER ? "Se te fue la cola, suave." : "Subviraje, el auto no dobla.";
+        say(m, false);
+    }
+
+    /** Lo que pasó en la curva c en esta vuelta (bloqueo, trompo, etc.), o null. */
+    private String eventTip(int c) {
+        int m = lapEvMask[c];
+        if (m == 0) return null;
+        if ((m & (1 << Dynamics.LOCK)) != 0)
+            return "bloqueaste " + Dynamics.wheels(lapEvWheels[c]) + ". Frena un poco menos fuerte al inicio o suelta antes el freno.";
+        if ((m & (1 << Dynamics.OVER)) != 0) return "se te fue la cola. Acelera más suave en el vértice.";
+        if ((m & (1 << Dynamics.SPIN)) != 0) return "patinaste a la salida. Dosifica el acelerador hasta enderezar el volante.";
+        return "el auto no dobló, subviraje. Entra más lento y suelta el freno de a poco.";
+    }
+
+    private void finishRace() {
+        debriefText = session.debrief();
+        say(debriefText, false);
+        raceEnds++;
+    }
+
     private void startLap(Telemetry t, boolean sawTransition) {
+        java.util.Arrays.fill(lapEvMask, 0);
+        java.util.Arrays.fill(lapEvWheels, 0);
         lapObserved = sawTransition;
         lapTimeS = 0; lapDist = 0; midLapSaid = false;
         coach.startLap();
@@ -136,7 +190,7 @@ final class Engineer {
             if (lapsToGo <= 0 && !raceFinished) {
                 raceFinished = true;
                 if (pending) flagPending = true;   // se dice después del tiempo de la última vuelta
-                else say(FLAG, false);
+                else { say(FLAG, false); finishRace(); }
             }
         } else lapsToGo = -1;
     }
@@ -150,6 +204,8 @@ final class Engineer {
         pendingMeasuredS = lapTimeS;
         pendingObserved = lapObserved;
         pendingFuelUsed = lapFuelValid ? lapStartFuel - t.fuelPct() : -1;
+        pendingMaxKmh = lapMaxKmh;
+        lapMaxKmh = 0;
         // lapStartLastLapMs conserva el valor de cuando empezó la vuelta: si el juego ya lo
         // cambió en este mismo paquete, resolvePending lo detecta de inmediato.
     }
@@ -176,19 +232,25 @@ final class Engineer {
         updateFuelEstimate(t);
 
         StringBuilder sb = new StringBuilder();
+        if (ms > 0 || pendingObserved)
+            session.addLap(pendingLap, ms, pendingMaxKmh, pendingObserved && pendingFuelUsed > 0 ? pendingFuelUsed : -1);
         if (ms > 0) {
             boolean newBest = myBestMs < 0 || ms < myBestMs, first = myBestMs < 0;
-            if (newBest) { myBestMs = ms; if (pendingObserved) coach.adoptLast(); }
+            if (newBest) { myBestMs = ms; if (pendingObserved) coach.adoptLast(); bestLapMaxKmh = pendingMaxKmh; }
             if (lapCalls) {
                 sb.append("Vuelta ").append(pendingLap).append(": ").append(speakTime(ms)).append(". ");
                 if (newBest && !first) sb.append("¡Mejor vuelta! ");
                 else if (!newBest) {
                     String dl = speakDelta((ms - myBestMs) / 1000f);
                     sb.append(Character.toUpperCase(dl.charAt(0))).append(dl.substring(1)).append(" más lento que tu mejor. ");
+                    if (bestLapMaxKmh > 0 && pendingMaxKmh > 0 && pendingMaxKmh < bestLapMaxKmh - 3)
+                        sb.append("Velocidad máxima ").append(Math.round(pendingMaxKmh)).append(", ")
+                          .append(Math.round(bestLapMaxKmh - pendingMaxKmh)).append(" menos que en tu mejor vuelta: sal más rápido de la curva antes de la recta. ");
                 }
             } else if (newBest && !first) sb.append("Mejor vuelta, ").append(speakTime(ms)).append(". ");
         }
-        if (flagPending) { flagPending = false; sb.append(FLAG); }
+        boolean endNow = false;
+        if (flagPending) { flagPending = false; sb.append(FLAG); endNow = true; }
         else if (!raceFinished) {
             String plan = fuelPlan(t);
             if (plan != null) sb.append(plan).append(' ');
@@ -199,6 +261,7 @@ final class Engineer {
         }
         String msg = sb.toString().trim();
         if (msg.length() > 0) say(msg, false);
+        if (endNow) finishRace();
     }
 
     /** Plan de combustible: se dice la primera vez que se puede calcular y cuando cambia. */
