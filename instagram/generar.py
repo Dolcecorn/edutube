@@ -212,7 +212,10 @@ sinónimos."""
         voz += """
 Gancho: la PRIMERA escena debe detener el scroll en los primeros 2 segundos, con una pregunta o un dato
 sorprendente y concreto de máximo 7 palabras en pantalla (los reels los ven sobre todo personas que aún no nos
-siguen)."""
+siguen).
+Cierre: la ÚLTIMA escena (llamado a la acción), en pantalla y en la locución, dice que somos de San Antonio, en la
+Quinta Región, y que también trabajamos en la Región Metropolitana, e invita a contactarnos.
+En la locución nunca empieces una frase con "AHP": di "Ambulancias AHP" o "en AHP"."""
     if not generico and tipo == "carrusel":
         voz += """
 Formato para GUARDAR: el carrusel es una guía práctica que la persona querrá guardar o compartir (checklist,
@@ -356,7 +359,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
     if reuso:
         c = (Historia if tipo == "historia" else Contenido).model_validate_json(Path(reuso).read_text(encoding="utf-8"))
     else:
-        zona = toca_zona(m, estado["historial"])
+        # los reels de AHP siempre cierran con la zona (Eleva 2026-11-10); el resto, 1 de cada 6
+        zona = toca_zona(m, estado["historial"]) or (tipo == "reel" and not m.get("rubro"))
         c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub, zona)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
