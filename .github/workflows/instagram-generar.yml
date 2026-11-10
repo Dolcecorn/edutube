@@ -47,6 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # torch 2.6 (lo que pide chatterbox-tts) solo tiene ruedas hasta Python 3.13: fijamos 3.12
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Instalar dependencias
         run: |
