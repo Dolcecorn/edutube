@@ -426,6 +426,22 @@
         "noche-autopista-frente.mp4",
         "noche-autopista-trasera.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-11 18:30",
+      "tipo": "reel",
+      "tema": "Somnolencia al volante: señales para detenerse a tiempo",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "fotos": [
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "noche-frente-balizas-vertical.jpg",
+        "clinica-dia-angulo-bajo.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
