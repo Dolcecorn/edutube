@@ -226,6 +226,152 @@ def balanza(img, semilla):
     con_brillo(img, c, glow=10, fuerza=0.7)
 
 
+def _hoja(d, x0, y0, w, h, r, n=12, alfa=12, paso=44, resaltar=None):
+    """Hoja de vidrio con líneas de texto; resaltar = índice de una línea que va en dorado."""
+    d.rounded_rectangle([x0 * S, y0 * S, (x0 + w) * S, (y0 + h) * S], radius=16 * S,
+                        fill=(200, 212, 245, alfa), outline=BLANCO + (110,), width=int(1.5 * S))
+    d.rectangle([(x0 + 44) * S, (y0 + 56) * S, (x0 + 44 + w * 0.4) * S, (y0 + 66) * S], fill=BLANCO + (120,))
+    filas = []
+    for i in range(n):
+        ly = y0 + 116 + i * paso
+        if ly + 10 > y0 + h - 40:
+            break
+        largo = w - 100 - int(r.uniform(0, w * 0.3))
+        col, a = (DORADO, 230) if i == resaltar else (BLANCO, 45)
+        d.rounded_rectangle([(x0 + 44) * S, ly * S, (x0 + 44 + largo) * S, (ly + 7) * S], radius=3 * S, fill=col + (a,))
+        filas.append((ly, largo))
+    return filas
+
+
+def lupa(img, semilla):
+    """Hoja de bases con una lupa de vidrio que revela una línea dorada (revisar, detectar irregularidades)."""
+    r = np.random.default_rng(semilla)
+    c = capa()
+    d = ImageDraw.Draw(c)
+    _hoja(d, 170, 380, 620, 900, r, n=17, alfa=14)
+    c = c.rotate(-6, resample=Image.BICUBIC, center=(W / 2, H / 2))
+    con_brillo(img, c, glow=8, fuerza=0.3, desenfoque=2)
+    cx, cy, R = 600, 860, 200
+    l = capa()
+    d = ImageDraw.Draw(l)
+    d.ellipse([(cx - R) * S, (cy - R) * S, (cx + R) * S, (cy + R) * S], fill=(210, 222, 250, 30))
+    for i in range(5):                                  # texto ampliado dentro del lente
+        ly = cy - 120 + i * 58
+        mitad = math.sqrt(max(0, R * R - (ly - cy) ** 2)) - 30
+        col, a = (DORADO, 245) if i == 2 else (BLANCO, 90)
+        d.rounded_rectangle([(cx - mitad) * S, ly * S, (cx + mitad * (0.9 if i == 2 else 0.6)) * S, (ly + 14) * S],
+                            radius=6 * S, fill=col + (a,))
+    d.ellipse([(cx - R) * S, (cy - R) * S, (cx + R) * S, (cy + R) * S], outline=BLANCO + (220,), width=int(5 * S))
+    d.ellipse([(cx - R + 16) * S, (cy - R + 16) * S, (cx + R - 16) * S, (cy + R - 16) * S], outline=BLANCO + (50,),
+              width=int(1.2 * S))
+    a = math.radians(45)
+    x1, y1 = cx + R * math.cos(a), cy + R * math.sin(a)
+    linea(d, [(x1 + 8, y1 + 8), (x1 + 190, y1 + 190)], DORADO, 255, 16)
+    d.arc([(cx - R + 30) * S, (cy - R + 30) * S, (cx + R - 30) * S, (cy + R - 30) * S], 200, 250,
+          fill=BLANCO + (160,), width=int(3 * S))
+    con_brillo(img, l, glow=12, fuerza=0.55)
+
+
+def comparar(img, semilla):
+    """Dos hojas lado a lado unidas por guías: bases vs. lo ocurrido; una diferencia marcada en dorado."""
+    r = np.random.default_rng(semilla)
+    c = capa()
+    d = ImageDraw.Draw(c)
+    f1 = _hoja(d, 110, 480, 400, 820, r, n=14, alfa=16)
+    f2 = _hoja(d, 570, 480, 400, 820, r, n=14, alfa=16, resaltar=6)
+    for i, (ly, largo) in enumerate(f1):
+        if i % 2 == 0 or i == 6:
+            col, a = (DORADO, 230) if i == 6 else (BLANCO, 70)
+            for x in range(110 + 44 + largo + 12, 570 + 30, 18):   # guía punteada entre hojas
+                linea(d, [(x, ly + 3), (x + 8, ly + 3)], col, a, 1.4)
+    for i in (1, 3, 9, 11):                              # visto bueno en filas que coinciden
+        ly = f2[i][0]
+        linea(d, [(930, ly + 2), (942, ly + 14), (962, ly - 10)], BLANCO, 170, 2.2)
+    ly = f2[6][0]
+    d.ellipse([(946 - 16) * S, (ly + 3 - 16) * S, (946 + 16) * S, (ly + 3 + 16) * S], outline=DORADO + (255,),
+              width=int(3 * S))
+    con_brillo(img, c, glow=8, fuerza=0.45)
+
+
+def carpeta(img, semilla):
+    """Carpeta de antecedentes con hojas asomando en profundidad y pestaña dorada (conservar documentos)."""
+    r = np.random.default_rng(semilla)
+    for k, (dx, dy, desen) in enumerate([(-40, -150, 4), (10, -110, 2), (60, -70, 0)]):
+        c = capa()
+        d = ImageDraw.Draw(c)
+        _hoja(d, 230 + dx, 560 + dy, 560, 700, r, n=11, alfa=14 + 5 * k)
+        con_brillo(img, c, glow=6, fuerza=0.3, desenfoque=desen)
+    c = capa()
+    d = ImageDraw.Draw(c)
+    x0, y0, x1, y1 = 170, 860, 910, 1360
+    d.polygon([(x0 * S, y0 * S), ((x0 + 230) * S, y0 * S), ((x0 + 270) * S, (y0 - 50) * S),
+               ((x0 + 470) * S, (y0 - 50) * S), ((x0 + 500) * S, y0 * S), (x1 * S, y0 * S), (x1 * S, y1 * S),
+               (x0 * S, y1 * S)], fill=(34, 42, 78, 235), outline=BLANCO + (190,))
+    d.rounded_rectangle([(x0 + 290) * S, (y0 - 34) * S, (x0 + 450) * S, (y0 - 14) * S], radius=6 * S,
+                        fill=DORADO + (235,))
+    linea(d, [(x0 + 40, y0 + 60), (x1 - 40, y0 + 60)], BLANCO, 60, 1.2)
+    for i in range(3):
+        linea(d, [(x0 + 70, y0 + 150 + i * 70), (x0 + 70 + [420, 340, 260][i], y0 + 150 + i * 70)], BLANCO, 70, 3)
+    linea(d, [(x0 - 60, y1 + 40), (x1 + 60, y1 + 40)], DORADO, 200, 2)
+    con_brillo(img, c, glow=10, fuerza=0.6)
+
+
+def reloj(img, semilla):
+    """Reloj en línea fina con un arco dorado que avanza (plazos, actuar a tiempo)."""
+    cx, cy, R = 540, 860, 340
+    g = capa()
+    d = ImageDraw.Draw(g)
+    for k, rad in enumerate((R + 70, R + 130)):
+        for i in range(90):
+            a = 2 * math.pi * i / 90 + k * 0.03
+            punto(d, cx + rad * math.cos(a), cy + rad * math.sin(a), 2.2, BLANCO, 70 - k * 25)
+    con_brillo(img, g, glow=4, fuerza=0.4, desenfoque=1)
+    c = capa()
+    d = ImageDraw.Draw(c)
+    d.ellipse([(cx - R) * S, (cy - R) * S, (cx + R) * S, (cy + R) * S], fill=(200, 212, 245, 14),
+              outline=BLANCO + (200,), width=int(2.4 * S))
+    for i in range(60):
+        a = 2 * math.pi * i / 60 - math.pi / 2
+        l0 = R - (40 if i % 5 == 0 else 20)
+        linea(d, [(cx + l0 * math.cos(a), cy + l0 * math.sin(a)), (cx + (R - 8) * math.cos(a), cy + (R - 8) * math.sin(a))],
+              BLANCO, 190 if i % 5 == 0 else 80, 2.2 if i % 5 == 0 else 1.2)
+    d.arc([(cx - R - 26) * S, (cy - R - 26) * S, (cx + R + 26) * S, (cy + R + 26) * S], -90, 160,
+          fill=DORADO + (255,), width=int(5 * S))
+    a = math.radians(160)
+    punto(d, cx + (R + 26) * math.cos(a), cy + (R + 26) * math.sin(a), 11, DORADO, 255)
+    for ang, largo, ancho in ((-90 + 300, R * 0.52, 6), (-90 + 160 + 90, R * 0.78, 3.5)):
+        a = math.radians(ang)
+        linea(d, [(cx, cy), (cx + largo * math.cos(a), cy + largo * math.sin(a))], BLANCO, 230, ancho)
+    punto(d, cx, cy, 14, DORADO, 255)
+    con_brillo(img, c, glow=10, fuerza=0.6)
+
+
+def sello(img, semilla):
+    """Resolución con sello circular dorado en relieve (adjudicación, decisión de la autoridad)."""
+    r = np.random.default_rng(semilla)
+    c = capa()
+    d = ImageDraw.Draw(c)
+    _hoja(d, 200, 360, 680, 960, r, n=15, alfa=14)
+    c = c.rotate(4, resample=Image.BICUBIC, center=(W / 2, H / 2))
+    con_brillo(img, c, glow=8, fuerza=0.3, desenfoque=3)
+    cx, cy = 640, 1080
+    s = capa()
+    d = ImageDraw.Draw(s)
+    for rad, wd, a in ((190, 5, 255), (166, 1.6, 200), (110, 1.6, 160)):
+        d.ellipse([(cx - rad) * S, (cy - rad) * S, (cx + rad) * S, (cy + rad) * S], outline=DORADO + (a,),
+                  width=int(wd * S))
+    for i in range(48):
+        a = 2 * math.pi * i / 48
+        punto(d, cx + 138 * math.cos(a), cy + 138 * math.sin(a), 3, DORADO, 200)
+    pts = []
+    for i in range(10):
+        a = -math.pi / 2 + i * math.pi / 5
+        rr = 70 if i % 2 == 0 else 30
+        pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
+    d.polygon([(x * S, y * S) for x, y in pts], fill=DORADO + (230,))
+    con_brillo(img, s, glow=12, fuerza=0.55)
+
+
 AZULF = (50, 66, 120)
 CALIDO = (120, 95, 50)
 FONDOS = [
@@ -245,6 +391,16 @@ FONDOS = [
      "Cuadrícula en perspectiva con barras de vidrio y línea dorada ascendente (empresas, crecimiento, decisiones)"),
     ("balanza.jpg", balanza, 6, [(0.5, 0.22, 0.5, AZULF, 0.9), (0.5, 0.8, 0.35, CALIDO, 0.15)],
      "Balanza de la justicia en línea fina con eje dorado (conflictos, controversias, resolución de disputas)"),
+    ("lupa-bases.jpg", lupa, 11, [(0.7, 0.3, 0.5, AZULF, 0.9), (0.25, 0.8, 0.35, CALIDO, 0.2)],
+     "Lupa sobre las bases que revela una línea dorada (revisar una licitación, sospecha de irregularidad, auditoría)"),
+    ("comparar-documentos.jpg", comparar, 12, [(0.5, 0.2, 0.55, AZULF, 0.9), (0.8, 0.8, 0.3, CALIDO, 0.2)],
+     "Dos documentos lado a lado con guías y una diferencia marcada en dorado (comparar bases con lo ocurrido, requisitos)"),
+    ("carpeta-antecedentes.jpg", carpeta, 13, [(0.3, 0.25, 0.5, AZULF, 0.9), (0.75, 0.8, 0.35, CALIDO, 0.2)],
+     "Carpeta con documentos y pestaña dorada (conservar antecedentes, respaldos, expediente)"),
+    ("reloj-plazos.jpg", reloj, 14, [(0.5, 0.35, 0.5, AZULF, 0.9), (0.2, 0.85, 0.3, CALIDO, 0.2)],
+     "Reloj en línea fina con arco dorado que avanza (plazos, actuar a tiempo, vencimientos)"),
+    ("sello-resolucion.jpg", sello, 15, [(0.75, 0.25, 0.5, AZULF, 0.9), (0.3, 0.75, 0.35, CALIDO, 0.2)],
+     "Resolución con sello dorado (adjudicación, decisión de la autoridad, acto administrativo)"),
 ]
 
 

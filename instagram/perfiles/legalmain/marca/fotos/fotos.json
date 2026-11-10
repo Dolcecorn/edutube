@@ -38,5 +38,30 @@
     "archivo": "balanza.jpg",
     "descripcion": "Balanza de la justicia en línea fina con eje dorado (conflictos, controversias, resolución de disputas)",
     "orientacion": "vertical"
+  },
+  {
+    "archivo": "lupa-bases.jpg",
+    "descripcion": "Lupa sobre las bases que revela una línea dorada (revisar una licitación, sospecha de irregularidad, auditoría)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "comparar-documentos.jpg",
+    "descripcion": "Dos documentos lado a lado con guías y una diferencia marcada en dorado (comparar bases con lo ocurrido, requisitos)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "carpeta-antecedentes.jpg",
+    "descripcion": "Carpeta con documentos y pestaña dorada (conservar antecedentes, respaldos, expediente)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "reloj-plazos.jpg",
+    "descripcion": "Reloj en línea fina con arco dorado que avanza (plazos, actuar a tiempo, vencimientos)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "sello-resolucion.jpg",
+    "descripcion": "Resolución con sello dorado (adjudicación, decisión de la autoridad, acto administrativo)",
+    "orientacion": "vertical"
   }
 ]
