@@ -91,7 +91,11 @@ def _verificar(ruta, esperado):
         return True, 1.0, ""
     if _oido is None:
         _oido = WhisperModel("small", device="cpu", compute_type="int8")
-    segmentos, _ = _oido.transcribe(str(ruta), language="es", beam_size=5, vad_filter=False)
+    # el audio se decodifica con ffmpeg (no con PyAV, cuya versión choca con la que fija chatterbox)
+    datos = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(ruta), "-ac", "1", "-ar", "16000",
+                            "-f", "f32le", "-"], capture_output=True, check=True).stdout
+    audio = np.frombuffer(datos, np.float32)
+    segmentos, _ = _oido.transcribe(audio, language="es", beam_size=5, vad_filter=False)
     oido = " ".join(s.text for s in segmentos).strip()
     import difflib
     a, b = _normalizar(esperado), _normalizar(oido)
