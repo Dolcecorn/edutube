@@ -49,6 +49,18 @@ final class Engineer {
     private float pitCond, pitExitCond, pitTime;
     private boolean pitStopped, pitRefuel, curLapPit, pendingPit, refuelSeen;
     private float refuelAcc;
+    int stopsDone;                       // paradas en boxes hechas en esta carrera
+    float pitLossS = -1;                 // tiempo que cuesta una parada (medido); -1 = sin medir
+    float refuelRate = -1;               // % de estanque por segundo al repostar (medido)
+    private float stopTime, pitFuelAdded;
+    private int pitLapsMs, pitLapsN;
+    private int strategyKey = -1;
+
+    // última pasada por cada curva (para responder "¿cómo estuvo la curva 2?")
+    private final int[] cLap = new int[Session.MAXC];
+    private final float[] cGain = new float[Session.MAXC], cMin = new float[Session.MAXC];
+    private final int[] cEv = new int[Session.MAXC];
+    private final String[] cTip = new String[Session.MAXC];
 
     // sectores (tercios de la vuelta según la referencia)
     private int sector;
@@ -120,6 +132,8 @@ final class Engineer {
         else { dyn.reset(); session.clear(); }
         track = null; coach.useSegments(null, null);
         inPit = false; pitCond = 0; pitExitCond = 0; curLapPit = false; pendingPit = false;
+        stopsDone = 0; pitLossS = -1; pitLapsMs = 0; pitLapsN = 0; strategyKey = -1;
+        java.util.Arrays.fill(cLap, 0);
         sector = 0; pendingS1 = -1; pendingS12 = -1;
         for (int[] a : trendSaidLap) java.util.Arrays.fill(a, -10);
     }
@@ -148,7 +162,10 @@ final class Engineer {
         if (voice != null) voice.say(s, urgent);
     }
 
+    private Telemetry lastT;
+
     void onPacket(Telemetry t) {
+        lastT = t;
         if (prevPid >= 0 && t.packetId == prevPid) return;
         float dt = prevPid < 0 ? 0 : (t.packetId - prevPid) / HZ;
         if (dt < 0 || dt > 2f) dt = 0;   // salto raro: no lo contamos
@@ -184,6 +201,10 @@ final class Engineer {
                 String ev = c < Session.MAXC ? eventTip(c) : null;
                 if (ev != null) tip = "Curva " + (c + 1) + ": " + ev
                         + (coach.lastGain >= 0.12f ? " Perdiste " + speakDelta(coach.lastGain) + "." : "");
+                if (c >= 0 && c < Session.MAXC && lapObserved) {
+                    cLap[c] = t.lap; cGain[c] = coach.lastGain; cMin[c] = coach.lastMinKmh; cEv[c] = lapEvMask[c];
+                    cTip[c] = tip;
+                }
             }
             if (inPit || curLapPit) tip = null;     // vuelta con boxes: sin consejos de curva
             if (tip != null && coachCalls && !pending && clock - tipSaidAt > 3f) { tipSaidAt = clock; say(tip, false); }
@@ -282,7 +303,8 @@ final class Engineer {
             if (pitCond > (stopped ? 1.5f : 2.5f)) enterPit(t);
         } else {
             pitTime += dt;
-            if (kmh < 3f) pitStopped = true;
+            if (kmh < 3f) { pitStopped = true; stopTime += dt; }
+            if (refuelAcc > pitFuelAdded) pitFuelAdded = refuelAcc;
             boolean back = hasRef ? (coach.offLine < 6f && kmh > 60f) || kmh > 140f : kmh > 80f;
             if (back) pitExitCond += dt; else pitExitCond = 0;
             if (pitExitCond > 2f || (pitTime > 120f && kmh > 100f)) exitPit(t);
@@ -291,24 +313,33 @@ final class Engineer {
 
     private void enterPit(Telemetry t) {
         inPit = true; pitCond = 0; pitExitCond = 0; pitTime = 0; pitStopped = false; pitRefuel = false;
+        stopTime = 0; pitFuelAdded = 0;
         curLapPit = true;
         say(pitInfo(t), false);
     }
 
     private void exitPit(Telemetry t) {
         inPit = false; pitExitCond = 0; curLapPit = true;
-        StringBuilder sb = new StringBuilder("Saliendo de boxes. ");
+        if (pitStopped || pitRefuel) stopsDone++;
+        if (pitRefuel && pitFuelAdded > 3f && stopTime > 1f) refuelRate = pitFuelAdded / stopTime;
+        planState = -1;            // el plan se rehace con lo que cargaste
+        StringBuilder sb = new StringBuilder("Saliendo de boxes");
+        sb.append(stopsDone > 0 ? ", parada " + stopsDone + " lista. " : ". ");
         float mn = Math.min(Math.min(t.tyreTemp[0], t.tyreTemp[1]), Math.min(t.tyreTemp[2], t.tyreTemp[3]));
         if (pitStopped && mn < 70f)
             sb.append("Neumáticos fríos: frena un poco antes y acelera suave las primeras curvas hasta que tomen temperatura. ");
         else sb.append("Vamos, a buscar ritmo. ");
-        if (pitRefuel && fuelLapsLeft >= 0 && lapsToGo > 0) sb.append(fuelSentence());
+        if (pitRefuel && fuelLapsLeft >= 0 && lapsToGo > 0) {
+            String pl = fuelPlan(lastT != null ? lastT : t);
+            if (pl != null) sb.append(pl).append(' ');
+        }
         say(sb.toString().trim(), false);
     }
 
     /** Lo que sirve saber mientras estás detenido en boxes. */
     String pitInfo(Telemetry t) {
         StringBuilder sb = new StringBuilder("Entrando a boxes. ");
+        sb.append(pitFuel(t));
         int n = 0; long sum = 0;
         for (Session.Lap l : session.laps) if (l.ms > 0 && !l.pit && l.lap > 1) { n++; sum += l.ms; }
         if (myBestMs > 0) {
@@ -333,15 +364,202 @@ final class Engineer {
             sb.append(" por vuelta. ");
         }
         sb.append(trendSummary());
-        if (t.hasFuel() && lapsToGo > 0 && fuelPerLapPct > 0) {
-            float add = fuelToAdd(t);
-            if (add < 0.5f) sb.append("No necesitas combustible para terminar. ");
-            else if (t.fuelPct() + add <= 100f) sb.append("Para terminar carga ").append(Math.round(add)).append(" por ciento de combustible. ");
-            else sb.append("Llena el estanque: necesitas ").append(Math.round(add)).append(" por ciento y no cabe todo. ");
-        }
         float mx = Math.max(Math.max(t.tyreTemp[0], t.tyreTemp[1]), Math.max(t.tyreTemp[2], t.tyreTemp[3]));
         if (mx > TYRE_HOT) sb.append("Los neumáticos venían sobre ").append(Math.round(mx)).append(" grados: cuida la entrada a las curvas. ");
         return sb.toString().trim();
+    }
+
+    /** Lo primero en boxes: cuánto combustible cargar en esta parada. */
+    private String pitFuel(Telemetry t) {
+        if (!t.hasFuel()) return "";
+        if (fuelPerLapPct <= 0 || lapsToGo <= 0) return "Todavía no tengo el consumo para decirte cuánto cargar. ";
+        float add = fuelToAdd(t);
+        if (add < 0.5f) return "Combustible: no necesitas cargar, llegas al final. ";
+        if (t.fuelPct() + add <= 100f) {
+            String s = "Combustible: carga " + Math.round(add) + " por ciento y llegas al final";
+            if (refuelRate > 0 && t.fuelPct() + add < 95f) s += "; no llenes, cada 10 por ciento de más son " + num1(10f / refuelRate) + " segundos parado";
+            return s + ". ";
+        }
+        float after = add - (100f - t.fuelPct());
+        int more = (int) Math.ceil(after / 100f);
+        String s = "Combustible: llena el estanque. Aun así te quedará" + (more == 1 ? " una parada más" : "n " + more + " paradas más") + ". ";
+        String st = saveAdvice(t, more);
+        return st != null ? s + st : s;
+    }
+
+    // ---------------------------------------------------------------- estrategia
+    private float avgCleanLapS() {
+        int n = 0; long sum = 0;
+        for (Session.Lap l : session.laps) if (l.ms > 0 && !l.pit && l.lap > 1) { n++; sum += l.ms; }
+        if (n > 0) return sum / (float) n / 1000f;
+        return myBestMs > 0 ? myBestMs / 1000f : 90f;
+    }
+
+    /** Las 2 curvas a las que llegas más rápido: donde el lift and coast ahorra más. */
+    private String liftCorners() {
+        Coach c = coach;
+        if (c.ref == null || c.nc == 0) return "las frenadas desde más velocidad";
+        int a = -1, b = -1;
+        for (int k = 0; k < c.nc; k++) {
+            if (c.cBrake[k] < 0) continue;
+            float v = c.ref.v[c.cBrake[k]];
+            if (a < 0 || v > c.ref.v[c.cBrake[a]]) { b = a; a = k; }
+            else if (b < 0 || v > c.ref.v[c.cBrake[b]]) b = k;
+        }
+        if (a < 0) return "las frenadas desde más velocidad";
+        return b < 0 ? "la curva " + (a + 1) : "las curvas " + (a + 1) + " y " + (b + 1);
+    }
+
+    private String technique(float save) {
+        String lc = "lift and coast: suelta el acelerador unos 50 a 80 metros antes de frenar en " + liftCorners();
+        if (save <= 4f) return lc + ".";
+        if (save <= 8f) return lc + ", y cambio corto: pasa de marcha unas 800 revoluciones antes del corte.";
+        return "baja el mapa de combustible un par de niveles en el menú del volante, más " + lc
+                + ". Te confirmo en la vuelta siguiente si alcanza.";
+    }
+
+    /**
+     * ¿Conviene ahorrar para hacer una parada menos? Compara lo que se pierde en pista ahorrando
+     * (estimado: 10 % menos de consumo cuesta ~0,8 % del tiempo de vuelta) con lo que cuesta una parada.
+     * Devuelve el consejo, o null si no aplica.
+     */
+    private String saveAdvice(Telemetry t, int stopsLeft) {
+        if (stopsLeft <= 0) return null;
+        float lapsLeft = lapsToGo - lapFraction();
+        float need = fuelPerLapPct * (lapsLeft + 0.5f);
+        float available = (inPit ? 100f : t.fuelPct()) + (stopsLeft - 1) * 100f;
+        float save = 100f * (1f - available / need);
+        if (save <= 0 || save > 15f) return null;
+        float lap = avgCleanLapS();
+        float cost = lap * save / 100f * 0.08f * lapsLeft;
+        float loss = pitLossS > 0 ? pitLossS : 25f;
+        String parada = stopsLeft == 1 ? "llegas sin otra parada" : "te ahorras una parada";
+        if (cost < loss * 0.9f)
+            return "Estrategia: si ahorras " + Math.max(1, Math.round(save)) + " por ciento por vuelta " + parada
+                    + ". Pierdes " + (cost < 1f ? "casi nada" : "unos " + Math.round(cost) + " segundos") + " en pista y ganas unos " + Math.round(loss)
+                    + (pitLossS > 0 ? "" : " estimados") + " de boxes. Cómo: " + technique(save) + " ";
+        return "Ahorrar para evitar la parada no conviene: costaría unos " + Math.round(cost) + " segundos y la parada "
+                + Math.round(loss) + ". Ve a fondo. ";
+    }
+
+    /** Estrategia completa en vivo (también responde a "¿qué estrategia?"). */
+    String strategy(Telemetry t) {
+        if (!t.hasFuel()) return "Este auto no gasta combustible en esta carrera: ve a fondo.";
+        if (fuelPerLapPct <= 0 || lapsToGo <= 0) return "Necesito una vuelta completa y una carrera con vueltas definidas para calcular la estrategia.";
+        Plan p = plan(t);
+        if (p == null) return fuelReport(t);
+        float lapsLeft = lapsToGo - lapFraction();
+        if (p.stops == 0) {
+            float margin = fuelLapsLeft - lapsLeft;
+            if (margin > 1.5f) return "Llegas sin parar y te sobran " + num1(margin) + " vueltas de combustible. Si vas con mapa de ahorro, súbelo a 1 y ataca.";
+            if (margin < 0.3f) return "Llegas sin parar pero muy justo. Para tener margen: " + technique(3f);
+            return "Llegas sin parar con " + num1(margin) + " vueltas de margen. Ve a fondo.";
+        }
+        StringBuilder sb = new StringBuilder();
+        if (p.stops == 1) sb.append(stopsDone > 0 ? "Te queda una parada más. " : "Plan: una parada. ");
+        sb.append(pitReport(t)).append(' ');
+        if (p.savePct > 0) return sb.append("Cómo ahorrar: ").append(technique(p.savePct)).toString().trim();
+        String sv = saveAdvice(t, p.stops);
+        if (sv != null) sb.append(sv);
+        else if (p.stops == 1) sb.append("Carga sólo lo necesario: parada más corta y auto más liviano.");
+        return sb.toString().trim();
+    }
+
+    /** Se habla al cerrar la vuelta sólo cuando cambia la recomendación. */
+    private String strategyUpdate(Telemetry t) {
+        if (!t.hasFuel() || fuelPerLapPct <= 0 || lapsToGo <= 1) return null;
+        Plan p = plan(t);
+        if (p == null || p.stops == 0) return null;
+        String sv = p.savePct > 0 ? "Para hacer una sola parada: " + technique(p.savePct) : saveAdvice(t, p.stops);
+        int key = p.stops * 10 + (p.savePct > 0 ? 3 : sv == null ? 0 : sv.startsWith("Estrategia") ? 1 : 2);
+        if (key == strategyKey) return null;
+        strategyKey = key;
+        return sv;
+    }
+
+    // ---------------------------------------------------------------- preguntas sobre curvas y sectores
+    private static final String[] NUM = {"cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
+            "once", "doce", "trece", "catorce", "quince", "dieciseis", "diecisiete", "dieciocho", "diecinueve", "veinte"};
+
+    /** Número que viene después de la palabra (dígitos o en palabras); -1 si no hay. */
+    static int numberAfter(String q, String word) {
+        int i = q.indexOf(word);
+        if (i < 0) return -1;
+        String rest = q.substring(i + word.length()).trim().replaceAll("^(numero|n°|nº|#)\\s*", "");
+        String[] tok = rest.split("[^a-z0-9]+");
+        if (tok.length == 0 || tok[0].length() == 0) return -1;
+        String w = tok[0];
+        if (w.matches("\\d+")) return Integer.parseInt(w);
+        if (w.equals("una") || w.equals("primera") || w.equals("primer")) return 1;
+        if (w.equals("segunda")) return 2;
+        if (w.equals("tercera") || w.equals("tercer")) return 3;
+        if (w.equals("veinti") && tok.length > 1) { int u = java.util.Arrays.asList(NUM).indexOf(tok[1]); return u > 0 ? 20 + u : 20; }
+        if (w.startsWith("veinti")) { int u = java.util.Arrays.asList(NUM).indexOf(w.substring(6)); return u > 0 ? 20 + u : -1; }
+        int k = java.util.Arrays.asList(NUM).indexOf(w);
+        return k;
+    }
+
+    String cornerReport(int n) {
+        int c = n - 1;
+        if (coach.nc == 0) return "Todavía no tengo curvas: necesito una vuelta completa.";
+        if (c < 0 || c >= coach.nc || c >= Session.MAXC) return "Este circuito tiene " + coach.nc + " curvas; pregúntame de la 1 a la " + coach.nc + ".";
+        if (cLap[c] == 0) return "Todavía no pasas por la curva " + n + " con una vuelta de referencia.";
+        StringBuilder sb = new StringBuilder("Curva " + n + " en la vuelta " + cLap[c] + ": ");
+        if (Math.abs(cGain[c]) < 0.05f) sb.append("igual que en tu mejor vuelta");
+        else sb.append(cGain[c] > 0 ? "perdiste " : "ganaste ").append(speakDelta(Math.abs(cGain[c]))).append(" contra tu mejor vuelta");
+        if (cMin[c] > 0 && coach.cMinV[c] > 0) {
+            int dv = Math.round(cMin[c] - coach.cMinV[c]);
+            sb.append(", vértice a ").append(Math.round(cMin[c])).append(" kilómetros por hora");
+            if (Math.abs(dv) >= 2) sb.append(", ").append(Math.abs(dv)).append(dv > 0 ? " más" : " menos").append(" que en tu mejor");
+        }
+        sb.append(". ");
+        int m = cEv[c];
+        if ((m & (1 << Dynamics.LOCK)) != 0) sb.append("Bloqueaste. ");
+        if ((m & (1 << Dynamics.SPIN)) != 0) sb.append("Patinaste a la salida. ");
+        if ((m & (1 << Dynamics.OVER)) != 0) sb.append("Se te fue la cola. ");
+        if ((m & (1 << Dynamics.UNDER)) != 0) sb.append("El auto no dobló. ");
+        if (cTip[c] != null) {
+            String tip = cTip[c];
+            int k = tip.indexOf(": ");
+            if (tip.startsWith("Curva") && k > 0) tip = tip.substring(k + 2);
+            String lo = fold(tip);
+            if (!lo.startsWith("perdiste") && !lo.startsWith("ganaste")) sb.append("Consejo: ").append(tip);
+            else if (cGain[c] < 0.1f) sb.append("Así está bien.");
+        } else if (cGain[c] < 0.1f) sb.append("Así está bien.");
+        float avg = session.avgLoss(c);
+        if (session.lossN[c] >= 2 && avg >= 0.1f) sb.append(" En promedio pierdes ").append(speakDelta(avg)).append(" ahí.");
+        return sb.toString().trim();
+    }
+
+    String sectorReport(int n) {
+        if (n < 1 || n > 3) return "Hay 3 sectores: pregúntame por el 1, el 2 o el 3.";
+        Session.Lap last = null;
+        for (int i = session.laps.size() - 1; i >= 0; i--) { Session.Lap l = session.laps.get(i); if (l.s1 > 0) { last = l; break; } }
+        if (last == null) return "Todavía no tengo sectores: necesito dos vueltas completas.";
+        int v = n == 1 ? last.s1 : n == 2 ? last.s2 : last.s3, b = session.bestSector(n - 1);
+        String s = "Sector " + n + " en la vuelta " + last.lap + ": " + speakTime(v);
+        if (b > 0 && v > b) s += ", " + speakDelta((v - b) / 1000f) + " más lento que tu mejor sector";
+        else if (b > 0) s += ", tu mejor sector";
+        return s + ".";
+    }
+
+    String weakReport() {
+        int[] w = session.worstCorners(3);
+        if (w.length == 0) return "Todavía no veo curvas donde pierdas tiempo claro.";
+        StringBuilder sb = new StringBuilder("Donde más pierdes: ");
+        for (int k = 0; k < w.length; k++)
+            sb.append(k == 0 ? "" : k == w.length - 1 ? " y " : ", ").append("curva ").append(w[k] + 1)
+              .append(", ").append(speakDelta(session.avgLoss(w[k])));
+        sb.append(" por vuelta.");
+        int ws = session.weakSector();
+        if (ws >= 0) sb.append(" El sector más flojo es el ").append(ws + 1).append(".");
+        return sb.toString();
+    }
+
+    String idealReport() {
+        int ideal = session.idealMs();
+        if (ideal <= 0 || myBestMs <= 0) return "Necesito un par de vueltas completas para la vuelta ideal.";
+        return "Tu vuelta ideal es " + speakTime(ideal) + ", " + speakDelta(Math.max(0, myBestMs - ideal) / 1000f) + " menos que tu mejor.";
     }
 
     // ---------------------------------------------------------------- sectores
@@ -357,6 +575,13 @@ final class Engineer {
     private String recognizeTrack() {
         if (coach.ref == null || coach.nc == 0) return "";
         TrackDb.Track m = tracks.match(coach.ref);
+        if (m != null && m.builtin) {
+            track = m;
+            coach.useTrack(m.ax, m.az, m.turns);
+            session.trackName = m.name;
+            return "Circuito reconocido: " + m.name + ". Numeré " + coach.nc + (coach.nc == 1 ? " curva" : " curvas")
+                    + (coach.nc == m.turns ? ", igual que el juego. " : "; el juego cuenta " + m.turns + ". ");
+        }
         if (m != null) {
             track = m;
             coach.useSegments(m.cs, m.ce);
@@ -372,7 +597,7 @@ final class Engineer {
     }
 
     void renameTrack(String name) {
-        if (track == null || name == null) return;
+        if (track == null || name == null || track.builtin) return;
         track.name = name.trim();
         session.trackName = track.label();
         saveTracks();
@@ -448,6 +673,12 @@ final class Engineer {
         if (ms > 0 || pendingObserved) {
             Session.Lap sl = session.addLap(pendingLap, ms, pendingMaxKmh, pendingObserved && pendingFuelUsed > 0 ? pendingFuelUsed : -1);
             sl.pit = pendingPit;
+            if (pendingPit && ms > 0) { pitLapsMs += ms; pitLapsN++; }
+            else if (!pendingPit && pitLapsN > 0) {
+                float loss = pitLapsMs / 1000f - pitLapsN * avgCleanLapS();
+                if (loss > 5f && loss < 200f) pitLossS = loss;
+                pitLapsMs = 0; pitLapsN = 0;
+            }
             if (ms > 0 && pendingS1 > 0 && pendingS12 > pendingS1) {
                 int a = Math.round(pendingS1 * 1000), ab = Math.round(pendingS12 * 1000);
                 if (ms - ab > 0) { sl.s1 = a; sl.s2 = ab - a; sl.s3 = ms - ab; }
@@ -482,6 +713,8 @@ final class Engineer {
             String plan = fuelPlan(t);
             if (plan != null) sb.append(plan).append(' ');
             else if (fuelCalls && fuelLapsLeft >= 0) sb.append(fuelSentence());
+            String stg = pendingPit ? null : strategyUpdate(t);
+            if (stg != null && pendingLap >= 2) sb.append(stg).append(' ');
             if (tyreCalls && tyreKeyMoment(t)) sb.append(tyreShort(t)).append(' ');
             if (lapsToGo == 1) sb.append("Última vuelta, a fondo.");
             else if (lapsToGo == 2) sb.append("Quedan dos vueltas.");
@@ -499,10 +732,13 @@ final class Engineer {
         if (st == planState) return null;
         boolean firstPlan = planState < 0;
         planState = st;
-        if (ok) return (firstPlan ? "Plan de combustible: llegamos al final sin parar" : "Cambio de plan: ahora llegamos sin parar")
+        boolean after = firstPlan && stopsDone > 0;   // plan nuevo justo después de una parada
+        if (ok) return (after ? "Con lo que cargaste llegas al final sin parar" : firstPlan ? "Plan de combustible: llegamos al final sin parar" : "Cambio de plan: ahora llegamos sin parar")
                 + ", con margen de " + num1(fuelLapsLeft - (lapsToGo - lapFraction())) + " vueltas.";
         Plan pl = plan(t);
-        String head = firstPlan ? "Plan de combustible: " : "Cambio de plan: ";
+        String head = after ? "Con lo que cargaste te queda" + (pl != null && pl.stops >= 2 ? "n " + pl.stops + " paradas más. " : " una parada más. ")
+                : firstPlan ? "Plan de combustible: " : "Cambio de plan: ";
+        if (after) return head + pitReport(t);
         if (pl != null && pl.stops >= 2) return head + pitReport(t);
         return head + "vamos a tener que parar a repostar. " + pitReport(t);
     }
@@ -711,7 +947,7 @@ final class Engineer {
             return "Con una parada no alcanza ni llenando el estanque. Ahorra " + Math.max(1, Math.round(p.savePct))
                     + " por ciento por vuelta y llenando el estanque en una sola parada llegas; si no, serán dos paradas. "
                     + when(p.pitLap, t.lap).replace("Entra a boxes", "La parada:").replace("No alcanzas", "Ojo, no alcanzas");
-        return "Vamos a necesitar " + p.stops + " paradas. " + when(p.pitLap, t.lap).replace("Entra a boxes", "La primera")
+        return (stopsDone > 0 ? "Quedan " + p.stops + " paradas más. " : "Vamos a necesitar " + p.stops + " paradas. ") + when(p.pitLap, t.lap).replace("Entra a boxes", "La próxima")
                 + "Llena el estanque.";
     }
 
@@ -729,7 +965,8 @@ final class Engineer {
 
     /** Responde una pregunta hablada (texto reconocido). */
     static final String HELP = "Toca RAD y dime: activa o desactiva consejos, tiempos, combustible, neumáticos o delta. "
-            + "También: activa todo, o no me digas nada. Y pregúntame cuándo entro a boxes, cuánta bencina queda, cómo voy o cuántas vueltas faltan.";
+            + "También: activa todo, o no me digas nada. Y pregúntame cómo estuvo la curva 2, cómo voy en el sector 1, dónde pierdo tiempo, "
+            + "cuál es la estrategia, cuándo entro a boxes, cuánta bencina queda o cuántas vueltas faltan.";
 
     /** Comandos para prender/apagar funciones. Devuelve la respuesta o null si no es un comando. */
     String command(String q) {
@@ -765,6 +1002,21 @@ final class Engineer {
             return "GT7 no me manda el clima. Mira el radar de lluvia en la pantalla del juego.";
         if (has(q, "rapida de la carrera", "record", "de los demas", "del resto"))
             return "Sólo veo tus vueltas, no las de los demás. " + lapReport(t);
+        if (has(q, "curva")) {
+            int n = numberAfter(q, "curva");
+            if (n > 0) return cornerReport(n);
+            if (has(q, "peor", "pierdo", "mas lenta", "mejorar")) return weakReport();
+            return "¿Qué curva? Dime, por ejemplo: cómo estuvo la curva 2.";
+        }
+        if (has(q, "sector")) {
+            int n = numberAfter(q, "sector");
+            return n > 0 ? sectorReport(n) : weakReport();
+        }
+        if (has(q, "donde pierdo", "peor", "mejorar", "que mejoro", "donde mejoro")) return weakReport();
+        if (has(q, "ideal")) return idealReport();
+        if (has(q, "estrategia", "ahorr", "mapa", "lift", "cambio corto", "short", "conviene"))
+            return strategy(t);
+        if (has(q, "circuito", "pista")) return track != null ? "Estamos en " + track.label() + ", con " + coach.nc + " curvas." : "Todavía no reconozco el circuito: necesito la primera vuelta completa.";
         if (has(q, "parar", "parada", "boxes", "box", "pits", "detener", "reposta", "cargar", "entrar"))
             return (has(q, "neumatic", "goma", "rueda", "llanta")
                     ? "GT7 no me manda el desgaste de los neumáticos, así que la parada te la calculo por combustible. " : "")

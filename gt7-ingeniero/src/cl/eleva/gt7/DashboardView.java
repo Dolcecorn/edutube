@@ -38,6 +38,7 @@ final class DashboardView extends View implements Painter {
         c = canvas;
         boolean live;
         dash.muted = act.isMuted();
+        dash.battery = act.batteryPct; dash.charging = act.charging;
         dash.listening = act.listening;
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);

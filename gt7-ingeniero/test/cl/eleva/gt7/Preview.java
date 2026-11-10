@@ -58,7 +58,8 @@ public class Preview implements Painter {
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        new Dashboard().draw(new Preview(g), W, H, t, e, live ? "Conectado a la PS5 192.168.1.20" : "Buscando la PS5 en la red…", live, System.currentTimeMillis() / 500 * 500);
+        Dashboard dsh = new Dashboard(); dsh.battery = 78; dsh.charging = true;
+        dsh.draw(new Preview(g), W, H, t, e, live ? "Conectado a la PS5 192.168.1.20" : "Buscando la PS5 en la red…", live, System.currentTimeMillis() / 500 * 500);
         ImageIO.write(img, "png", new File(file));
     }
 
@@ -87,6 +88,7 @@ public class Preview implements Painter {
     public static void main(String[] a) throws Exception {
         analysis(a[0], a.length > 1 ? Integer.parseInt(a[1]) : 760);
         shot(a[0] + "/dash-carrera.png", 300, true);
+        shot(a[0] + "/dash-boxes.png", 422, true);
         W = 1024; H = 552;   // tablet con barra de navegación
         shot(a[0] + "/dash-1024x552.png", 300, true);
         W = 1024; H = 600;

@@ -34,7 +34,9 @@ final class Coach {
     Trace cur = new Trace(), last, ref;
     int mapIdx = -1;
     float offLine = -1;      // metros entre el auto y la línea de la mejor vuelta (-1 = sin referencia)
-    float[] fixedS, fixedE;  // curvas de un circuito ya conocido (fracción de vuelta); null = detectar          // índice de la mejor vuelta que corresponde a la posición actual
+    float[] fixedS, fixedE;  // curvas de un circuito ya conocido (fracción de vuelta); null = detectar
+    float[] apexX, apexZ;    // vértices oficiales del circuito (base de pistas GT7); null = no hay
+    int targetTurns;         // cantidad oficial de curvas (0 = no se sabe)
 
     // curvas de la referencia
     int nc;
@@ -85,11 +87,45 @@ final class Coach {
             buildCorners(si, ei, n);
             return;
         }
+        if (apexX != null && apexX.length > 0 && r.n > 50) { fromApexes(r); return; }
+        int[][] seg = null;
+        if (targetTurns > 0) {
+            // circuito conocido: busca los parámetros que dan la cantidad oficial de curvas
+            int bestErr = Integer.MAX_VALUE;
+            for (float[] pr : LADDER) {
+                int[][] g = geometric(r, pr[0], pr[1], pr[2], pr[3]);
+                int err = Math.abs(g[0].length - targetTurns);
+                if (err < bestErr) { bestErr = err; seg = g; if (err == 0) break; }
+            }
+        }
+        if (seg == null) seg = geometric(r, 1f / 300f, 0.3f, 15f, 0.5f);
+        buildCorners(seg[0], seg[1], seg[0].length);
+    }
+
+    /** Juegos de parámetros (curvatura mínima, giro mínimo, unión, corte de doble vértice), de más a menos estricto. */
+    private static final float[][] LADDER = buildLadder();
+
+    private static float[][] buildLadder() {
+        float[] kon = {1f / 300f, 1f / 220f, 1f / 400f, 1f / 160f, 1f / 550f};
+        float[] turn = {0.3f, 0.4f, 0.22f, 0.5f, 0.15f};
+        float[] merge = {15f, 30f, 0f};
+        float[] split = {0.5f, 0f, 0.7f};
+        float[][] out = new float[kon.length * turn.length * merge.length * split.length][];
+        int i = 0;
+        for (float sp : split) for (float m : merge) for (float tu : turn) for (float k : kon) out[i++] = new float[]{k, tu, m, sp};
+        return out;
+    }
+
+    /**
+     * Curvas por geometría: tramos donde el radio baja de 1/kOn y que giran más de minTurn radianes.
+     * Curvas para el mismo lado separadas por menos de merge metros se unen; un tramo largo con dos
+     * vértices (la curvatura baja a menos de split × el pico) se corta en dos.
+     */
+    private static int[][] geometric(Trace r, float kOn, float minTurn, float merge, float split) {
         final float STEP = 5f;
         float len = r.d[r.n - 1];
         int m = (int) (len / STEP);
-        if (m < 20) { nc = 0; alloc(0); return; }
-        // re-muestrea cada 5 m
+        if (m < 20) return new int[][]{new int[0], new int[0]};
         float[] px = new float[m], pz = new float[m];
         int[] idx = new int[m];
         int j = 0;
@@ -98,7 +134,6 @@ final class Coach {
             while (j < r.n - 1 && r.d[j] < d) j++;
             px[k] = r.x[j]; pz[k] = r.z[j]; idx[k] = j;
         }
-        // curvatura (rad/m) suavizada
         float[] kap = new float[m];
         for (int k = 1; k < m - 2; k++) {
             double h0 = Math.atan2(pz[k] - pz[k - 1], px[k] - px[k - 1]);
@@ -110,24 +145,79 @@ final class Coach {
         }
         float[] sm = new float[m];
         for (int k = 2; k < m - 2; k++) sm[k] = (kap[k - 2] + kap[k - 1] + kap[k] + kap[k + 1] + kap[k + 2]) / 5f;
-        final float K_ON = 1f / 220f;   // radio menor a ~220 m = curva
-        int[] cs = new int[128], ce = new int[128];
+        int[] cs = new int[256], ce = new int[256], sg = new int[256];
         int n = 0, k = 0;
-        while (k < m && n < 128) {
-            if (Math.abs(sm[k]) > K_ON) {
+        while (k < m && n < 250) {
+            if (Math.abs(sm[k]) > kOn) {
                 int sign = sm[k] > 0 ? 1 : -1, st = k;
-                float turn = 0;
-                while (k < m && Math.abs(sm[k]) > K_ON * 0.6f && (sm[k] > 0 ? 1 : -1) == sign) { turn += Math.abs(sm[k]) * STEP; k++; }
-                if (turn > 0.35f) {   // más de ~20° de giro
-                    // une con la anterior si gira para el mismo lado y casi sin recta entre medio
-                    if (n > 0 && (st - ce[n - 1]) * STEP < 20f && Math.signum(sm[ce[n - 1] - 1]) == sign) ce[n - 1] = k;
-                    else { cs[n] = st; ce[n] = k; n++; }
+                while (k < m && Math.abs(sm[k]) > kOn * 0.6f && (sm[k] > 0 ? 1 : -1) == sign) k++;
+                // corta en dos si hay dos vértices claros
+                int a = st;
+                if (split > 0) {
+                    int p1 = -1;
+                    for (int q = st + 1; q < k - 1; q++) {
+                        float v = Math.abs(sm[q]);
+                        if (v >= Math.abs(sm[q - 1]) && v >= Math.abs(sm[q + 1]) && v > kOn) {
+                            if (p1 >= 0 && (q - p1) * STEP > 30f) {
+                                int lo = p1;
+                                for (int z = p1; z <= q; z++) if (Math.abs(sm[z]) < Math.abs(sm[lo])) lo = z;
+                                if (Math.abs(sm[lo]) < split * Math.min(Math.abs(sm[p1]), v)) {
+                                    if (turn(sm, a, lo, STEP) > minTurn) { cs[n] = a; ce[n] = lo; sg[n] = sign; n++; }
+                                    a = lo;
+                                    p1 = q; continue;
+                                }
+                            }
+                            if (p1 < 0 || v > Math.abs(sm[p1])) p1 = q;
+                        }
+                    }
+                }
+                if (turn(sm, a, k, STEP) > minTurn && n < 250) {
+                    if (n > 0 && sg[n - 1] == sign && (a - ce[n - 1]) * STEP < merge && a != ce[n - 1]) ce[n - 1] = k;
+                    else { cs[n] = a; ce[n] = k; sg[n] = sign; n++; }
                 }
             } else k++;
         }
         int[] si = new int[n], ei = new int[n];
         for (int c = 0; c < n; c++) { si[c] = idx[cs[c]]; ei[c] = idx[Math.min(m - 1, ce[c])]; }
+        return new int[][]{si, ei};
+    }
+
+    private static float turn(float[] sm, int a, int b, float step) {
+        float t = 0;
+        for (int q = a; q < b; q++) t += Math.abs(sm[q]) * step;
+        return t;
+    }
+
+    /** Curvas a partir de los vértices oficiales: cada vértice es una curva, en orden desde la meta. */
+    private void fromApexes(Trace r) {
+        int n = apexX.length;
+        int[] ai = new int[n];
+        for (int c = 0; c < n; c++) {
+            int b = 0; float bd = Float.MAX_VALUE;
+            for (int i = 0; i < r.n; i++) { float dx = r.x[i] - apexX[c], dz = r.z[i] - apexZ[c], dd = dx * dx + dz * dz; if (dd < bd) { bd = dd; b = i; } }
+            ai[c] = b;
+        }
+        java.util.Arrays.sort(ai);
+        int[][] g = geometric(r, 1f / 400f, 0.15f, 0f, 0.6f);
+        int[] si = new int[n], ei = new int[n];
+        for (int c = 0; c < n; c++) {
+            int a = ai[c];
+            si[c] = idxAt(r, r.d[a] - 50f, 0); ei[c] = idxAt(r, r.d[a] + 30f, a);
+            for (int q = 0; q < g[0].length; q++) if (g[0][q] <= a && a <= g[1][q]) { si[c] = g[0][q]; ei[c] = g[1][q]; break; }
+            if (c > 0) si[c] = Math.max(si[c], (ai[c - 1] + a) / 2);
+            if (c + 1 < n) ei[c] = Math.min(ei[c], (a + ai[c + 1]) / 2);
+            if (ei[c] < a) ei[c] = a;
+            if (si[c] > a) si[c] = a;
+        }
         buildCorners(si, ei, n);
+    }
+
+    /** Circuito de la base de GT7: vértices oficiales o, si no hay, la cantidad oficial de curvas. */
+    void useTrack(float[] ax, float[] az, int turns) {
+        fixedS = null; fixedE = null;
+        apexX = ax != null && ax.length > 0 ? ax : null; apexZ = apexX != null ? az : null;
+        targetTurns = turns;
+        if (ref != null) { detectCorners(); nextCorner = 0; }
     }
 
     /** Fracciones de vuelta (inicio, fin) de cada curva actual, para guardar el circuito. */
@@ -141,6 +231,7 @@ final class Coach {
     /** Usa las curvas de un circuito conocido (misma numeración que la vez anterior). */
     void useSegments(float[] fs, float[] fe) {
         fixedS = fs; fixedE = fe;
+        if (fs == null) { apexX = null; apexZ = null; targetTurns = 0; }
         if (ref != null) { detectCorners(); nextCorner = 0; }
     }
 

@@ -68,6 +68,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public String reminder(int car) { return setupReminder(car); }
         };
         engineer.tracks.load(readFile("pistas.txt"));
+        engineer.tracks.loadBuiltin(readRaw(R.raw.pistas_gt7));
+        registerReceiver(new android.content.BroadcastReceiver() {
+            @Override public void onReceive(Context c, Intent i) {
+                int lv = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1), sc = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100);
+                int st = i.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1);
+                batteryPct = lv >= 0 && sc > 0 ? Math.round(100f * lv / sc) : -1;
+                charging = st == android.os.BatteryManager.BATTERY_STATUS_CHARGING || st == android.os.BatteryManager.BATTERY_STATUS_FULL;
+            }
+        }, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         engineer.trackSaver = new Engineer.TrackSaver() {
             public void save(final String data) {
                 new Thread(new Runnable() { public void run() { writeFile("pistas.txt", data); } }).start();
@@ -115,7 +124,30 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         if (!ttsReady || !prefs.getBoolean("voz", true)) return;
         HashMap<String, String> p = new HashMap<String, String>();
         p.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(android.media.AudioManager.STREAM_MUSIC));
-        tts.speak(text, urgent ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p);
+        // los textos largos (como el resumen final) se dicen por partes: algunos motores de voz
+        // no leen nada si el texto es muy largo
+        boolean first = true;
+        for (String part : chunks(text, 220)) {
+            tts.speak(part, urgent && first ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, p);
+            first = false;
+        }
+    }
+
+    static ArrayList<String> chunks(String text, int max) {
+        ArrayList<String> out = new ArrayList<String>();
+        StringBuilder cur = new StringBuilder();
+        for (String s : text.split("(?<=[.!?;:])\\s+")) {
+            if (cur.length() > 0 && cur.length() + s.length() + 1 > max) { out.add(cur.toString()); cur.setLength(0); }
+            if (cur.length() > 0) cur.append(' ');
+            cur.append(s);
+            while (cur.length() > max * 2) {   // frase larguísima: corta en una coma o espacio
+                int k = cur.lastIndexOf(", ", max); if (k < max / 2) k = cur.lastIndexOf(" ", max);
+                if (k <= 0) break;
+                out.add(cur.substring(0, k + 1).trim()); cur.delete(0, k + 1);
+            }
+        }
+        if (cur.length() > 0) out.add(cur.toString());
+        return out;
     }
 
     boolean isMuted() { return !prefs.getBoolean("voz", true); }
@@ -452,7 +484,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 : "Circuito: lo reconozco después de la primera vuelta", pad);
         final EditText trkName = field(box, "Nombre del circuito, ej. Suzuka", trk != null ? trk.name : "");
         trkName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-        trkName.setEnabled(trk != null);
+        trkName.setEnabled(trk != null && !trk.builtin);
 
         section(box, "Voz", pad);
         final RadioGroup acentos = new RadioGroup(this);
@@ -550,6 +582,21 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
         });
         dlg.show();
+    }
+
+    volatile int batteryPct = -1;
+    volatile boolean charging;
+
+    private String readRaw(int id) {
+        try {
+            java.io.InputStream in = getResources().openRawResource(id);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            in.close();
+            return out.toString("UTF-8");
+        } catch (Exception e) { return ""; }
     }
 
     /** Circuitos aprendidos: se guardan en la memoria interna de la app. */

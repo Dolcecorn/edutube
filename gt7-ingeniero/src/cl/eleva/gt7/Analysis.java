@@ -238,7 +238,8 @@ final class Analysis {
         if (e.track != null) {
             text("CIRCUITO", lx, 504, 14, Dashboard.LABEL, Painter.LEFT, true);
             text(e.track.label(), lx, 532, 19, Dashboard.YELLOW, Painter.LEFT, true);
-            if (e.track.name.length() == 0) text("ponle nombre en SET", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
+            if (e.track.builtin) text(e.coach.nc + " curvas (oficial: " + e.track.turns + ")", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
+            else if (e.track.name.length() == 0) text("ponle nombre en SET", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
         }
     }
 

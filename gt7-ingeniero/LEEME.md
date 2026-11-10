@@ -22,6 +22,8 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
 GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso no aparece.
 
 ## Comandos de voz (botón RAD)
+Preguntas nuevas (v1.8): "cómo estuvo la curva 2 en esta vuelta", "cómo voy en el sector dos", "dónde pierdo
+más tiempo", "cuál es la vuelta ideal", "cuál es la estrategia", "en qué circuito estamos".
 - "Desactiva/activa los consejos", "los tiempos", "el combustible", "los neumáticos", "el delta".
 - "No me digas nada" (sólo plan de combustible, lo crítico y la bandera) / "Activa todo".
 - "Ayuda" repite la lista. Lo que prendes o apagas queda guardado.
@@ -37,17 +39,28 @@ mejor vuelta y lento por 2,5 s, o detenido cerca de la meta, o cuando sube el co
 tu mejor y tu promedio, cuánto tienes con tus mejores sectores, las 2 curvas donde más pierdes, tendencias
 de sobre/subviraje y cuánto combustible cargar. Al salir avisa neumáticos fríos y el combustible.
 Las vueltas con boxes salen con "P" en VUELTAS y no cuentan para la constancia ni las curvas.
+Al entrar, lo primero es cuánto combustible cargar. Cuenta las paradas hechas: al salir dice "parada N lista"
+y el plan siguiente parte de lo que cargaste. Mide cuánto te costó la parada y la velocidad de carga.
 
-## Circuitos y sectores (v1.7)
-Tras la 1ª vuelta compara la forma con los circuitos guardados (largo ±4 % y forma a <25 m en promedio).
-Si lo conoce usa la misma numeración de curvas de siempre; si no, lo guarda (archivo interno pistas.txt)
-y le puedes poner nombre en SET. No hay base de datos oficial de pistas: la app aprende las que corres,
-y su numeración puede no coincidir con la oficial. Sectores = tercios de la vuelta; vuelta ideal = suma
-de tus mejores sectores.
+## Estrategia de combustible (v1.8)
+Cada vuelta recalcula paradas con el consumo real. Si ahorrando hasta 15 % por vuelta te ahorras una parada,
+compara lo que pierdes en pista (estimado: 10 % de ahorro ≈ 0,8 % del tiempo de vuelta) con lo que cuesta parar
+(medido en tu parada, o 25 s estimados) y te dice si conviene y cómo: lift and coast en las 2 frenadas desde más
+velocidad, cambio corto, o bajar el mapa de combustible. En la última parada te dice que cargues sólo lo necesario.
+Habla sólo cuando cambia la recomendación; también se puede preguntar ("cuál es la estrategia").
+
+## Circuitos, curvas y sectores (v1.8)
+La app trae una base de 78 circuitos/variantes de GT7 (res/raw/pistas_gt7.txt). Tras la 1ª vuelta compara la
+forma de tu vuelta con la base (mismo sentido, cualquier punto de partida) y te dice el nombre. Las curvas se
+numeran desde la meta: en 6 pistas con vértices oficiales etiquetados (Monza, Spa... ver el archivo) se usan esos;
+en el resto se ajusta la detección hasta tener la cantidad oficial de curvas del juego (en prueba: 74 de 78 exactas).
+Si la pista no está en la base, la aprende (pistas.txt interno) y le puedes poner nombre en SET.
+Sectores = tercios de la vuelta; vuelta ideal = suma de tus mejores sectores.
+Datos: github.com/jbhoorasingh/gt7-datalogger-track-data (CC0) y github.com/zetetos/gt-telemetry (MIT).
 
 ## Análisis (desliza a la izquierda)
 Pestañas RESUMEN, MAPA, CURVAS, VUELTAS y AUTO. 10 s después de la bandera a cuadros se abre solo en
-RESUMEN (en puntos), el ingeniero da el resumen hablado y guarda el historial en /sdcard/IngenieroGT7/carrera-FECHA.csv
+RESUMEN (en puntos), el ingeniero da el resumen hablado (por partes, para que el motor de voz no lo corte) y guarda el historial en /sdcard/IngenieroGT7/carrera-FECHA.csv
 (sacarlo con `adb pull /sdcard/IngenieroGT7/`). Desliza a la derecha o toca "< VOLANTE" para volver.
 
 ## Dinámica que vigila el ingeniero
@@ -56,6 +69,9 @@ RESUMEN (en puntos), el ingeniero da el resumen hablado y guarda el historial en
 - Subviraje: mucho volante para poca curva (necesita el paquete "B" de GT7 1.42+, que trae el volante).
 - Sobre y subviraje sólo se comentan cuando se repiten en la misma curva (2 de las últimas 3 vueltas).
 - Velocidad máxima de cada vuelta contra la de tu mejor vuelta.
+
+## Reloj y batería (v1.8)
+Abajo a la derecha: hora y batería de la tablet ("+" y verde = cargando, rojo = 15 % o menos).
 
 ## Botones
 - Izquierda: RAD (preguntarle por voz: combustible, boxes, neumáticos, tiempos, vueltas que faltan), FUEL (combustible), TYR (neumáticos), LAP (tiempos), VOL-.

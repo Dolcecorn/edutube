@@ -80,7 +80,27 @@ final class Dashboard {
         drawButtons(now);
 
         text(conn, 512, 590, 13, live ? DIM : ORANGE, Painter.CENTER, false);
+        drawClock(now);
         if (!live) drawWaiting(conn);
+    }
+
+    int battery = -1;          // % de batería de la tablet (-1 = no se sabe)
+    boolean charging;
+
+    /** Reloj y batería, discretos en la esquina inferior derecha. */
+    private void drawClock(long now) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(now);
+        String hm = String.format(java.util.Locale.US, "%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
+        text(hm, 1012, 591, 14, DIM, Painter.RIGHT, false);
+        if (battery < 0) return;
+        float r = 964, l = r - 26, tp = 580, b = 592;
+        int c = charging ? GREEN : battery <= 15 ? RED : DIM;
+        p.outline(X(l), Y(tp), X(r), Y(b), 2 * u, 1.5f * u, c);
+        round(r, tp + 3, r + 3, b - 3, 1, c);
+        float f = Math.max(0.06f, Math.min(1f, battery / 100f));
+        round(l + 2.5f, tp + 2.5f, l + 2.5f + (r - l - 5) * f, b - 2.5f, 1, c);
+        text((charging ? "+" : "") + battery + "%", l - 6, 591, 14, c, Painter.RIGHT, false);
     }
 
     // ---- luces de cambio: se encienden desde afuera hacia el centro ----
@@ -215,14 +235,19 @@ final class Dashboard {
         text("BOXES", 130, 500, 15, ORANGE, Painter.LEFT, true);
         Engineer.Plan pl = e.plan(t);
         String msg; int c = WHITE;
-        if (!t.hasFuel()) { msg = "Sin consumo de combustible"; c = DIM; }
+        if (e.inPit) {
+            float add = e.fuelToAdd(t);
+            msg = "EN BOXES" + (add > 0.5f ? " · cargar " + Math.round(Math.min(add, 100f - t.fuelPct())) + "%" : add >= 0 ? " · no cargues" : "");
+            c = ORANGE;
+        }
+        else if (!t.hasFuel()) { msg = "Sin consumo de combustible"; c = DIM; }
         else if (pl == null) { msg = "Midiendo consumo… (1 vuelta)"; c = DIM; }
         else if (pl.stops == 0) { msg = "Sin parar: llegas al final"; c = GREEN; }
         else {
             String lap = pl.pitLap == 0 ? "ahora" : pl.pitLap == t.lap ? "esta vuelta" : "vuelta " + pl.pitLap;
             if (pl.stops == 1) msg = "Parar " + lap + " · cargar " + Math.round(pl.load) + "%";
             else if (pl.savePct > 0) msg = "Ahorra " + Math.max(1, Math.round(pl.savePct)) + "%/v y 1 parada (" + lap + "), o 2 paradas";
-            else msg = pl.stops + " paradas · 1ª " + lap + " · llenar estanque";
+            else msg = pl.stops + " paradas · próx. " + lap + " · llenar estanque";
             c = pl.pitLap >= 0 && pl.pitLap <= t.lap ? RED : WHITE;
         }
         text(msg, 640, 501, 18, c, Painter.RIGHT, false);

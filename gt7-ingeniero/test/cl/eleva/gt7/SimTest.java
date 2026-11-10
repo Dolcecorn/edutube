@@ -37,7 +37,7 @@ public class SimTest {
                 System.out.println("ESTADO: " + eng.status(t));
                 String[] qs = {"¿Cuándo tengo que entrar a boxes?", "a cuánto estoy del auto de adelante", "cuál es la vuelta rápida de la carrera",
                     "en qué vuelta debo parar a cambiar neumáticos", "cómo está el clima, viene lluvia", "cuánta bencina me queda",
-                    "cuántas vueltas faltan", "cómo voy", "hola", "desactiva los consejos", "no me digas nada", "activa todo", "apaga el combustible y los neumáticos", "ayuda"};
+                    "cuántas vueltas faltan", "cómo voy", "hola", "cómo estuvo la curva 2 en esta vuelta", "y la curva tres", "cómo voy en el sector dos", "cuál es la estrategia", "conviene ahorrar combustible", "dónde pierdo más tiempo", "en qué circuito estamos", "desactiva los consejos", "no me digas nada", "activa todo", "apaga el combustible y los neumáticos", "ayuda"};
                 for (String q : qs) System.out.println("P: " + q + "\nR: " + eng.answer(q, t));
             }
         }
@@ -57,7 +57,7 @@ public class SimTest {
             Engineer e2 = new Engineer(null);
             Telemetry t2 = new Telemetry();
             for (int i = 0; i < (int) (60 * 60 * 2.6f); i++) { byte[] p = s2.next(); t2.decrypt(p, p.length); e2.onPacket(t2); }
-            System.out.println("CONSUMO " + rate + "%/v, vuelta " + t2.lap + ", comb " + Math.round(t2.fuelPct()) + "%: " + e2.pitReport(t2));
+            System.out.println("CONSUMO " + rate + "%/v, vuelta " + t2.lap + ", comb " + Math.round(t2.fuelPct()) + "%: " + e2.pitReport(t2) + "\n   ESTRATEGIA: " + e2.strategy(t2));
         }
     }
 }
