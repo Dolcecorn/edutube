@@ -63,5 +63,30 @@
     "archivo": "sello-resolucion.jpg",
     "descripcion": "Resolución con sello dorado (adjudicación, decisión de la autoridad, acto administrativo)",
     "orientacion": "vertical"
+  },
+  {
+    "archivo": "filtracion-datos.jpg",
+    "descripcion": "Base de datos de vidrio con fuga de partículas doradas (filtración, vulneración de datos personales, Ley 21.719)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "evaluar-incidente.jpg",
+    "descripcion": "Panel de análisis con triángulo de alerta de oro (evaluar un incidente, riesgos, auditoría)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "reporte-agencia.jpg",
+    "descripcion": "Informe que viaja por una ruta dorada hasta una institución (reportar a la Agencia, autoridad, fiscalización)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "notificar-titulares.jpg",
+    "descripcion": "Personas conectadas a un nodo de oro, algunas con aviso (comunicar a titulares, clientes, trabajadores)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "escudo-protocolo.jpg",
+    "descripcion": "Escudo de vidrio con candado de oro sobre anillos de datos (seguridad, protocolos, cumplimiento)",
+    "orientacion": "vertical"
   }
 ]
