@@ -67,6 +67,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         engineer.setup = new Engineer.SetupProvider() {
             public String reminder(int car) { return setupReminder(car); }
         };
+        engineer.tracks.load(readFile("pistas.txt"));
+        engineer.trackSaver = new Engineer.TrackSaver() {
+            public void save(final String data) {
+                new Thread(new Runnable() { public void run() { writeFile("pistas.txt", data); } }).start();
+            }
+        };
         view = new DashboardView(this);
         setContentView(view);
         if (!prefs.getBoolean("sin_ayuda", false)) showHelp(true);
@@ -440,6 +446,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         final EditText bb = field(box, "Balance de frenos, ej. -1", prefs.getString("bb_" + car, ""));
         tcs.setEnabled(car != 0); bb.setEnabled(car != 0);
 
+        final TrackDb.Track trk;
+        synchronized (lock) { trk = engineer.track; }
+        section(box, trk != null ? "Circuito actual (" + trk.label() + ", " + Math.round(trk.length) + " m)"
+                : "Circuito: lo reconozco después de la primera vuelta", pad);
+        final EditText trkName = field(box, "Nombre del circuito, ej. Suzuka", trk != null ? trk.name : "");
+        trkName.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        trkName.setEnabled(trk != null);
+
         section(box, "Voz", pad);
         final RadioGroup acentos = new RadioGroup(this);
         String ac = prefs.getString("acento", "es-CL");
@@ -525,6 +539,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                         } else applyVoice(acento, rate, grave.isChecked());
                         boolean reconnect = !oldIp.equals(prefs.getString("ip", "")) || oldDemo != demo.isChecked();
                         synchronized (lock) {
+                            if (trk != null && !trkName.getText().toString().trim().equals(trk.name)) engineer.renameTrack(trkName.getText().toString());
                             applyPrefs();
                             if (reconnect) { engineer.reset(); lastPacketAt = 0; }
                         }
@@ -535,6 +550,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
         });
         dlg.show();
+    }
+
+    /** Circuitos aprendidos: se guardan en la memoria interna de la app. */
+    private String readFile(String name) {
+        try {
+            java.io.FileInputStream in = openFileInput(name);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            in.close();
+            return out.toString("UTF-8");
+        } catch (Exception e) { return ""; }
+    }
+
+    private void writeFile(String name, String data) {
+        try {
+            java.io.FileOutputStream o = openFileOutput(name, MODE_PRIVATE);
+            o.write(data.getBytes("UTF-8"));
+            o.close();
+        } catch (Exception ignored) { }
     }
 
     private void section(LinearLayout box, String title, int pad) {

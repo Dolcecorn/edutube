@@ -11,6 +11,9 @@ final class Simulator {
     private float dist, lapTime, pace = 1f, preRace = 3f, shift;
     private int best = -1;
     private float heat;
+    int pitAt = 6;                 // entra a boxes al final de esta vuelta (0 = nunca)
+    private float stopT;
+    private boolean stopDone;
 
     private final float[] tx = new float[(int) LAP_M + 2], tz = new float[(int) LAP_M + 2], th = new float[(int) LAP_M + 2], tk = new float[(int) LAP_M + 2];
 
@@ -49,6 +52,11 @@ final class Simulator {
         return (float) (24 + 46 * (0.5 + 0.5 * Math.sin(a * 5) * Math.cos(a * 2))) * pace;
     }
 
+    private boolean pitZone() {
+        if (pitAt <= 0 || preRace > 0 || t.lap > t.totalLaps) return false;
+        return (t.lap == pitAt && dist > LAP_M - 400) || (t.lap == pitAt + 1 && dist < 400);
+    }
+
     /** Avanza 1/60 s y devuelve el paquete cifrado. */
     byte[] next() {
         float dt = 1f / Engineer.HZ;
@@ -61,6 +69,12 @@ final class Simulator {
         } else {
             boolean finished = t.lap > t.totalLaps;
             float v = finished ? Math.max(8f, t.speedMs - 4 * dt) : target(dist);
+            if (pitZone()) v = Math.min(v, 16.7f);            // límite de velocidad del pit lane
+            if (stopT > 0) {                                   // detenido: repostaje
+                stopT -= dt; v = 0; t.speedMs = 0;
+                t.fuel = Math.min(100f, t.fuel + 8f * dt);
+                if (stopT <= 0) stopDone = true;
+            } else if (pitAt > 0 && t.lap == pitAt + 1 && dist > 150 && !stopDone) { stopT = 8f; v = 0; t.speedMs = 0; }
             float acc = (v - t.speedMs) / dt;
             t.speedMs += Math.max(-25f, Math.min(9f, acc)) * dt;
             t.throttle = acc > -1 ? (int) Math.min(255, 140 + acc * 15) : 0;
@@ -92,6 +106,7 @@ final class Simulator {
         }
         int di = Math.max(0, Math.min(tx.length - 1, (int) dist));
         t.posX = tx[di]; t.posZ = tz[di];
+        if (pitZone()) { t.posX -= (float) Math.sin(th[di]) * 20f; t.posZ += (float) Math.cos(th[di]) * 20f; }  // pit lane al lado
         // dinámica: velocidad, giro, ruedas, suspensión y volante (paquete "B")
         float v = t.speedMs, k = tk[di];
         t.velX = (float) Math.cos(th[di]) * v; t.velZ = (float) Math.sin(th[di]) * v;
@@ -108,7 +123,7 @@ final class Simulator {
         if (t.lap > 1 && t.lap % 4 == 0 && !firstHalf && t.throttle > 200 && t.kmh() < 140) {        // patinaje
             t.wheelRps[2] *= 1.35f; t.wheelRps[3] *= 1.35f;
         }
-        if (t.lap == 5 && Math.abs(k) > 0.006f && dist > 1000 && dist < 2000) t.angVelY = k * v + 0.45f * Math.signum(k); // sobreviraje
+        if (t.lap >= 5 && t.lap <= 7 && Math.abs(k) > 0.006f && dist > 1000 && dist < 2000) t.angVelY = k * v + 0.45f * Math.signum(k); // sobreviraje
         if (t.lap == 8 && Math.abs(k) > 0.006f && dist > 1500) t.steer *= 2.0f;                       // subviraje
         t.timeOfDayMs += 17;
         return t.encode(0x1234567 + pid * 7919, true);

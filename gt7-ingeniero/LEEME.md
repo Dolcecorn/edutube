@@ -31,15 +31,30 @@ GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso
 - Plan de combustible (1 o más paradas; si con un poco de ahorro alcanza con una sola, te dice cuánto) al cerrar la 1ª vuelta y cuando cambia (sin parar / parar en la vuelta N y cuánto cargar).
 - Neumáticos en momentos clave: tras la 1ª vuelta, a mitad de carrera, a 3 del final y en la vuelta de parada.
 
+## Boxes (v1.7)
+GT7 no avisa cuándo entras a boxes; la app lo deduce: cerca de la meta, a más de 12 m de la línea de tu
+mejor vuelta y lento por 2,5 s, o detenido cerca de la meta, o cuando sube el combustible. Al entrar te dice
+tu mejor y tu promedio, cuánto tienes con tus mejores sectores, las 2 curvas donde más pierdes, tendencias
+de sobre/subviraje y cuánto combustible cargar. Al salir avisa neumáticos fríos y el combustible.
+Las vueltas con boxes salen con "P" en VUELTAS y no cuentan para la constancia ni las curvas.
+
+## Circuitos y sectores (v1.7)
+Tras la 1ª vuelta compara la forma con los circuitos guardados (largo ±4 % y forma a <25 m en promedio).
+Si lo conoce usa la misma numeración de curvas de siempre; si no, lo guarda (archivo interno pistas.txt)
+y le puedes poner nombre en SET. No hay base de datos oficial de pistas: la app aprende las que corres,
+y su numeración puede no coincidir con la oficial. Sectores = tercios de la vuelta; vuelta ideal = suma
+de tus mejores sectores.
+
 ## Análisis (desliza a la izquierda)
-Pestañas RESUMEN, MAPA, CURVAS, VUELTAS y AUTO. Al terminar la carrera se abre solo en RESUMEN,
-el ingeniero da el resumen hablado y guarda el historial en /sdcard/IngenieroGT7/carrera-FECHA.csv
+Pestañas RESUMEN, MAPA, CURVAS, VUELTAS y AUTO. 10 s después de la bandera a cuadros se abre solo en
+RESUMEN (en puntos), el ingeniero da el resumen hablado y guarda el historial en /sdcard/IngenieroGT7/carrera-FECHA.csv
 (sacarlo con `adb pull /sdcard/IngenieroGT7/`). Desliza a la derecha o toca "< VOLANTE" para volver.
 
 ## Dinámica que vigila el ingeniero
 - Bloqueo de ruedas al frenar y patinaje al acelerar (velocidad de cada rueda contra la del auto).
 - Sobreviraje: la carrocería gira más rápido que la trayectoria.
 - Subviraje: mucho volante para poca curva (necesita el paquete "B" de GT7 1.42+, que trae el volante).
+- Sobre y subviraje sólo se comentan cuando se repiten en la misma curva (2 de las últimas 3 vueltas).
 - Velocidad máxima de cada vuelta contra la de tu mejor vuelta.
 
 ## Botones

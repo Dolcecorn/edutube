@@ -19,6 +19,8 @@ public class SimTest {
                 System.out.println(String.format("[%6.1fs]%s %s", now[0], urgent ? " !!" : "", s));
             }
         });
+        eng.time = new Engineer.Clock() { public long now() { return Math.round(now[0] * 1000); } };
+        eng.trackSaver = new Engineer.TrackSaver() { public void save(String d) { System.out.println("   [pistas guardadas: " + d.length() + " bytes]"); } };
         eng.setup = new Engineer.SetupProvider() { public String reminder(int car) { return "Antes de largar: TCS en 2 y balance de frenos en menos 1."; } };
         Telemetry t = new Telemetry();
         int bad = 0;
@@ -39,7 +41,17 @@ public class SimTest {
                 for (String q : qs) System.out.println("P: " + q + "\nR: " + eng.answer(q, t));
             }
         }
-        System.out.println("paquetes inválidos: " + bad + "  curvas detectadas: " + eng.coach.nc);
+        System.out.println("paquetes inválidos: " + bad + "  curvas detectadas: " + eng.coach.nc + " vistas resumen: " + eng.raceEnds);
+        for (String b : eng.debriefList) System.out.println("  • " + b);
+        for (Session.Lap l : eng.session.laps) System.out.println(String.format("   V%d %s s1=%d s2=%d s3=%d pit=%b", l.lap, Engineer.msText(l.ms), l.s1, l.s2, l.s3, l.pit));
+        System.out.println("ideal " + Engineer.msText(eng.session.idealMs()));
+        // segunda carrera en el mismo circuito: debe reconocerlo
+        Engineer e3 = new Engineer(new Engineer.Voice() { public void say(String s, boolean u) { if (s.contains("ircuito")) System.out.println("CARRERA 2: " + s); } });
+        e3.tracks.load(eng.tracks.serialize());
+        Simulator s3 = new Simulator(); s3.pitAt = 0;
+        Telemetry t3 = new Telemetry();
+        for (int i = 0; i < 60 * 60 * 3; i++) { byte[] p = s3.next(); t3.decrypt(p, p.length); e3.onPacket(t3); }
+        System.out.println("CARRERA 2 curvas " + e3.coach.nc + " pista " + (e3.track != null ? e3.track.label() : "-"));
         for (float rate : new float[]{15.5f, 18f, 19.5f, 20.5f, 21.5f, 30f}) {
             Simulator s2 = new Simulator(rate);
             Engineer e2 = new Engineer(null);

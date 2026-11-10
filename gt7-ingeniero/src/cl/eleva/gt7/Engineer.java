@@ -13,7 +13,7 @@ final class Engineer {
     static final float HZ = 59.94f;           // GT7 manda ~60 paquetes por segundo
     static final float TYRE_HOT = 100f;       // °C
     static final float WATER_HOT = 115f;      // °C
-    static final String FLAG = "Bandera a cuadros. Terminaste la carrera, buen trabajo.";
+    static final String FLAG = "Bandera a cuadros. Terminaste la carrera, buen trabajo. En diez segundos te doy el resumen.";
 
     private final Voice voice;
     interface SetupProvider { String reminder(int carCode); }
@@ -28,8 +28,33 @@ final class Engineer {
     final Coach coach = new Coach();
     final Dynamics dyn = new Dynamics();
     final Session session = new Session();
-    int raceEnds;              // sube cada vez que termina una carrera (la vista salta al análisis)
+    int raceEnds;              // sube cuando sale el resumen final (la vista salta al análisis)
     String debriefText = "";
+    final java.util.ArrayList<String> debriefList = new java.util.ArrayList<String>();
+    static final long DEBRIEF_DELAY_MS = 10000;   // el resumen sale 10 s después de la bandera
+    interface Clock { long now(); }
+    Clock time = new Clock() { public long now() { return System.currentTimeMillis(); } };
+    private long debriefAt;                       // 0 = no hay resumen pendiente
+    private final java.util.ArrayList<String> nextDebrief = new java.util.ArrayList<String>();
+    private boolean sessionStale;                 // la carrera anterior se borra recién al empezar otra
+
+    // circuitos conocidos
+    interface TrackSaver { void save(String data); }
+    TrackSaver trackSaver;
+    final TrackDb tracks = new TrackDb();
+    TrackDb.Track track;                          // circuito actual (null = todavía no se sabe)
+
+    // boxes
+    boolean inPit;
+    private float pitCond, pitExitCond, pitTime;
+    private boolean pitStopped, pitRefuel, curLapPit, pendingPit, refuelSeen;
+    private float refuelAcc;
+
+    // sectores (tercios de la vuelta según la referencia)
+    private int sector;
+    private final float[] secT = new float[2];
+    private float pendingS1 = -1, pendingS12 = -1;
+    private final int[][] trendSaidLap = new int[4][Session.MAXC];
     private float lapMaxKmh, pendingMaxKmh, bestLapMaxKmh;
     private final int[] lapEvMask = new int[Session.MAXC];
     private final int[] lapEvWheels = new int[Session.MAXC];
@@ -89,8 +114,31 @@ final class Engineer {
         for (int i = 0; i < 4; i++) hotSince[i] = -1;
         tyreSaid = -1000; flagPending = false;
         startReminded = false; planState = -1; tyreMoments = 0; flagPending = false;
-        dyn.reset(); session.clear(); lapMaxKmh = 0; bestLapMaxKmh = 0;
+        lapMaxKmh = 0; bestLapMaxKmh = 0;
+        // el historial y el resumen se mantienen a la vista hasta que empiece otra carrera
+        if (!session.laps.isEmpty() || !session.events.isEmpty()) sessionStale = true;
+        else { dyn.reset(); session.clear(); }
+        track = null; coach.useSegments(null, null);
+        inPit = false; pitCond = 0; pitExitCond = 0; curLapPit = false; pendingPit = false;
+        sector = 0; pendingS1 = -1; pendingS12 = -1;
+        for (int[] a : trendSaidLap) java.util.Arrays.fill(a, -10);
     }
+
+    /** Hay que llamarlo seguido (también cuando no llegan paquetes): dispara el resumen final a su hora. */
+    void tick() {
+        if (debriefAt > 0 && time.now() >= debriefAt) {
+            debriefAt = 0;
+            debriefList.clear();
+            debriefList.addAll(nextDebrief);
+            StringBuilder sb = new StringBuilder("Resumen de la carrera. ");
+            for (String x : debriefList) sb.append(x).append(' ');
+            debriefText = sb.toString().trim();
+            say(debriefText, false);
+            raceEnds++;
+        }
+    }
+
+    boolean debriefPending() { return debriefAt > 0; }
 
     long lastMessageAt;
 
@@ -126,15 +174,18 @@ final class Engineer {
             lapDist += t.speedMs * dt;
             if (t.kmh() > lapMaxKmh) lapMaxKmh = t.kmh();
             String tip = coach.sample(t, lapTimeS, lapDist);
+            updatePit(t, dt);
+            updateSectors();
             updateDelta();
             if (dyn.evType >= 0) onDynEvent(t);
             if (coach.evaluatedNow) {
                 int c = coach.lastCorner;
-                if (lapObserved) session.cornerResult(c, coach.lastGain, coach.lastMinKmh);
+                if (lapObserved && !curLapPit) session.cornerResult(c, coach.lastGain, coach.lastMinKmh);
                 String ev = c < Session.MAXC ? eventTip(c) : null;
                 if (ev != null) tip = "Curva " + (c + 1) + ": " + ev
                         + (coach.lastGain >= 0.12f ? " Perdiste " + speakDelta(coach.lastGain) + "." : "");
             }
+            if (inPit || curLapPit) tip = null;     // vuelta con boxes: sin consejos de curva
             if (tip != null && coachCalls && !pending && clock - tipSaidAt > 3f) { tipSaidAt = clock; say(tip, false); }
             trackFuel(t);
             checkTyres(t);
@@ -142,6 +193,7 @@ final class Engineer {
         }
         if (pending) resolvePending(t);
         updateFuelEstimate(t);
+        tick();
     }
 
     private void onDynEvent(Telemetry t) {
@@ -152,7 +204,9 @@ final class Engineer {
             if (dyn.evType == Dynamics.LOCK) lapEvWheels[c] |= dyn.evWheels;
             return;   // se comenta al salir de la curva
         }
-        if (!coachCalls || pending || clock - evSaidAt < 8f) return;
+        // sobreviraje y subviraje sueltos no se comentan: sólo cuando se repiten (ver eventTip)
+        if (dyn.evType == Dynamics.OVER || dyn.evType == Dynamics.UNDER) return;
+        if (!coachCalls || pending || inPit || clock - evSaidAt < 8f) return;
         evSaidAt = clock;
         String m = dyn.evType == Dynamics.LOCK ? "Bloqueaste " + Dynamics.wheels(dyn.evWheels) + "."
                 : dyn.evType == Dynamics.SPIN ? "Patinas, cuidado con el acelerador."
@@ -166,20 +220,176 @@ final class Engineer {
         if (m == 0) return null;
         if ((m & (1 << Dynamics.LOCK)) != 0)
             return "bloqueaste " + Dynamics.wheels(lapEvWheels[c]) + ". Frena un poco menos fuerte al inicio o suelta antes el freno.";
-        if ((m & (1 << Dynamics.OVER)) != 0) return "se te fue la cola. Acelera más suave en el vértice.";
+        String tr = trendTip(c, Dynamics.OVER, m);
+        if (tr != null) return tr;
         if ((m & (1 << Dynamics.SPIN)) != 0) return "patinaste a la salida. Dosifica el acelerador hasta enderezar el volante.";
-        return "el auto no dobló, subviraje. Entra más lento y suelta el freno de a poco.";
+        return trendTip(c, Dynamics.UNDER, m);
     }
 
-    private void finishRace() {
-        debriefText = session.debrief();
-        say(debriefText, false);
-        raceEnds++;
+    /**
+     * Sobreviraje / subviraje: sólo se avisa cuando se repite en la misma curva (2 de las últimas
+     * 3 vueltas) y no se dijo hace poco. Así no se comenta un caso aislado.
+     */
+    private String trendTip(int c, int type, int mask) {
+        if ((mask & (1 << type)) == 0) return null;
+        int n = session.lapsWith(type, c, 3);
+        if (n < 2 || prevLap - trendSaidLap[type][c] < 3) return null;
+        trendSaidLap[type][c] = prevLap;
+        String rep = " (" + n + " de las últimas 3 vueltas).";
+        if (type == Dynamics.OVER)
+            return "se repite el sobreviraje, se te va la cola" + rep
+                    + " Acelera más suave y más tarde en el vértice; si sigue, sube un punto el TCS.";
+        return "se repite el subviraje, el auto no dobla" + rep
+                + " Entra más lento y suelta el freno de a poco; si sigue, mueve el balance de frenos un punto hacia atrás.";
     }
+
+    /** Tendencias activas de sobre/subviraje, para el informe en boxes. */
+    private String trendSummary() {
+        StringBuilder sb = new StringBuilder();
+        String[] what = {null, null, "se te va la cola en la curva ", "subviraje en la curva "};
+        for (int type = Dynamics.OVER; type <= Dynamics.UNDER; type++) {
+            int w = -1, wn = 1;
+            for (int c = 0; c < Session.MAXC; c++) { int n = session.lapsWith(type, c, 3); if (n > wn) { wn = n; w = c; } }
+            if (w >= 0) sb.append(sb.length() == 0 ? "Tendencia: " : " y ").append(what[type]).append(w + 1);
+        }
+        if (sb.length() == 0) return "";
+        return sb.append(". Si quieres, ajusta el TCS o el balance de frenos un punto. ").toString();
+    }
+
+    /** Bandera a cuadros: el resumen se arma ahora y se dice (y se muestra) 10 s después. */
+    private void finishRace() {
+        nextDebrief.clear();
+        nextDebrief.addAll(session.debriefItems());
+        debriefAt = time.now() + DEBRIEF_DELAY_MS;
+        inPit = false;
+    }
+
+    // ---------------------------------------------------------------- boxes
+    /**
+     * GT7 no avisa cuándo entras a boxes. Se detecta así: cerca de la meta, fuera de la línea de tu
+     * mejor vuelta (el pit lane va al lado de la recta) y lento, o detenido cerca de la meta,
+     * o cuando sube el combustible (repostaje). Se sale al volver a la línea con velocidad.
+     */
+    private void updatePit(Telemetry t, float dt) {
+        float kmh = t.kmh();
+        float f = lapFraction();
+        boolean hasRef = coach.ref != null && coach.offLine >= 0;
+        boolean nearLine = f > 0.8f || f < 0.2f;
+        if (!inPit) {
+            boolean off = hasRef && nearLine && coach.offLine > 12f && kmh < 110f && kmh > 3f;
+            boolean stopped = hasRef && nearLine && kmh < 3f && lapTimeS > 3f;
+            if (off || stopped) pitCond += dt; else pitCond = 0;
+            if (pitCond > (stopped ? 1.5f : 2.5f)) enterPit(t);
+        } else {
+            pitTime += dt;
+            if (kmh < 3f) pitStopped = true;
+            boolean back = hasRef ? (coach.offLine < 6f && kmh > 60f) || kmh > 140f : kmh > 80f;
+            if (back) pitExitCond += dt; else pitExitCond = 0;
+            if (pitExitCond > 2f || (pitTime > 120f && kmh > 100f)) exitPit(t);
+        }
+    }
+
+    private void enterPit(Telemetry t) {
+        inPit = true; pitCond = 0; pitExitCond = 0; pitTime = 0; pitStopped = false; pitRefuel = false;
+        curLapPit = true;
+        say(pitInfo(t), false);
+    }
+
+    private void exitPit(Telemetry t) {
+        inPit = false; pitExitCond = 0; curLapPit = true;
+        StringBuilder sb = new StringBuilder("Saliendo de boxes. ");
+        float mn = Math.min(Math.min(t.tyreTemp[0], t.tyreTemp[1]), Math.min(t.tyreTemp[2], t.tyreTemp[3]));
+        if (pitStopped && mn < 70f)
+            sb.append("Neumáticos fríos: frena un poco antes y acelera suave las primeras curvas hasta que tomen temperatura. ");
+        else sb.append("Vamos, a buscar ritmo. ");
+        if (pitRefuel && fuelLapsLeft >= 0 && lapsToGo > 0) sb.append(fuelSentence());
+        say(sb.toString().trim(), false);
+    }
+
+    /** Lo que sirve saber mientras estás detenido en boxes. */
+    String pitInfo(Telemetry t) {
+        StringBuilder sb = new StringBuilder("Entrando a boxes. ");
+        int n = 0; long sum = 0;
+        for (Session.Lap l : session.laps) if (l.ms > 0 && !l.pit && l.lap > 1) { n++; sum += l.ms; }
+        if (myBestMs > 0) {
+            sb.append("Tu mejor: ").append(speakTime(myBestMs));
+            if (n >= 2) sb.append(", tu promedio ").append(speakTime((int) (sum / n)));
+            sb.append(". ");
+        }
+        int ideal = session.idealMs();
+        Session.Lap b = session.best();
+        if (ideal > 0 && b != null && b.ms - ideal >= 100) {
+            sb.append("Juntando tus mejores sectores tienes ").append(speakDelta((b.ms - ideal) / 1000f)).append(" más");
+            int ws = session.weakSector();
+            if (ws >= 0) sb.append(", sobre todo en el sector ").append(ws + 1);
+            sb.append(". ");
+        }
+        int[] w = session.worstCorners(2);
+        if (w.length > 0) {
+            sb.append("Al salir, foco en la curva ").append(w[0] + 1);
+            if (w.length > 1) sb.append(" y la ").append(w[1] + 1);
+            sb.append(": ahí pierdes ").append(speakDelta(session.avgLoss(w[0])));
+            if (w.length > 1) sb.append(" y ").append(speakDelta(session.avgLoss(w[1])));
+            sb.append(" por vuelta. ");
+        }
+        sb.append(trendSummary());
+        if (t.hasFuel() && lapsToGo > 0 && fuelPerLapPct > 0) {
+            float add = fuelToAdd(t);
+            if (add < 0.5f) sb.append("No necesitas combustible para terminar. ");
+            else if (t.fuelPct() + add <= 100f) sb.append("Para terminar carga ").append(Math.round(add)).append(" por ciento de combustible. ");
+            else sb.append("Llena el estanque: necesitas ").append(Math.round(add)).append(" por ciento y no cabe todo. ");
+        }
+        float mx = Math.max(Math.max(t.tyreTemp[0], t.tyreTemp[1]), Math.max(t.tyreTemp[2], t.tyreTemp[3]));
+        if (mx > TYRE_HOT) sb.append("Los neumáticos venían sobre ").append(Math.round(mx)).append(" grados: cuida la entrada a las curvas. ");
+        return sb.toString().trim();
+    }
+
+    // ---------------------------------------------------------------- sectores
+    private void updateSectors() {
+        if (!lapObserved || coach.ref == null || lapTimeS < 3f) return;
+        float f = lapFraction();
+        if (sector == 0 && f >= 1f / 3f && f < 0.6f) { secT[0] = lapTimeS; sector = 1; }
+        else if (sector == 1 && f >= 2f / 3f && f < 0.95f) { secT[1] = lapTimeS; sector = 2; }
+    }
+
+    // ---------------------------------------------------------------- circuitos
+    /** Tras la primera vuelta: compara la forma con los circuitos guardados. */
+    private String recognizeTrack() {
+        if (coach.ref == null || coach.nc == 0) return "";
+        TrackDb.Track m = tracks.match(coach.ref);
+        if (m != null) {
+            track = m;
+            coach.useSegments(m.cs, m.ce);
+            session.trackName = m.label();
+            return "Circuito reconocido: " + m.label() + ". Uso la misma numeración de curvas de siempre, " + coach.nc + " curvas. ";
+        }
+        float[][] sg = coach.segments();
+        track = tracks.add(coach.ref, sg[0], sg[1]);
+        coach.useSegments(sg[0], sg[1]);     // la numeración queda fija el resto de la carrera
+        session.trackName = track.label();
+        saveTracks();
+        return "Circuito nuevo, lo guardé como " + track.label() + " con " + coach.nc + " curvas. Puedes ponerle nombre en SET. ";
+    }
+
+    void renameTrack(String name) {
+        if (track == null || name == null) return;
+        track.name = name.trim();
+        session.trackName = track.label();
+        saveTracks();
+    }
+
+    private void saveTracks() { if (trackSaver != null) trackSaver.save(tracks.serialize()); }
 
     private void startLap(Telemetry t, boolean sawTransition) {
         java.util.Arrays.fill(lapEvMask, 0);
         java.util.Arrays.fill(lapEvWheels, 0);
+        if (sessionStale) {   // empieza otra carrera: ahora sí se borra la anterior
+            sessionStale = false;
+            session.clear(); dyn.reset();
+            if (debriefAt == 0) { debriefText = ""; debriefList.clear(); }
+        }
+        curLapPit = inPit;
+        sector = 0;
         lapObserved = sawTransition;
         lapTimeS = 0; lapDist = 0; midLapSaid = false;
         coach.startLap();
@@ -205,6 +415,9 @@ final class Engineer {
         pendingObserved = lapObserved;
         pendingFuelUsed = lapFuelValid ? lapStartFuel - t.fuelPct() : -1;
         pendingMaxKmh = lapMaxKmh;
+        pendingPit = curLapPit;
+        pendingS1 = sector >= 1 ? secT[0] : -1;
+        pendingS12 = sector >= 2 ? secT[1] : -1;
         lapMaxKmh = 0;
         // lapStartLastLapMs conserva el valor de cuando empezó la vuelta: si el juego ya lo
         // cambió en este mismo paquete, resolvePending lo detecta de inmediato.
@@ -232,12 +445,25 @@ final class Engineer {
         updateFuelEstimate(t);
 
         StringBuilder sb = new StringBuilder();
-        if (ms > 0 || pendingObserved)
-            session.addLap(pendingLap, ms, pendingMaxKmh, pendingObserved && pendingFuelUsed > 0 ? pendingFuelUsed : -1);
+        if (ms > 0 || pendingObserved) {
+            Session.Lap sl = session.addLap(pendingLap, ms, pendingMaxKmh, pendingObserved && pendingFuelUsed > 0 ? pendingFuelUsed : -1);
+            sl.pit = pendingPit;
+            if (ms > 0 && pendingS1 > 0 && pendingS12 > pendingS1) {
+                int a = Math.round(pendingS1 * 1000), ab = Math.round(pendingS12 * 1000);
+                if (ms - ab > 0) { sl.s1 = a; sl.s2 = ab - a; sl.s3 = ms - ab; }
+            }
+        }
+        String trackMsg = "";
         if (ms > 0) {
             boolean newBest = myBestMs < 0 || ms < myBestMs, first = myBestMs < 0;
-            if (newBest) { myBestMs = ms; if (pendingObserved) coach.adoptLast(); bestLapMaxKmh = pendingMaxKmh; }
-            if (lapCalls) {
+            if (newBest) {
+                myBestMs = ms;
+                if (pendingObserved) { coach.adoptLast(); if (track == null) trackMsg = recognizeTrack(); }
+                bestLapMaxKmh = pendingMaxKmh;
+            }
+            if (pendingPit && lapCalls) {
+                sb.append("Vuelta ").append(pendingLap).append(" con boxes: ").append(speakTime(ms)).append(". ");
+            } else if (lapCalls) {
                 sb.append("Vuelta ").append(pendingLap).append(": ").append(speakTime(ms)).append(". ");
                 if (newBest && !first) sb.append("¡Mejor vuelta! ");
                 else if (!newBest) {
@@ -249,6 +475,7 @@ final class Engineer {
                 }
             } else if (newBest && !first) sb.append("Mejor vuelta, ").append(speakTime(ms)).append(". ");
         }
+        sb.append(trackMsg);
         boolean endNow = false;
         if (flagPending) { flagPending = false; sb.append(FLAG); endNow = true; }
         else if (!raceFinished) {
@@ -318,12 +545,18 @@ final class Engineer {
     private void trackFuel(Telemetry t) {
         if (!t.hasFuel()) return;
         float f = t.fuelPct();
-        if (prevFuel >= 0 && f > prevFuel + 1f) {
+        // el juego carga el combustible de a poco: se suma lo que va subiendo
+        if (prevFuel >= 0 && f > prevFuel + 0.001f) refuelAcc += f - prevFuel;
+        else if (prevFuel >= 0 && f < prevFuel - 0.001f) refuelAcc = 0;
+        if (refuelAcc > 1.5f && !refuelSeen) {
             // repostaje en boxes: esta vuelta no sirve para medir consumo
+            refuelSeen = true;
             lapFuelValid = false;
             planState = -1;
-            if (f - prevFuel > 3f) say("Carga de combustible registrada.", false);
+            if (!inPit && !raceFinished && t.lap > 0) enterPit(t);   // repostó: estás en boxes aunque no lo haya visto antes
+            pitRefuel = true;
         }
+        if (refuelAcc == 0) refuelSeen = false;
         prevFuel = f;
         // combustible crítico: no alcanza para terminar la vuelta siguiente
         if (fuelLapsLeft >= 0 && fuelLapsLeft < 1.1f && lapsToGo > 1
@@ -353,7 +586,7 @@ final class Engineer {
         if (r == null || i <= 0 || i >= r.n - 1 || !lapObserved || lapTimeS < 1f) { deltaValid = false; return; }
         deltaS = lapTimeS - r.t[i];
         deltaValid = true;
-        if (midLapCalls && !midLapSaid && lapFraction() > 0.5f) {
+        if (midLapCalls && !midLapSaid && !curLapPit && lapFraction() > 0.5f) {
             midLapSaid = true;
             if (Math.abs(deltaS) < 0.05f) say("Mitad de vuelta, igual que tu mejor.", false);
             else say("Mitad de vuelta, " + speakDelta(Math.abs(deltaS)) + (deltaS > 0 ? " abajo." : " arriba, sigue así."), false);

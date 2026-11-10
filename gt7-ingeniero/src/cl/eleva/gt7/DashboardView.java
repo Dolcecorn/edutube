@@ -41,6 +41,7 @@ final class DashboardView extends View implements Painter {
         dash.listening = act.listening;
         synchronized (act.lock) {
             snap.copyFrom(act.telemetry);
+            act.engineer.tick();   // el resumen final sale aunque ya no lleguen paquetes
             live = System.currentTimeMillis() - act.lastPacketAt < 2000;
             if (act.engineer.raceEnds != seenRaceEnds) {   // terminó la carrera: abre el análisis
                 seenRaceEnds = act.engineer.raceEnds;

@@ -65,9 +65,10 @@ final class Analysis {
         Session.Lap b = s.best();
         tile(24, 80, 330, 170, "MEJOR VUELTA", b != null ? Engineer.msText(b.ms) : "--:--.---",
                 b != null ? "vuelta " + b.lap : "", 0xffc9a6ff);
-        Session.Lap last = s.laps.isEmpty() ? null : s.laps.get(s.laps.size() - 1);
-        tile(24, 180, 330, 270, "ÚLTIMA", last != null ? Engineer.msText(last.ms) : "--:--.---",
-                last != null ? "vuelta " + last.lap : "", Dashboard.WHITE);
+        int ideal = s.idealMs();
+        tile(24, 180, 330, 270, "VUELTA IDEAL", ideal > 0 ? Engineer.msText(ideal) : "--:--.---",
+                ideal > 0 && b != null ? String.format(Locale.US, "mejores sectores: %.2f s menos", Math.max(0, b.ms - ideal) / 1000f)
+                        : "mejores 3 sectores", Dashboard.GREEN);
         float cons = s.consistency();
         tile(24, 280, 330, 370, "CONSISTENCIA", cons >= 0 ? String.format(Locale.US, "±%.2f s", cons) : "--",
                 cons < 0 ? "necesito 3 vueltas" : cons < 0.4f ? "muy constante" : cons < 1f ? "bien" : "irregular", Dashboard.WHITE);
@@ -85,10 +86,12 @@ final class Analysis {
             text(String.valueOf(s.count(i)), l + 79, 154, 42, Dashboard.WHITE, Painter.CENTER, true);
         }
         box(344, 180, 1000, 578, Dashboard.TEAL);
-        text(e.raceFinished ? "RESUMEN DEL INGENIERO" : "EN VIVO (el resumen completo sale al terminar la carrera)",
-                360, 206, 15, Dashboard.TEAL, Painter.LEFT, true);
-        String msg = e.debriefText.length() > 0 ? e.debriefText : liveSummary(s);
-        paragraph(msg, 360, 236, 640, 570, 19);
+        String head = e.debriefList.size() > 0 ? "RESUMEN DEL INGENIERO"
+                : e.debriefPending() ? "EL RESUMEN SALE EN UNOS SEGUNDOS" : "EN VIVO (el resumen completo sale al terminar la carrera)";
+        text(head, 360, 206, 15, Dashboard.TEAL, Painter.LEFT, true);
+        if (s.trackName.length() > 0) text(s.trackName.toUpperCase(Locale.US), 988, 206, 15, Dashboard.YELLOW, Painter.RIGHT, true);
+        if (e.debriefList.size() > 0) bullets(e.debriefList, 360, 238, 628, 562, 18);
+        else paragraph(liveSummary(s), 360, 236, 640, 570, 19);
         if (csvPath.length() > 0) text("Datos guardados en " + csvPath, 990, 572, 12, Dashboard.DIM, Painter.RIGHT, false);
     }
 
@@ -120,6 +123,25 @@ final class Analysis {
         while (lines.size() * size * 1.3f > bottom - top && size > 12) { size -= 1; lines = wrap(s, size, maxW); }
         float y = top;
         for (String ln : lines) { if (y > bottom) break; text(ln, l, y, size, Dashboard.WHITE, Painter.LEFT, false); y += size * 1.3f; }
+    }
+
+    /** Lista con viñetas; achica la letra hasta que quepa. */
+    private void bullets(java.util.List<String> items, float l, float top, float maxW, float bottom, float size) {
+        ArrayList<ArrayList<String>> w = new ArrayList<ArrayList<String>>();
+        for (;;) {
+            w.clear();
+            int lines = 0;
+            for (String it : items) { ArrayList<String> x = wrap(it, size, maxW - 24); w.add(x); lines += x.size(); }
+            if (lines * size * 1.25f + items.size() * size * 0.35f <= bottom - top || size <= 11) break;
+            size -= 1;
+        }
+        float y = top;
+        for (int i = 0; i < w.size(); i++) {
+            if (y > bottom) break;
+            text("•", l + 4, y, size, Dashboard.YELLOW, Painter.LEFT, true);
+            for (String ln : w.get(i)) { text(ln, l + 24, y, size, Dashboard.WHITE, Painter.LEFT, false); y += size * 1.25f; }
+            y += size * 0.35f;
+        }
     }
 
     private ArrayList<String> wrap(String s, float size, float maxW) {
@@ -182,6 +204,15 @@ final class Analysis {
             p.ring(cx, cy, 13 * u, 2 * u, Dashboard.WHITE);
             p.text(String.valueOf(k + 1), cx, cy + 6 * u, 15 * u, Dashboard.WHITE, Painter.CENTER, true);
         }
+        // límites de sector (tercios de la vuelta)
+        float len = r.d[r.n - 1];
+        for (int k = 1; k <= 2; k++) {
+            int j = 0;
+            while (j < r.n - 1 && r.d[j] < len * k / 3f) j++;
+            float sxp = offX + (r.x[j] - minX) * scale, syp = offY + (r.z[j] - minZ) * scale;
+            p.round(sxp - 17 * u, syp - 11 * u, sxp + 17 * u, syp + 11 * u, 5 * u, Dashboard.YELLOW);
+            p.text("S" + (k + 1), sxp, syp + 6 * u, 14 * u, Dashboard.BG, Painter.CENTER, true);
+        }
         // meta
         p.circle(offX + (r.x[0] - minX) * scale, offY + (r.z[0] - minZ) * scale, 7 * u, Dashboard.WHITE);
         // auto en vivo
@@ -203,6 +234,12 @@ final class Analysis {
         text("Punto celeste: tu auto ahora", lx, 400, 14, Dashboard.DIM, Painter.LEFT, false);
         text("Punto blanco: meta", lx, 422, 14, Dashboard.DIM, Painter.LEFT, false);
         text("Curvas: " + c.nc + " (numeradas desde la meta)", lx, 444, 14, Dashboard.DIM, Painter.LEFT, false);
+        text("Amarillo: inicio de sector 2 y 3", lx, 466, 14, Dashboard.DIM, Painter.LEFT, false);
+        if (e.track != null) {
+            text("CIRCUITO", lx, 504, 14, Dashboard.LABEL, Painter.LEFT, true);
+            text(e.track.label(), lx, 532, 19, Dashboard.YELLOW, Painter.LEFT, true);
+            if (e.track.name.length() == 0) text("ponle nombre en SET", lx, 556, 13, Dashboard.DIM, Painter.LEFT, false);
+        }
     }
 
     // ---------------------------------------------------------------- CURVAS
@@ -263,8 +300,9 @@ final class Analysis {
             text(String.valueOf(l.lap), x + bw / 2, gb + 16, 12, Dashboard.DIM, Painter.CENTER, false);
         }
         // tabla
-        String[] head = {"VUELTA", "TIEMPO", "DIF.", "V. MÁX", "COMB.", "BLOQ", "PATIN", "SOBRE", "SUBV"};
-        float[] col = {60, 190, 320, 430, 530, 640, 730, 820, 910};
+        String[] head = {"VUELTA", "TIEMPO", "DIF.", "S1", "S2", "S3", "V. MÁX", "COMB.", "BLOQ", "PATIN", "SOBRE", "SUBV"};
+        float[] col = {54, 150, 250, 335, 420, 505, 590, 668, 742, 810, 878, 946};
+        int[] bs = {s.bestSector(0), s.bestSector(1), s.bestSector(2)};
         float y0 = 322;
         for (int i = 0; i < head.length; i++) text(head[i], col[i], y0, 13, Dashboard.LABEL, Painter.CENTER, true);
         int rows = (int) ((580 - y0 - 10) / 26);
@@ -273,14 +311,18 @@ final class Analysis {
             Session.Lap l = s.laps.get(i);
             float y = y0 + 26 * (i - start + 1);
             int c = l == best ? 0xffc9a6ff : Dashboard.WHITE;
-            text(String.valueOf(l.lap), col[0], y, 17, c, Painter.CENTER, true);
-            text(Engineer.msText(l.ms), col[1], y, 17, c, Painter.CENTER, false);
+            text(l.lap + (l.pit ? " P" : ""), col[0], y, 16, l.pit ? Dashboard.YELLOW : c, Painter.CENTER, true);
+            text(Engineer.msText(l.ms), col[1], y, 16, c, Painter.CENTER, false);
             text(best != null && l.ms > 0 && l != best ? String.format(Locale.US, "+%.2f", (l.ms - best.ms) / 1000f) : l == best ? "mejor" : "--",
-                    col[2], y, 17, c, Painter.CENTER, false);
-            text(l.maxKmh > 0 ? String.valueOf(Math.round(l.maxKmh)) : "--", col[3], y, 17, Dashboard.WHITE, Painter.CENTER, false);
-            text(l.fuelUsed > 0 ? String.format(Locale.US, "%.1f%%", l.fuelUsed) : "--", col[4], y, 17, Dashboard.WHITE, Painter.CENTER, false);
+                    col[2], y, 16, c, Painter.CENTER, false);
+            int[] sv = {l.s1, l.s2, l.s3};
+            for (int k = 0; k < 3; k++)
+                text(sv[k] > 0 ? String.format(Locale.US, "%.2f", sv[k] / 1000f) : "--", col[3 + k], y, 16,
+                        sv[k] > 0 && sv[k] == bs[k] ? 0xffc9a6ff : sv[k] > 0 ? Dashboard.WHITE : Dashboard.DIM, Painter.CENTER, sv[k] > 0 && sv[k] == bs[k]);
+            text(l.maxKmh > 0 ? String.valueOf(Math.round(l.maxKmh)) : "--", col[6], y, 16, Dashboard.WHITE, Painter.CENTER, false);
+            text(l.fuelUsed > 0 ? String.format(Locale.US, "%.1f%%", l.fuelUsed) : "--", col[7], y, 16, Dashboard.WHITE, Painter.CENTER, false);
             int[] v = {l.lock, l.spin, l.over, l.under};
-            for (int k = 0; k < 4; k++) text(v[k] > 0 ? String.valueOf(v[k]) : "·", col[5 + k], y, 17, v[k] > 0 ? Dashboard.ORANGE : Dashboard.DIM, Painter.CENTER, v[k] > 0);
+            for (int k = 0; k < 4; k++) text(v[k] > 0 ? String.valueOf(v[k]) : "·", col[8 + k], y, 16, v[k] > 0 ? Dashboard.ORANGE : Dashboard.DIM, Painter.CENTER, v[k] > 0);
         }
     }
 

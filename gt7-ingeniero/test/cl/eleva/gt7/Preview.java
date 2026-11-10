@@ -66,7 +66,10 @@ public class Preview implements Painter {
         Simulator sim = new Simulator();
         Telemetry t = new Telemetry();
         Engineer e = new Engineer(null);
-        for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); e.onPacket(t); }
+        final long[] clk = {0};
+        e.time = new Engineer.Clock() { public long now() { return clk[0]; } };
+        for (int i = 0; i < seconds * 60; i++) { byte[] p = sim.next(); t.decrypt(p, p.length); clk[0] = Math.round(i / 59.94 * 1000); e.onPacket(t); }
+        if (e.track != null) e.renameTrack("Circuito de prueba");
         Analysis an = new Analysis();
         an.csvPath = "/sdcard/IngenieroGT7/carrera.csv";
         for (int tab = 0; tab < Analysis.TABS.length; tab++) {
@@ -82,7 +85,7 @@ public class Preview implements Painter {
     }
 
     public static void main(String[] a) throws Exception {
-        analysis(a[0], a.length > 1 ? Integer.parseInt(a[1]) : 720);
+        analysis(a[0], a.length > 1 ? Integer.parseInt(a[1]) : 760);
         shot(a[0] + "/dash-carrera.png", 300, true);
         W = 1024; H = 552;   // tablet con barra de navegación
         shot(a[0] + "/dash-1024x552.png", 300, true);

@@ -32,10 +32,13 @@ final class Coach {
     static final int BRAKE_ON = 40, FULL_THROTTLE = 245;
 
     Trace cur = new Trace(), last, ref;
-    int mapIdx = -1;          // índice de la mejor vuelta que corresponde a la posición actual
+    int mapIdx = -1;
+    float offLine = -1;      // metros entre el auto y la línea de la mejor vuelta (-1 = sin referencia)
+    float[] fixedS, fixedE;  // curvas de un circuito ya conocido (fracción de vuelta); null = detectar          // índice de la mejor vuelta que corresponde a la posición actual
 
     // curvas de la referencia
     int nc;
+    int[] cStart = new int[0];
     int[] cBrake = new int[0], cApex = new int[0], cExit = new int[0], cFull = new int[0], cExitGear = new int[0];
     float[] cMinV = new float[0];
 
@@ -74,6 +77,14 @@ final class Coach {
      */
     private void detectCorners() {
         Trace r = ref;
+        if (fixedS != null && r.n > 50) {
+            float len = r.d[r.n - 1];
+            int n = fixedS.length;
+            int[] si = new int[n], ei = new int[n];
+            for (int c = 0; c < n; c++) { si[c] = idxAt(r, fixedS[c] * len, 0); ei[c] = idxAt(r, fixedE[c] * len, si[c]); }
+            buildCorners(si, ei, n);
+            return;
+        }
         final float STEP = 5f;
         float len = r.d[r.n - 1];
         int m = (int) (len / STEP);
@@ -114,11 +125,33 @@ final class Coach {
                 }
             } else k++;
         }
+        int[] si = new int[n], ei = new int[n];
+        for (int c = 0; c < n; c++) { si[c] = idx[cs[c]]; ei[c] = idx[Math.min(m - 1, ce[c])]; }
+        buildCorners(si, ei, n);
+    }
+
+    /** Fracciones de vuelta (inicio, fin) de cada curva actual, para guardar el circuito. */
+    float[][] segments() {
+        float len = refLength();
+        float[] a = new float[nc], b = new float[nc];
+        for (int c = 0; c < nc; c++) { a[c] = ref.d[cStart[c]] / len; b[c] = ref.d[cExit[c]] / len; }
+        return new float[][]{a, b};
+    }
+
+    /** Usa las curvas de un circuito conocido (misma numeración que la vez anterior). */
+    void useSegments(float[] fs, float[] fe) {
+        fixedS = fs; fixedE = fe;
+        if (ref != null) { detectCorners(); nextCorner = 0; }
+    }
+
+    private void buildCorners(int[] si, int[] ei, int n) {
+        Trace r = ref;
         alloc(n);
         nc = n;
         for (int c = 0; c < n; c++) {
-            int s0 = idx[cs[c]], e0 = idx[Math.min(m - 1, ce[c])];
-            int prevEnd = c > 0 ? idx[Math.min(m - 1, ce[c - 1])] : 0;
+            int s0 = si[c], e0 = Math.max(si[c], ei[c]);
+            cStart[c] = s0;
+            int prevEnd = c > 0 ? ei[c - 1] : 0;
             int apex = s0;
             for (int q = s0; q <= e0; q++) if (r.v[q] < r.v[apex]) apex = q;
             // frenada que pertenece a esta curva: hasta 250 m antes, sin pasar la curva anterior
@@ -143,7 +176,7 @@ final class Coach {
     }
 
     private void alloc(int k) {
-        cBrake = new int[k]; cApex = new int[k]; cExit = new int[k]; cFull = new int[k]; cExitGear = new int[k]; cMinV = new float[k];
+        cStart = new int[k]; cBrake = new int[k]; cApex = new int[k]; cExit = new int[k]; cFull = new int[k]; cExitGear = new int[k]; cMinV = new float[k];
         brakeD = new float[k]; minV = new float[k]; fullD = new float[k]; deltaIn = new float[k];
         seen = new boolean[k]; done = new boolean[k]; wStart = new float[k]; wEnd = new float[k];
     }
@@ -156,7 +189,7 @@ final class Coach {
 
     /** Ubica la posición actual sobre la mejor vuelta (búsqueda local del punto más cercano). */
     private void map(float px, float pz) {
-        if (ref == null) { mapIdx = -1; return; }
+        if (ref == null) { mapIdx = -1; offLine = -1; return; }
         int from, to;
         if (mapIdx < 0) { from = 0; to = ref.n - 1; }
         else { from = Math.max(0, mapIdx - 30); to = Math.min(ref.n - 1, mapIdx + 300); }
@@ -166,6 +199,7 @@ final class Coach {
             float dx = ref.x[i] - px, dz = ref.z[i] - pz, dd = dx * dx + dz * dz;
             if (dd < bd) { bd = dd; best = i; }
         }
+        offLine = best >= 0 ? (float) Math.sqrt(bd) : -1;
         if (best >= 0 && bd < 60f * 60f) mapIdx = best;
     }
 
