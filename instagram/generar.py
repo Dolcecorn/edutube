@@ -119,6 +119,7 @@ en la Quinta Región y la Región Metropolitana; otras regiones solo a pedido.
 Datos reales de la empresa (confirmados por la empresa; úsalos cuando aporten, sin inventar más):
 - Empresa familiar fundada en 2005: más de 20 años de experiencia. Fundador: Augusto Henríquez Pacheco (de ahí
   la sigla AHP), junto a su esposa Teresa Olivares Álvarez. Nombres solo de vez en cuando y con naturalidad.
+- La empresa se nombra SIEMPRE "Ambulancias AHP", nunca solo "AHP" (ni en títulos, textos, llamados ni locución).
 - Cifras aproximadas: más de 1.700 traslados de pacientes particulares y más de 500 coberturas de eventos
   (siempre como "más de"; no des otras cifras).
 - Atención 24/7. Salida inmediata según disponibilidad de ambulancias (nunca prometas un tiempo de llegada);
@@ -215,7 +216,7 @@ sorprendente y concreto de máximo 7 palabras en pantalla (los reels los ven sob
 siguen).
 Cierre: la ÚLTIMA escena (llamado a la acción), en pantalla y en la locución, dice que somos de San Antonio, en la
 Quinta Región, y que también trabajamos en la Región Metropolitana, e invita a contactarnos.
-En la locución nunca empieces una frase con "AHP": di "Ambulancias AHP" o "en AHP"."""
+Nunca escribas ni digas solo "AHP": siempre "Ambulancias AHP" (en títulos, textos, llamados y locución)."""
     if not generico and tipo == "carrusel":
         voz += """
 Formato para GUARDAR: el carrusel es una guía práctica que la persona querrá guardar o compartir (checklist,
@@ -353,6 +354,21 @@ def fondo_del_dia(m, dia, hora, solo_oscuros=False):
     return fondos[(dt.date.fromisoformat(dia).toordinal() * len(horas) + i) % len(fondos)]
 
 
+SOLO_SIGLA = re.compile(r"(?<![\w#@./])(?<!Ambulancias )(?<!ambulancias )(?<!AMBULANCIAS )AHP\b")
+
+
+def nombre_completo(c):
+    """AHP nunca se nombra solo: siempre "Ambulancias AHP" (Eleva 2026-11-11). Corrige todos los textos."""
+    from pydantic import BaseModel
+    for campo, valor in c:
+        if isinstance(valor, str) and campo not in ("foto", "hashtags"):
+            setattr(c, campo, SOLO_SIGLA.sub("Ambulancias AHP", valor))
+        elif isinstance(valor, list):
+            for x in valor:
+                if isinstance(x, BaseModel):
+                    nombre_completo(x)
+
+
 def crear(m, estado, tipo, dia, hora, salida, pub=None):
     """Genera una publicación y la deja en salida/<dia>-<hora>-<tipo>-<tema>/."""
     reuso = os.environ.get("CONTENIDO", "").strip()   # volver a renderizar un contenido.json existente
@@ -362,6 +378,8 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
         # los reels de AHP siempre cierran con la zona (Eleva 2026-11-10); el resto, 1 de cada 6
         zona = toca_zona(m, estado["historial"]) or (tipo == "reel" and not m.get("rubro"))
         c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub, zona)
+    if not m.get("rubro"):
+        nombre_completo(c)
     validas = {f["archivo"] for f in diseno.fotos()}
     if tipo == "historia":
         if c.foto not in validas:
