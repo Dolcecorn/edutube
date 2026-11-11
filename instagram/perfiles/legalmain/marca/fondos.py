@@ -793,6 +793,229 @@ def escudo_premium(img, semilla):
     obj.alpha_composite(v)
     cerrar()
 
+
+def _persona(obj, x, y, e, alfa=190, oro=None):
+    """Silueta de persona de vidrio (cabeza y hombros) dentro de un círculo; oro: máscara L opcional."""
+    c = capa()
+    d = ImageDraw.Draw(c)
+    rr = 62 * e
+    d.ellipse([(x - rr) * S, (y - rr) * S, (x + rr) * S, (y + rr) * S], fill=(210, 224, 255, 40),
+              outline=BLANCO + (alfa,), width=int(1.8 * S))
+    d.ellipse([(x - rr * 0.28) * S, (y - rr * 0.55) * S, (x + rr * 0.28) * S, y * S], fill=BLANCO + (alfa,))
+    d.chord([(x - rr * 0.55) * S, (y + rr * 0.08) * S, (x + rr * 0.55) * S, (y + rr * 0.9) * S], 180, 360,
+            fill=BLANCO + (alfa,))
+    if e < 0.9:
+        c = c.filter(ImageFilter.GaussianBlur(1.2 * S))
+    obj.alpha_composite(c)
+
+
+def _candado(dm, cx, cy, k=1.0, abierto=False):
+    """Candado (en una máscara L) centrado en cx, cy."""
+    dm.rounded_rectangle([(cx - 40 * k) * S, (cy - 8 * k) * S, (cx + 40 * k) * S, (cy + 56 * k) * S], radius=9 * k * S,
+                         fill=255)
+    dx = 30 * k if abierto else 0
+    dm.arc([(cx - 27 * k + dx) * S, (cy - 58 * k) * S, (cx + 27 * k + dx) * S, (cy + 2 * k) * S], 180, 360, fill=255,
+           width=int(8 * k * S))
+    dm.line([((cx - 27 * k + dx) * S, (cy - 28 * k) * S), ((cx - 27 * k + dx) * S, (cy - 10 * k) * S)], fill=255,
+            width=int(8 * k * S))
+    if not abierto:
+        dm.line([((cx + 27 * k) * S, (cy - 28 * k) * S), ((cx + 27 * k) * S, (cy - 10 * k) * S)], fill=255,
+                width=int(8 * k * S))
+
+
+def acceso(img, semilla):
+    """Puerta de vidrio con cerradura de oro y personas que se acercan por caminos de luz (quién accede a los datos)."""
+    obj, cerrar = _escena(img, semilla)
+    w, h = 420, 760
+    p, d = _vidrio(w, h, radio=30, alfa=(74, 24))
+    for i in range(3):                                               # filas de datos dentro de la puerta
+        _cy = 470 + i * 70
+        d.rounded_rectangle([60 * S, _cy * S, (w - 60) * S, (_cy + 10) * S], radius=4 * S, fill=BLANCO + (60,))
+    quad = [(360, 560), (760, 600), (760, 1400), (360, 1420)]
+    obj.alpha_composite(_proyectar(p, quad))
+    caminos = capa()
+    dl = ImageDraw.Draw(caminos)
+    gente = [(150, 980, 0.85), (230, 1250, 1.0), (900, 900, 0.75), (930, 1210, 0.95), (120, 700, 0.6)]
+    for x, y, e in gente:
+        for t in np.linspace(0, 1, 26)[::2]:
+            px, py = x + (560 - x) * t, y + (1010 - y) * t
+            punto(dl, px, py, 2.4, BLANCO, int(150 * (1 - t) + 40))
+    obj.alpha_composite(caminos)
+    for x, y, e in gente:
+        _persona(obj, x, y, e)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    cx, cy = 560, 900
+    dm.ellipse([(cx - 70) * S, (cy - 70) * S, (cx + 70) * S, (cy + 70) * S], fill=255)
+    dm.ellipse([(cx - 96) * S, (cy - 96) * S, (cx + 96) * S, (cy + 96) * S], outline=255, width=int(5 * S))
+    dm.rounded_rectangle([(710) * S, (980) * S, (742) * S, (1080) * S], radius=12 * S, fill=255)   # manilla
+    obj.alpha_composite(_oro(m, 40))
+    v = capa()
+    dv = ImageDraw.Draw(v)
+    dv.ellipse([(cx - 20) * S, (cy - 34) * S, (cx + 20) * S, (cy + 6) * S], fill=(36, 26, 8, 235))
+    dv.polygon([((cx - 13) * S, (cy - 6) * S), ((cx + 13) * S, (cy - 6) * S), ((cx + 22) * S, (cy + 44) * S),
+                ((cx - 22) * S, (cy + 44) * S)], fill=(36, 26, 8, 235))
+    obj.alpha_composite(v)
+    cerrar()
+
+
+def niveles(img, semilla):
+    """Tres capas de vidrio escalonadas (niveles de acceso): cada una con su candado, solo la superior en oro."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    for k, (y, ancho) in enumerate(((1120, 760), (880, 620), (650, 480))):
+        w, h = ancho, 300
+        p, d = _vidrio(w, h, radio=26, alfa=(70 - k * 4, 22))
+        _texto(d, w, 3, r, y0=150, paso=48, oro=(0 if k == 2 else None))
+        x0 = 540 - ancho / 2
+        quad = [(x0 + 60, y), (x0 + ancho - 60, y), (x0 + ancho, y + 190), (x0, y + 190)]
+        obj.alpha_composite(_proyectar(p, quad))
+        lx = x0 + ancho - 70
+        if k == 2:
+            _candado(dm, lx - 10, y + 80, 0.9)
+        else:                                                       # candados de vidrio en los niveles bajos
+            cand = Image.new("L", (W, H), 0)
+            _candado(ImageDraw.Draw(cand), lx - 10, y + 80, 0.75)
+            capa_c = Image.new("RGBA", (W, H), BLANCO + (0,))
+            capa_c.putalpha(cand.point(lambda v: int(v * 0.6)))
+            obj.alpha_composite(capa_c)
+    for t in np.linspace(0, 1, 22):                                   # eje dorado que une los niveles
+        y = 1320 - t * 760
+        dm.ellipse([(536) * S, (y - 4) * S, (544) * S, (y + 4) * S], fill=int(120 + 135 * t))
+    obj.alpha_composite(_oro(m, 35))
+    cerrar()
+
+
+def roles(img, semilla):
+    """Organigrama de vidrio arriba: un responsable de oro y tres funciones, cada una con su llave (deja libre el texto)."""
+    obj, cerrar = _escena(img, semilla)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    raiz = (540, 400)
+    hijos = [(230, 720), (540, 740), (850, 720)]
+    nietos = []
+    lin = capa()
+    dl = ImageDraw.Draw(lin)
+    for hx, hy in hijos:
+        dm.line([(raiz[0] * S, (raiz[1] + 110) * S), (raiz[0] * S, 590 * S), (hx * S, 590 * S), (hx * S, (hy - 90) * S)],
+                fill=200, width=int(4 * S), joint="curve")
+    for i, (nx, ny) in enumerate(nietos):
+        hx, hy = hijos[min(2, i * 3 // 5)]
+        dl.line([(hx * S, (hy + 90) * S), (hx * S, (hy + 150) * S), (nx * S, (hy + 150) * S), (nx * S, (ny - 70) * S)],
+                fill=(210, 222, 255, 110), width=int(2 * S))
+    obj.alpha_composite(lin)
+    for (x, y), (w, h) in [((hx, hy), (230, 180)) for hx, hy in hijos] + [((nx, ny), (150, 130)) for nx, ny in nietos]:
+        p, d = _vidrio(w, h, radio=18)
+        d.ellipse([(w / 2 - 22) * S, 26 * S, (w / 2 + 22) * S, 70 * S], fill=BLANCO + (200,))
+        d.chord([(w / 2 - 40) * S, 76 * S, (w / 2 + 40) * S, 136 * S], 180, 360, fill=BLANCO + (200,))
+        if h > 150:
+            d.rounded_rectangle([40 * S, 150 * S, (w - 40) * S, 160 * S], radius=4 * S, fill=BLANCO + (70,))
+        obj.alpha_composite(p, (int((x - w / 2) * S), int((y - h / 2) * S)))
+    for hx, hy in hijos:                                             # llave de acceso de cada función
+        kx, ky = hx + 92, hy - 70
+        dm.ellipse([(kx - 18) * S, (ky - 18) * S, (kx + 18) * S, (ky + 18) * S], outline=255, width=int(6 * S))
+        dm.line([((kx + 14) * S, (ky + 14) * S), ((kx + 46) * S, (ky + 46) * S)], fill=255, width=int(6 * S))
+        dm.line([((kx + 34) * S, (ky + 34) * S), ((kx + 44) * S, (ky + 24) * S)], fill=255, width=int(6 * S))
+    x, y = raiz
+    dm.ellipse([(x - 110) * S, (y - 110) * S, (x + 110) * S, (y + 110) * S], outline=255, width=int(6 * S))
+    dm.ellipse([(x - 34) * S, (y - 62) * S, (x + 34) * S, (y + 6) * S], fill=255)
+    dm.chord([(x - 66) * S, (y + 10) * S, (x + 66) * S, (y + 100) * S], 180, 360, fill=255)
+    obj.alpha_composite(_oro(m, 30))
+    cerrar()
+
+
+def conservar(img, semilla):
+    """Archivo de vidrio con cajones de datos y un reloj de arena de oro (cuánto tiempo se conservan)."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    w, h = 460, 800
+    p, d = _vidrio(w, h, radio=24, alfa=(66, 22))
+    for i in range(4):
+        y0 = 40 + i * 190
+        d.rounded_rectangle([30 * S, y0 * S, (w - 30) * S, (y0 + 165) * S], radius=14 * S, fill=(214, 226, 255, 22),
+                            outline=BLANCO + (150,), width=int(1.6 * S))
+        d.rounded_rectangle([(w / 2 - 50) * S, (y0 + 70) * S, (w / 2 + 50) * S, (y0 + 86) * S], radius=8 * S,
+                            fill=BLANCO + (170,))
+        for k in range(int(r.integers(3, 6))):
+            d.rounded_rectangle([60 * S, (y0 + 24 + k * 0) * S, (60 + 60 + k * 50) * S, (y0 + 30) * S], radius=3 * S,
+                                fill=BLANCO + (40,))
+    quad = [(110, 560), (530, 600), (530, 1410), (110, 1420)]
+    obj.alpha_composite(_proyectar(p, quad))
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    cx, top, bot = 780, 640, 1240
+    dm.rounded_rectangle([(cx - 150) * S, (top - 30) * S, (cx + 150) * S, top * S], radius=10 * S, fill=255)
+    dm.rounded_rectangle([(cx - 150) * S, bot * S, (cx + 150) * S, (bot + 30) * S], radius=10 * S, fill=255)
+    for x in (cx - 128, cx + 128):
+        dm.line([(x * S, top * S), (x * S, bot * S)], fill=255, width=int(9 * S))
+    vidrio = capa()
+    dv = ImageDraw.Draw(vidrio)
+    mid = (top + bot) / 2
+    forma = [(cx - 110, top + 10), (cx + 110, top + 10), (cx + 14, mid), (cx + 110, bot - 10), (cx - 110, bot - 10),
+             (cx - 14, mid)]
+    dv.polygon([(x * S, y * S) for x, y in forma], fill=(214, 226, 255, 46), outline=BLANCO + (210,))
+    obj.alpha_composite(vidrio)
+    dm.polygon([((cx - 70) * S, (top + 60) * S), ((cx + 70) * S, (top + 60) * S), ((cx + 8) * S, (mid - 6) * S),
+                ((cx - 8) * S, (mid - 6) * S)], fill=255)
+    dm.polygon([((cx - 100) * S, (bot - 12) * S), ((cx + 100) * S, (bot - 12) * S), (cx * S, (bot - 120) * S)], fill=255)
+    dm.line([(cx * S, mid * S), (cx * S, (bot - 120) * S)], fill=200, width=int(3 * S))
+    for k in range(18):                                              # datos que pasan del archivo al reloj
+        t = k / 17
+        x = 540 + t * 100
+        y = 980 - math.sin(t * math.pi) * 60
+        dm.rectangle([(x - 5) * S, (y - 5) * S, (x + 5) * S, (y + 5) * S], fill=int(80 + 160 * t))
+    obj.alpha_composite(_oro(m, 35))
+    cerrar()
+
+
+def preparada(img, semilla):
+    """Lista de verificación de vidrio con tres controles en oro y un escudo pequeño (empresa preparada)."""
+    r = np.random.default_rng(semilla)
+    obj, cerrar = _escena(img, semilla)
+    w, h = 620, 780
+    p, d = _vidrio(w, h, radio=30, alfa=(72, 24))
+    d.rounded_rectangle([60 * S, 70 * S, 330 * S, 84 * S], radius=5 * S, fill=BLANCO + (200,))
+    filas = []
+    for i in range(3):
+        y = 200 + i * 170
+        d.rounded_rectangle([60 * S, (y - 40) * S, (w - 60) * S, (y + 90) * S], radius=18 * S, fill=(214, 226, 255, 20),
+                            outline=BLANCO + (120,), width=int(1.4 * S))
+        d.rounded_rectangle([170 * S, (y + 4) * S, (int(r.uniform(420, 520))) * S, (y + 16) * S], radius=5 * S,
+                            fill=BLANCO + (110,))
+        d.rounded_rectangle([170 * S, (y + 40) * S, (int(r.uniform(300, 420))) * S, (y + 50) * S], radius=5 * S,
+                            fill=BLANCO + (55,))
+        filas.append(y)
+    quad = [(230, 520), (850, 560), (880, 1380), (200, 1400)]
+    obj.alpha_composite(_proyectar(p, quad))
+    f = _mapa(quad, w, h)
+    m = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(m)
+    for y in filas:
+        cx, cy = f(105, y + 25)
+        dm.ellipse([(cx - 36) * S, (cy - 36) * S, (cx + 36) * S, (cy + 36) * S], fill=255)
+    obj.alpha_composite(_oro(m, 35))
+    v = capa()
+    dv = ImageDraw.Draw(v)
+    for y in filas:
+        cx, cy = f(105, y + 25)
+        dv.line([((cx - 16) * S, cy * S), ((cx - 4) * S, (cy + 13) * S), ((cx + 18) * S, (cy - 14) * S)],
+                fill=(36, 26, 8, 240), width=int(6 * S), joint="curve")
+    obj.alpha_composite(v)
+    m2 = Image.new("L", (W, H), 0)
+    d2 = ImageDraw.Draw(m2)
+    sx, sy = 860, 470
+    sh = [(sx, sy - 110), (sx + 90, sy - 75), (sx + 80, sy + 40), (sx, sy + 115), (sx - 80, sy + 40), (sx - 90, sy - 75)]
+    d2.polygon([(x * S, y * S) for x, y in sh], fill=255)
+    obj.alpha_composite(_oro(m2, 50))
+    _candado_v = capa()
+    _candado(ImageDraw.Draw(_candado_v), sx, sy + 5, 0.55)
+    arr = np.asarray(_candado_v).copy()
+    arr[..., :3] = (36, 26, 8)
+    obj.alpha_composite(Image.fromarray(arr))
+    cerrar()
+
 AZULF = (50, 66, 120)
 CALIDO = (120, 95, 50)
 FONDOS = [
@@ -832,6 +1055,16 @@ FONDOS = [
      "Personas conectadas a un nodo de oro, algunas con aviso (comunicar a titulares, clientes, trabajadores)"),
     ("escudo-protocolo.jpg", escudo_premium, 20, [(0.5, 0.3, 0.5, AZULF, 0.95), (0.3, 0.85, 0.3, CALIDO, 0.2)],
      "Escudo de vidrio con candado de oro sobre anillos de datos (seguridad, protocolos, cumplimiento)"),
+    ("acceso-datos.jpg", acceso, 21, [(0.55, 0.3, 0.55, AZULF, 0.9), (0.2, 0.85, 0.3, CALIDO, 0.2)],
+     "Puerta de vidrio con cerradura de oro y personas que se acercan (quién accede a los datos, control de accesos)"),
+    ("niveles-acceso.jpg", niveles, 22, [(0.5, 0.25, 0.55, AZULF, 0.9), (0.8, 0.85, 0.3, CALIDO, 0.2)],
+     "Tres capas de vidrio escalonadas con candados, la superior en oro (niveles de acceso, permisos, información sensible)"),
+    ("roles-responsables.jpg", roles, 23, [(0.5, 0.2, 0.55, AZULF, 0.9), (0.25, 0.85, 0.3, CALIDO, 0.2)],
+     "Organigrama de vidrio con un responsable de oro y llaves por función (responsabilidades internas, permisos por cargo)"),
+    ("conservar-datos.jpg", conservar, 24, [(0.35, 0.3, 0.55, AZULF, 0.9), (0.8, 0.8, 0.3, CALIDO, 0.2)],
+     "Archivo de vidrio con cajones y un reloj de arena de oro (conservación de datos, plazos, retención)"),
+    ("empresa-preparada.jpg", preparada, 25, [(0.5, 0.3, 0.55, AZULF, 0.95), (0.3, 0.85, 0.3, CALIDO, 0.2)],
+     "Lista de verificación de vidrio con controles de oro y escudo (empresa preparada, cumplimiento, Ley 21.719)"),
 ]
 
 
