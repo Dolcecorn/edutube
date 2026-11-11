@@ -122,6 +122,12 @@ def decir(texto, destino, intentos=6):
             if ok:
                 break
         else:
+            if "AHP" in texto:
+                # el modelo no logra decir la sigla en esta frase: se dice sin ella antes de dejar un error
+                alt = re.sub(r"\bAmbulancias AHP\b", "nuestro equipo", texto)
+                alt = re.sub(r"\bAHP\b", "nuestro equipo", alt)
+                print(f"  sin sigla: «{alt}»", flush=True)
+                return decir(alt, destino, intentos)
             print(f"  AVISO: ninguna toma salió perfecta para «{texto}»; se usa la mejor", flush=True)
         shutil.copy(mejor[1], destino)
         return mejor[2]
