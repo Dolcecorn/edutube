@@ -1,0 +1,47 @@
+{
+  "tema": "Detrás de un traslado: roles y equipamiento del equipo de ambulancia",
+  "laminas": [
+    {
+      "titulo": "¿Quién va contigo en ambulancia?",
+      "texto": "",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "locucion": "No solo importa llegar al destino: también quién acompaña al paciente durante el trayecto."
+    },
+    {
+      "titulo": "Dos roles, una atención coordinada",
+      "texto": "En cada traslado van un conductor y un TENS, con funciones diferentes durante el servicio.",
+      "foto": "equipo-toldo-cerros-vertical.jpg",
+      "locucion": "El conductor se concentra en la ruta; el TENS observa al paciente y responde a sus necesidades durante el viaje."
+    },
+    {
+      "titulo": "Equipamiento para atender durante el viaje",
+      "texto": "Oxígeno, DEA, saturómetro, toma de presión, silla de ruedas y camilla.",
+      "foto": "noche-autopista-trasera.mp4+noche-clinica-las-condes-dron.mp4",
+      "locucion": "La ambulancia cuenta con elementos para evaluar y atender distintas necesidades durante el traslado."
+    },
+    {
+      "titulo": "Traslados programados o de urgencia",
+      "texto": "A hospitales, clínicas o domicilios. También a Santiago y otras regiones, a pedido.",
+      "foto": "noche-costanera-vertical.jpg",
+      "locucion": "Puede ser un traslado urgente o planificado, incluso con un acompañante y viajes fuera de la región."
+    },
+    {
+      "titulo": "San Antonio y Región Metropolitana",
+      "texto": "Somos de la provincia de San Antonio, Litoral Central, Quinta Región. Traslados, urgencias y eventos: +56 9 8748 2705 · www.ambulanciasahp.cl",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y también trabajamos en la Región Metropolitana. Contáctanos para solicitar tu servicio."
+    }
+  ],
+  "descripcion": "¿Quién acompaña a un paciente durante un traslado en ambulancia?\n\nEn Ambulancias AHP, cada traslado incluye un conductor y un TENS: cumplen funciones distintas para movilizar al paciente y atender sus necesidades durante el viaje.\n\nLas ambulancias cuentan con oxígeno, DEA, saturómetro, toma de presión, silla de ruedas y camilla. Realizamos traslados a hospitales, clínicas y domicilios, además de servicios programados.\n\nSomos de la provincia de San Antonio, Litoral Central, Quinta Región, y trabajamos en la Región de Valparaíso y la Región Metropolitana. Para traslados, urgencias o cobertura de eventos, contáctanos al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#AmbulanciasAHP",
+    "#TrasladoDePacientes",
+    "#AtencionDeUrgencias",
+    "#CoberturaDeEventos",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#Santiago",
+    "#RegionMetropolitana"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "tema": "Guía práctica: qué encontrarás en una ambulancia equipada",
+  "laminas": [
+    {
+      "titulo": "¿Qué lleva una ambulancia por dentro?",
+      "texto": "Guarda esta guía para reconocer los elementos y el equipo que acompañan un traslado de pacientes.",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "Dos roles durante el traslado",
+      "texto": "En cada traslado participan un conductor y un TENS: conducción y atención técnica van a cargo de personas distintas.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "Oxígeno para necesidades respiratorias",
+      "texto": "La ambulancia cuenta con oxígeno. Su uso y administración deben realizarse según la evaluación y las indicaciones del personal de salud.",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "Signos vitales bajo observación",
+      "texto": "El equipo incluye saturómetro y toma presión para controlar parámetros relevantes durante el traslado, según corresponda.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "Respuesta ante una emergencia cardíaca",
+      "texto": "También dispone de DEA, un desfibrilador externo automático diseñado para orientar su uso ante ciertos ritmos cardíacos de emergencia.",
+      "foto": "",
+      "locucion": ""
+    },
+    {
+      "titulo": "Camilla y silla de ruedas",
+      "texto": "La ambulancia cuenta con camilla y silla de ruedas para trasladar a pacientes que no pueden viajar cómodamente en un automóvil.",
+      "foto": "clinica-dia-vertical.jpg",
+      "locucion": ""
+    },
+    {
+      "titulo": "Guárdala y compártela",
+      "texto": "¿Necesitas un traslado? Guarda esta guía, compártela con quien pueda necesitarla y contáctanos al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": ""
+    }
+  ],
+  "descripcion": "No todas las personas necesitan el mismo tipo de traslado.\n\nAntes de contratar, fíjate en tres aspectos concretos: quién acompaña al paciente, qué equipamiento tiene la ambulancia y si permite realizar el viaje de forma adecuada para su condición.\n\nEn Ambulancias AHP, cada traslado cuenta con un conductor y un TENS. Las ambulancias disponen de oxígeno, DEA, saturómetro, toma de presión, camilla y silla de ruedas.\n\nRealizamos traslados a domicilios, hospitales y clínicas, además de viajes programados. Puede viajar un acompañante y entregamos boleta o factura para solicitar reembolso, según el plan de cada persona.\n\nGuarda este carrusel y compártelo con quien pueda necesitarlo. Para consultar disponibilidad, llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#AmbulanciasAHP",
+    "#TrasladoDePacientes",
+    "#Ambulancia",
+    "#AtencionDeUrgencias",
+    "#CoberturaDeEventos",
+    "#PrimerosAuxilios",
+    "#Salud",
+    "#SanAntonio",
+    "#Valparaiso",
+    "#QuintaRegion",
+    "#Santiago",
+    "#RegionMetropolitana"
+  ]
+}

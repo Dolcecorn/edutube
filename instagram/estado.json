@@ -425,6 +425,52 @@
         "noche-autopista-frente.mp4",
         "noche-autopista-trasera.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-12 09:00",
+      "tipo": "carrusel",
+      "tema": "Guía práctica: qué encontrarás en una ambulancia equipada",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "clinica-dia-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-12 18:30",
+      "tipo": "reel",
+      "tema": "Detrás de un traslado: roles y equipamiento del equipo de ambulancia",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "equipo-toldo-cerros-vertical.jpg",
+        "noche-costanera-vertical.jpg",
+        "equipo-toldo-dos-ambulancias.jpg"
+      ],
+      "clips": [
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-12 11:30",
+      "tipo": "historia",
+      "tema": "Detrás de escena: punto de atención en eventos",
+      "foto": "punto-atencion-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-12 15:30",
+      "tipo": "historia",
+      "tema": "El saturómetro durante un traslado",
+      "foto": "evento-ciclistas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-12 20:30",
+      "tipo": "historia",
+      "tema": "Detrás de escena: el DEA en la ambulancia",
+      "foto": "interior-ambulancia-camilla.jpg"
     }
   ]
 }
