@@ -442,6 +442,22 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-10 18:30",
+      "tipo": "reel",
+      "tema": "Cobertura de eventos: respaldo sanitario ante calor y descompensaciones",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "punto-atencion-ruta-vertical.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ]
     }
   ]
 }
