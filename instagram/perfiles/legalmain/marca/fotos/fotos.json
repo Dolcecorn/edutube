@@ -88,5 +88,30 @@
     "archivo": "escudo-protocolo.jpg",
     "descripcion": "Escudo de vidrio con candado de oro sobre anillos de datos (seguridad, protocolos, cumplimiento)",
     "orientacion": "vertical"
+  },
+  {
+    "archivo": "acceso-datos.jpg",
+    "descripcion": "Puerta de vidrio con cerradura de oro y personas que se acercan (quién accede a los datos, control de accesos)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "niveles-acceso.jpg",
+    "descripcion": "Tres capas de vidrio escalonadas con candados, la superior en oro (niveles de acceso, permisos, información sensible)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "roles-responsables.jpg",
+    "descripcion": "Organigrama de vidrio con un responsable de oro y llaves por función (responsabilidades internas, permisos por cargo)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "conservar-datos.jpg",
+    "descripcion": "Archivo de vidrio con cajones y un reloj de arena de oro (conservación de datos, plazos, retención)",
+    "orientacion": "vertical"
+  },
+  {
+    "archivo": "empresa-preparada.jpg",
+    "descripcion": "Lista de verificación de vidrio con controles de oro y escudo (empresa preparada, cumplimiento, Ley 21.719)",
+    "orientacion": "vertical"
   }
 ]
