@@ -471,6 +471,48 @@
       "tipo": "historia",
       "tema": "Detrás de escena: el DEA en la ambulancia",
       "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-13 09:00",
+      "tipo": "post",
+      "tema": "Hipoglicemia y alcohol: una alerta para el fin de semana",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-13 18:30",
+      "tipo": "reel",
+      "tema": "Hipoglicemia y conducción segura durante el fin de semana",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "urgencias-noche-vertical.jpg",
+        "noche-vespucio-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-13 11:30",
+      "tipo": "historia",
+      "tema": "Traslados programados para controles de diabetes",
+      "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-13 15:30",
+      "tipo": "historia",
+      "tema": "Día Mundial de la Diabetes: preparación para panoramas de fin de semana",
+      "foto": "puerto-crucero-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-13 20:30",
+      "tipo": "historia",
+      "tema": "Diabetes: prepárate antes de salir este fin de semana",
+      "foto": "noche-costanera-vertical.jpg"
     }
   ]
 }

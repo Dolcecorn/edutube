@@ -1,0 +1,49 @@
+{
+  "tema": "Hipoglicemia y conducción segura durante el fin de semana",
+  "laminas": [
+    {
+      "titulo": "¿Diabetes? No conduzcas con temblor",
+      "texto": "Temblor, sudor frío o mareo: detén el viaje y pide ayuda.",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "locucion": "Si tienes diabetes y aparecen estos síntomas, no sigas conduciendo. Detente en un lugar seguro y busca ayuda."
+    },
+    {
+      "titulo": "Reconoce las señales temprano",
+      "texto": "Temblor, sudoración, hambre repentina, mareo, irritabilidad o confusión pueden acompañar una hipoglicemia.",
+      "foto": "equipo-toldo-ruta-vertical.jpg",
+      "locucion": "Una baja de azúcar puede comenzar con señales sutiles. Reconocerlas pronto evita continuar la ruta en malas condiciones."
+    },
+    {
+      "titulo": "Si está consciente, actúa con calma",
+      "texto": "Si puede tragar, sigue su plan indicado y consume azúcar de acción rápida. No lo dejes solo ni lo hagas conducir.",
+      "foto": "noche-autopista-trasera.mp4+noche-autopista-frente.mp4",
+      "locucion": "Si está despierto y puede tragar, sigue su indicación habitual. Acompáñalo y evita que retome el volante."
+    },
+    {
+      "titulo": "Si no responde, es una emergencia",
+      "texto": "No le des comida ni líquidos. Si pierde la conciencia, convulsiona o no responde, llama al uno tres uno.",
+      "foto": "urgencias-noche-vertical.jpg",
+      "locucion": "Cuando no responde o convulsiona, no pongas nada en su boca. Llama al uno tres uno y permanece junto a la persona."
+    },
+    {
+      "titulo": "Ambulancias AHP: contáctanos",
+      "texto": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Traslados, urgencias y coberturas.",
+      "foto": "noche-vespucio-vertical.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y trabajamos también en la Región Metropolitana. Contacta a Ambulancias AHP."
+    }
+  ],
+  "descripcion": "¿Vas a viajar este fin de semana y tienes diabetes? Reconocer una hipoglicemia puede evitar que continúes conduciendo con riesgo.\n\nTemblor, sudor frío, hambre repentina, mareo o confusión son señales de alerta. Si la persona está consciente y puede tragar, debe seguir su plan indicado y permanecer acompañada.\n\nSi no responde o convulsiona, no le des alimentos ni líquidos y llama al uno tres uno. No la dejes sola.\n\nAmbulancias AHP es de la provincia de San Antonio, Litoral Central, Quinta Región, y trabaja en la Región de Valparaíso y la Región Metropolitana. Para atención de urgencias, traslados o coberturas de eventos, contáctanos al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#Hipoglicemia",
+    "#Diabetes",
+    "#SeguridadVial",
+    "#ConduccionSegura",
+    "#PrimerosAuxilios",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#RegionMetropolitana",
+    "#Valparaiso",
+    "#FinDeSemanaSeguro"
+  ]
+}
