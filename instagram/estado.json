@@ -513,6 +513,51 @@
       "tipo": "historia",
       "tema": "Diabetes: prepárate antes de salir este fin de semana",
       "foto": "noche-costanera-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-14 09:00",
+      "tipo": "carrusel",
+      "tema": "Día Mundial de la Diabetes: guía práctica ante una hipoglicemia",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "fotos": [
+        "noche-urgencias-centro-medico-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-14 18:30",
+      "tipo": "reel",
+      "tema": "Día Mundial de la Diabetes: hipoglicemia durante la noche",
+      "foto": "noche-ciudad-frente.mp4+noche-clinica-las-condes-dron.mp4",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "urgencias-noche-vertical.jpg",
+        "evento-downhill-ninos-1.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-14 11:30",
+      "tipo": "historia",
+      "tema": "Día Mundial de la Diabetes: qué hacer ante una hipoglicemia",
+      "foto": "evento-downhill-ninos-1.jpg"
+    },
+    {
+      "fecha": "2026-11-14 15:30",
+      "tipo": "historia",
+      "tema": "Día Mundial de la Diabetes: hipoglicemia y señales de riesgo",
+      "foto": "evento-downhill-ninos-2.jpg"
+    },
+    {
+      "fecha": "2026-11-14 20:30",
+      "tipo": "historia",
+      "tema": "Día Mundial de la Diabetes: qué no hacer ante una hipoglicemia",
+      "foto": "urgencias-noche-vertical.jpg"
     }
   ]
 }
