@@ -241,6 +241,7 @@ final class WebViewController: UIViewController {
         ])
         TVCast.shared.onChange = { [weak self] in self?.updateRemoteButton() }
         CastRemote.shared.onChange = { [weak self] in self?.updateRemoteButton() }
+        LGTV.shared.onChange = { [weak self] in self?.updateRemoteButton() }
 
         // YouTube cambia de página sin recargar; se mira la URL para mostrar el botón solo en los videos.
         urlObserver = webView.observe(\.url, options: [.new]) { [weak self] _, _ in
@@ -334,10 +335,10 @@ final class WebViewController: UIViewController {
             return castPageMedia()
         }
         Chromecast.shared.startDiscovery()
-        if Chromecast.shared.devices.isEmpty {
-            // Recién empezó a buscar: se da un momento para que aparezcan los Chromecast.
-            toast("Buscando Chromecast en tu Wi-Fi…")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.showCastPicker() }
+        if Chromecast.shared.devices.isEmpty && LGTV.shared.devices.isEmpty {
+            // Recién empezó a buscar: se da un momento para que aparezcan las TVs.
+            toast("Buscando TVs en tu Wi-Fi…")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.showCastPicker() }
         } else {
             showCastPicker()
         }
@@ -348,11 +349,14 @@ final class WebViewController: UIViewController {
         let devices = Chromecast.shared.devices
         let sheet = UIAlertController(
             title: "Transmitir a",
-            message: devices.isEmpty ? "No encontré ningún Chromecast. Revisa que el iPhone y el Chromecast estén en el mismo Wi-Fi "
-                + "y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
+            message: devices.isEmpty && LGTV.shared.devices.isEmpty ? "No encontré ningún Chromecast ni TV LG. Revisa que estén en el mismo Wi-Fi "
+                + "que el iPhone y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
             preferredStyle: .actionSheet)
         for device in devices {
             sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in self.castToChromecast(device) })
+        }
+        for tv in LGTV.shared.devices {
+            sheet.addAction(UIAlertAction(title: "\(tv.name) (\(tv.ip))", style: .default) { _ in self.castYouTubeToLG(tv) })
         }
         if TVCast.shared.isPaired {
             let name = TVCast.shared.screenName ?? "TV"
@@ -362,6 +366,9 @@ final class WebViewController: UIViewController {
         }
         sheet.addAction(UIAlertAction(title: "Vincular con código de TV…", style: .default) { _ in
             self.askPairing { [weak self] in self?.castToPairedTV() }
+        })
+        sheet.addAction(UIAlertAction(title: "Agregar TV LG por su IP…", style: .default) { _ in
+            self.askLGAddress { [weak self] tv in self?.castYouTubeToLG(tv) }
         })
         sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
         if let pop = sheet.popoverPresentationController {
@@ -398,6 +405,17 @@ final class WebViewController: UIViewController {
                     Chromecast.shared.playMedia(media, on: device) { result in
                         switch result {
                         case .success: self.toast("Pantalla en \(device.name)")
+                        case .failure(let e): self.showError(e.localizedDescription)
+                        }
+                    }
+                })
+            }
+            for tv in LGTV.shared.devices {
+                sheet.addAction(UIAlertAction(title: "\(tv.name) (puede no funcionar)", style: .default) { _ in
+                    self.toast("Conectando con \(tv.name)…")
+                    LGTV.shared.playMedia(media, on: tv) { result in
+                        switch result {
+                        case .success: self.toast("Pantalla en \(tv.name)")
                         case .failure(let e): self.showError(e.localizedDescription)
                         }
                     }
@@ -468,12 +486,18 @@ final class WebViewController: UIViewController {
             let devices = Chromecast.shared.devices
             let sheet = UIAlertController(
                 title: "Enviar este video a",
-                message: devices.isEmpty ? "No encontré ningún Chromecast. Revisa que el iPhone y el Chromecast estén en el mismo Wi-Fi "
-                    + "y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
+                message: devices.isEmpty && LGTV.shared.devices.isEmpty ? "No encontré ningún Chromecast ni TV LG. Revisa que estén en el mismo Wi-Fi "
+                    + "que el iPhone y que edutube tenga permiso de \"Red local\" en Ajustes." : nil,
                 preferredStyle: .actionSheet)
             for device in devices {
                 sheet.addAction(UIAlertAction(title: device.name, style: .default) { _ in self.castMedia(url, to: device) })
             }
+            for tv in LGTV.shared.devices {
+                sheet.addAction(UIAlertAction(title: "\(tv.name) (\(tv.ip))", style: .default) { _ in self.castMediaToLG(url, tv) })
+            }
+            sheet.addAction(UIAlertAction(title: "Agregar TV LG por su IP…", style: .default) { _ in
+                self.askLGAddress { [weak self] tv in self?.castMediaToLG(url, tv) }
+            })
             sheet.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
             if let pop = sheet.popoverPresentationController {
                 pop.sourceView = self.castButton
@@ -481,9 +505,9 @@ final class WebViewController: UIViewController {
             }
             self.present(sheet, animated: true)
         }
-        if Chromecast.shared.devices.isEmpty {
-            toast("Buscando Chromecast en tu Wi-Fi…")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: show)
+        if Chromecast.shared.devices.isEmpty && LGTV.shared.devices.isEmpty {
+            toast("Buscando TVs en tu Wi-Fi…")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: show)
         } else {
             show()
         }
@@ -562,6 +586,71 @@ final class WebViewController: UIViewController {
                 }
             }
         }
+    }
+
+    // MARK: - TVs LG
+
+    private func lgWaitingHint(_ tv: LGTV.Device) {
+        // La primera vez la TV muestra un aviso para aceptar a edutube.
+        if UserDefaults.standard.string(forKey: "lg.key.\(tv.ip)") == nil {
+            toast("En la TV LG aparecerá un aviso: elige «Aceptar» con el control")
+        } else {
+            toast("Conectando con \(tv.name)…")
+        }
+    }
+
+    private func castYouTubeToLG(_ tv: LGTV.Device) {
+        guard let id = currentVideoId() else { return }
+        castStarted()
+        lgWaitingHint(tv)
+        let title = webView.title?.replacingOccurrences(of: " - YouTube", with: "") ?? "YouTube"
+        LGTV.shared.playYouTube(id, title: title, on: tv) { [weak self] result in
+            switch result {
+            case .success:
+                Remote.target = .lg
+                self?.castFinished(.success(tv.name))
+            case .failure(let e):
+                self?.castFinished(.failure(e))
+            }
+        }
+    }
+
+    private func castMediaToLG(_ url: String, _ tv: LGTV.Device) {
+        castStarted()
+        lgWaitingHint(tv)
+        let title = webView.title?.isEmpty == false ? webView.title! : (webView.url?.host ?? "Video")
+        Self.prepare(url, title: title, time: 0) { media in
+            LGTV.shared.playMedia(media, on: tv) { [weak self] result in
+                switch result {
+                case .success:
+                    self?.webView.pauseAllMediaPlayback(completionHandler: nil)
+                    Remote.target = .lg
+                    self?.castFinished(.success(tv.name))
+                case .failure(let e):
+                    self?.castFinished(.failure(Chromecast.CastError.message(
+                        "\(e.localizedDescription) Si la TV abre el reproductor pero no muestra el video, es un formato que esa TV no lee.")))
+                }
+            }
+        }
+    }
+
+    private func askLGAddress(then next: @escaping (LGTV.Device) -> Void) {
+        let alert = UIAlertController(
+            title: "TV LG",
+            message: "En la TV: Ajustes → Red → Conexión Wi-Fi → Configuración avanzada. Ahí aparece la dirección IP.",
+            preferredStyle: .alert)
+        alert.addTextField { f in
+            f.placeholder = "192.168.1.50"
+            f.keyboardType = .decimalPad
+        }
+        alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Conectar", style: .default) { _ in
+            let ip = (alert.textFields?.first?.text ?? "").trimmingCharacters(in: .whitespaces)
+            guard ip.split(separator: ".").count == 4 else { return self.showError("Esa dirección no es válida.") }
+            LGTV.shared.add(ip: ip)
+            if let tv = LGTV.shared.devices.first(where: { $0.ip == ip }) { next(tv) }
+        })
+        present(alert, animated: true)
     }
 
     private func castToPairedTV() {

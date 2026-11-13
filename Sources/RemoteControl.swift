@@ -2,7 +2,7 @@ import UIKit
 
 /// Lo que está sonando en la TV, venga de YouTube (TVCast) o del reproductor del Chromecast (CastRemote).
 enum Remote {
-    enum Target { case youtube, media }
+    enum Target { case youtube, media, lg }
     typealias Option = (name: String, selected: Bool, action: () -> Void)
 
     static var target: Target?
@@ -11,6 +11,7 @@ enum Remote {
         switch target {
         case .youtube: return TVCast.shared.isControlling
         case .media: return CastRemote.shared.isControlling
+        case .lg: return LGTV.shared.isControlling
         case nil: return false
         }
     }
@@ -19,42 +20,109 @@ enum Remote {
         switch target {
         case .youtube: return TVCast.shared.title
         case .media: return CastRemote.shared.title
+        case .lg: return LGTV.shared.title
         case nil: return ""
         }
     }
 
     static var deviceName: String {
-        target == .media ? (CastRemote.shared.device?.name ?? "TV") : (TVCast.shared.screenName ?? "TV")
+        switch target {
+        case .media: return CastRemote.shared.device?.name ?? "TV"
+        case .lg: return LGTV.shared.current?.name ?? "TV LG"
+        default: return TVCast.shared.screenName ?? "TV"
+        }
     }
 
-    static var isPlaying: Bool { target == .youtube ? TVCast.shared.isPlaying : CastRemote.shared.isPlaying }
-    static var position: Double { target == .youtube ? TVCast.shared.currentPosition : CastRemote.shared.currentPosition }
-    static var duration: Double { target == .youtube ? TVCast.shared.duration : CastRemote.shared.duration }
-    static var volume: Double { target == .youtube ? TVCast.shared.volumeLevel : CastRemote.shared.volume }
-    static var isMuted: Bool { target == .youtube ? TVCast.shared.isMuted : CastRemote.shared.isMuted }
+    /// La LG no informa el tiempo: sin barra; los botones de saltar retroceden/avanzan rápido.
+    static var canSeek: Bool { target != .lg }
+
+    static var isPlaying: Bool {
+        switch target {
+        case .youtube: return TVCast.shared.isPlaying
+        case .lg: return LGTV.shared.isPlaying
+        default: return CastRemote.shared.isPlaying
+        }
+    }
+
+    static var position: Double {
+        switch target {
+        case .youtube: return TVCast.shared.currentPosition
+        case .lg: return 0
+        default: return CastRemote.shared.currentPosition
+        }
+    }
+
+    static var duration: Double {
+        switch target {
+        case .youtube: return TVCast.shared.duration
+        case .lg: return 0
+        default: return CastRemote.shared.duration
+        }
+    }
+
+    static var volume: Double {
+        switch target {
+        case .youtube: return TVCast.shared.volumeLevel
+        case .lg: return LGTV.shared.volume
+        default: return CastRemote.shared.volume
+        }
+    }
+
+    static var isMuted: Bool {
+        switch target {
+        case .youtube: return TVCast.shared.isMuted
+        case .lg: return LGTV.shared.isMuted
+        default: return CastRemote.shared.isMuted
+        }
+    }
 
     static func togglePlay() {
-        if target == .youtube {
-            isPlaying ? TVCast.shared.pause() : TVCast.shared.play()
-        } else {
-            isPlaying ? CastRemote.shared.pause() : CastRemote.shared.play()
+        switch target {
+        case .youtube: isPlaying ? TVCast.shared.pause() : TVCast.shared.play()
+        case .lg: isPlaying ? LGTV.shared.pause() : LGTV.shared.play()
+        default: isPlaying ? CastRemote.shared.pause() : CastRemote.shared.play()
         }
     }
 
     static func seek(to t: Double) {
-        target == .youtube ? TVCast.shared.seek(to: t) : CastRemote.shared.seek(to: t)
+        switch target {
+        case .youtube: TVCast.shared.seek(to: t)
+        case .lg: break
+        default: CastRemote.shared.seek(to: t)
+        }
+    }
+
+    /// Botones de atrasar/adelantar.
+    static func skip(_ seconds: Double) {
+        if target == .lg {
+            seconds < 0 ? LGTV.shared.rewind() : LGTV.shared.fastForward()
+        } else {
+            seek(to: position + seconds)
+        }
     }
 
     static func setVolume(_ v: Double) {
-        target == .youtube ? TVCast.shared.setVolume(v) : CastRemote.shared.setVolume(v)
+        switch target {
+        case .youtube: TVCast.shared.setVolume(v)
+        case .lg: LGTV.shared.setVolume(v)
+        default: CastRemote.shared.setVolume(v)
+        }
     }
 
     static func setMuted(_ on: Bool) {
-        target == .youtube ? TVCast.shared.setMuted(on) : CastRemote.shared.setMuted(on)
+        switch target {
+        case .youtube: TVCast.shared.setMuted(on)
+        case .lg: LGTV.shared.setMuted(on)
+        default: CastRemote.shared.setMuted(on)
+        }
     }
 
     static func stop() {
-        target == .youtube ? TVCast.shared.stop() : CastRemote.shared.stop()
+        switch target {
+        case .youtube: TVCast.shared.stop()
+        case .lg: LGTV.shared.stop()
+        default: CastRemote.shared.stop()
+        }
         target = nil
     }
 
@@ -70,7 +138,7 @@ enum Remote {
             let on = r.subtitles.filter { r.activeTracks.contains($0.id) }
             let off: Option = ("Desactivados", on.isEmpty, { r.selectSubtitle(nil) })
             return [off] + r.subtitles.map { t -> Option in (t.name, r.activeTracks.contains(t.id), { r.selectSubtitle(t.id) }) }
-        case nil:
+        case .lg, nil:
             return []
         }
     }
@@ -83,7 +151,7 @@ enum Remote {
         case .media:
             let r = CastRemote.shared
             return r.audios.map { t -> Option in (t.name, r.activeTracks.contains(t.id), { r.selectAudio(t.id) }) }
-        case nil:
+        case .lg, nil:
             return []
         }
     }
@@ -141,7 +209,7 @@ final class RemoteViewController: UIViewController {
             b.setImage(UIImage(systemName: symbol, withConfiguration: mid), for: .normal)
             b.tintColor = .white
             b.accessibilityLabel = label
-            b.addAction(UIAction { [weak self] _ in Remote.seek(to: Remote.position + seconds); self?.refresh() }, for: .touchUpInside)
+            b.addAction(UIAction { [weak self] _ in Remote.skip(seconds); self?.refresh() }, for: .touchUpInside)
             return b
         }
         let controls = UIStackView(arrangedSubviews: [
@@ -216,7 +284,11 @@ final class RemoteViewController: UIViewController {
         playButton.setImage(UIImage(systemName: symbol), for: .normal)
         let d = Remote.duration
         slider.isEnabled = d > 0
-        if d > 0 {
+        slider.isHidden = !Remote.canSeek
+        if !Remote.canSeek {
+            elapsed.text = "⏪ ⏩ = rápido"
+            remaining.text = ""
+        } else if d > 0 {
             slider.maximumValue = Float(d)
             if !dragging { slider.value = Float(Remote.position) }
             elapsed.text = Self.time(Double(slider.value))
@@ -264,6 +336,9 @@ final class RemoteViewController: UIViewController {
     }
 
     private func choose(_ title: String, _ options: [Remote.Option], empty: String, from source: UIView) {
+        let empty = Remote.target == .lg
+            ? "La TV LG no deja elegir \(title.lowercased()) desde el teléfono. Usa el control de la TV (botón de opciones mientras se ve el video)."
+            : empty
         guard options.count > 1 else {
             let a = UIAlertController(title: title, message: empty, preferredStyle: .alert)
             a.addAction(UIAlertAction(title: "OK", style: .default))

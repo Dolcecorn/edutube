@@ -35,6 +35,7 @@ final class Chromecast {
 
     /// Busca Chromecast en la red local. La primera vez iOS pide permiso de "red local".
     func startDiscovery() {
+        LGTV.shared.discover() // las TVs LG se buscan al mismo tiempo
         guard browser == nil else { return }
         let b = NWBrowser(for: .bonjourWithTXTRecord(type: "_googlecast._tcp", domain: nil), using: NWParameters())
         b.browseResultsChangedHandler = { [weak self] results, _ in

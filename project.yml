@@ -6,8 +6,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.10"
-    CURRENT_PROJECT_VERSION: "11"
+    MARKETING_VERSION: "1.11"
+    CURRENT_PROJECT_VERSION: "12"
 targets:
   TVWeb:
     type: application
@@ -38,8 +38,10 @@ targets:
         UIViewControllerBasedStatusBarAppearance: true
         UIRequiresFullScreen: false
         UIBackgroundModes: [audio]
-        NSLocalNetworkUsageDescription: edutube busca tu Chromecast en la red Wi-Fi para enviarle videos.
+        NSLocalNetworkUsageDescription: edutube busca tu Chromecast o tu TV LG en la red Wi-Fi para enviarle videos.
         NSBonjourServices: [_googlecast._tcp]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UIApplicationShortcutItems:
           - UIApplicationShortcutItemType: cl.eleva.tvweb.tvgratis
             UIApplicationShortcutItemTitle: TV gratis
