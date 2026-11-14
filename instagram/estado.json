@@ -558,6 +558,49 @@
       "tipo": "historia",
       "tema": "Día Mundial de la Diabetes: qué no hacer ante una hipoglicemia",
       "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-15 09:00",
+      "tipo": "post",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: qué hacer al llegar primero a un accidente",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-15 18:30",
+      "tipo": "reel",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: cómo entregar información útil y segura ante una emergencia en ruta",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "noche-vespucio-vertical.jpg",
+        "equipo-toldo-ruta-vertical.jpg",
+        "noche-costanera-vertical.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-15 11:30",
+      "tipo": "historia",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: traslado seguro de personas lesionadas",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-15 15:30",
+      "tipo": "historia",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: prevención antes de salir",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-15 20:30",
+      "tipo": "historia",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: cobertura médica para eventos deportivos",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     }
   ]
 }

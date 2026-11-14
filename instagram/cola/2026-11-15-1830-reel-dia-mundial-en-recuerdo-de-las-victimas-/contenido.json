@@ -1,0 +1,55 @@
+{
+  "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: cómo entregar información útil y segura ante una emergencia en ruta",
+  "laminas": [
+    {
+      "titulo": "¿Sabrías ubicar un accidente?",
+      "texto": "Una ubicación clara ayuda a orientar la respuesta de emergencia.",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "locucion": "En una emergencia vial, saber dónde estás puede ser tan importante como pedir ayuda."
+    },
+    {
+      "titulo": "Entrega una ubicación precisa",
+      "texto": "Indica ruta, kilómetro, sentido de circulación y referencias visibles. Si puedes, comparte la ubicación desde tu teléfono.",
+      "foto": "noche-vespucio-vertical.jpg",
+      "locucion": "Mira señales, salidas y puntos reconocibles. Esos datos permiten identificar mejor el lugar."
+    },
+    {
+      "titulo": "No te expongas al tránsito",
+      "texto": "Aléjate del flujo vehicular. Enciende las luces de emergencia y advierte a otros conductores solo si es seguro.",
+      "foto": "equipo-toldo-ruta-vertical.jpg",
+      "locucion": "Antes de acercarte, revisa los riesgos del entorno. Tu seguridad también cuenta."
+    },
+    {
+      "titulo": "Describe los riesgos visibles",
+      "texto": "Comunica cuántos vehículos hay, personas afectadas y peligros como fuego, humo, combustible o tránsito activo.",
+      "foto": "noche-autopista-trasera.mp4+dron-equipo-toldo-evento.mp4",
+      "locucion": "No necesitas diagnosticar. Cuenta exactamente lo que observas y evita entrar si existe peligro."
+    },
+    {
+      "titulo": "Ante riesgo vital, llama al 131",
+      "texto": "Pérdida de conciencia, dificultad grave para respirar, convulsiones o hemorragia intensa requieren ayuda urgente.",
+      "foto": "noche-costanera-vertical.jpg",
+      "locucion": "Si hay una señal de riesgo vital, llama al uno tres uno y sigue las instrucciones del operador."
+    },
+    {
+      "titulo": "Ambulancias AHP trabaja en ruta",
+      "texto": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Contacta a Ambulancias AHP para traslados, urgencias y coberturas.",
+      "foto": "noche-costanera-vertical.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y trabajamos también en la Región Metropolitana. Contacta a Ambulancias AHP."
+    }
+  ],
+  "descripcion": "En un accidente de tránsito, entregar información precisa puede orientar mejor la respuesta y evitar que otras personas se expongan.\n\nIndica la ruta, el kilómetro, el sentido de circulación y referencias visibles. También informa cuántos vehículos hay y qué riesgos observas, sin acercarte si la escena es peligrosa.\n\nSi existe pérdida de conciencia, dificultad grave para respirar, convulsiones o una hemorragia intensa, llama al 131 y sigue las instrucciones del operador.\n\nAmbulancias AHP es de la provincia de San Antonio, Litoral Central, Quinta Región, y trabaja en la Región de Valparaíso y la Región Metropolitana.\n\nPara atención de urgencias, traslados o cobertura de eventos, contáctanos al +56 9 8748 2705 o visita www.ambulanciasahp.cl. Sigue la cuenta para más información útil sobre seguridad y salud.",
+  "hashtags": [
+    "#AccidentesDeTransito",
+    "#SeguridadVial",
+    "#PrevencionDeAccidentes",
+    "#Emergencias",
+    "#PrimerosAuxilios",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago"
+  ]
+}
