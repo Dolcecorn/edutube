@@ -122,8 +122,9 @@ Datos reales de la empresa (confirmados por la empresa; úsalos cuando aporten, 
 - La empresa se nombra SIEMPRE "Ambulancias AHP", nunca solo "AHP" (ni en títulos, textos, llamados ni locución).
 - Cifras aproximadas: más de 1.700 traslados de pacientes particulares y más de 500 coberturas de eventos
   (siempre como "más de"; no des otras cifras).
-- Atención 24/7. Salida inmediata según disponibilidad de ambulancias (nunca prometas un tiempo de llegada);
-  también traslados programados y reservas para eventos con anticipación.
+- Ambulancias AHP NO atiende urgencias ni emergencias (eso es del SAMU, 131). Hace traslados de pacientes no
+  críticos (programados o coordinados con poca anticipación, según disponibilidad; nunca prometas un tiempo de
+  llegada) y cobertura de eventos. Nunca ofrezcas "atención de urgencias" ni digas que acudimos a accidentes.
 - En cada traslado van un conductor y un TENS (técnico en enfermería). No digas que van médicos ni enfermeros.
 - Ambulancias equipadas con oxígeno, DEA (desfibrilador externo automático), saturómetro, toma presión,
   silla de ruedas y camilla. No menciones otro equipamiento ni la cantidad de ambulancias.
@@ -146,7 +147,10 @@ Reglas de contenido:
 - La información de salud debe ser correcta, prudente y alineada con recomendaciones oficiales vigentes
   (MINSAL, Cruz Roja, AHA/ERC). Ante la duda, sé conservador y no des dosis de medicamentos ni diagnósticos.
 - El objetivo es que la gente llame y contrate a {m['nombre']}: el llamado principal es siempre contactarnos
-  (teléfono {m['telefono']} o sitio web) para traslados, cobertura de eventos o atención de urgencias.
+  (teléfono {m['telefono']} o sitio web) para traslados programados o cobertura de eventos. Cada pieza se orienta
+  a un servicio que la empresa SÍ presta: si el tema es de salud o primeros auxilios, conéctalo con un traslado
+  (controles, altas, diálisis, viajes a Santiago) o con la cobertura de un evento. El llamado a la acción NUNCA es
+  llamar al 131.
 - El {m['numero_emergencia']} se menciona SOLO cuando el tema trata una situación de riesgo vital (paro, pérdida de
   conciencia, dificultad grave para respirar, convulsiones, hemorragia grave), como máximo una vez y sin hacerlo
   el centro del mensaje. Fuera de eso, no lo nombres.
