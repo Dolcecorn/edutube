@@ -1,0 +1,48 @@
+{
+  "tema": "Primeros auxilios: qué hacer ante una quemadura leve",
+  "laminas": [
+    {
+      "titulo": "¿Te quemaste? No pongas hielo",
+      "texto": "El hielo puede agravar el daño. Aprende qué hacer durante los primeros minutos.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "locucion": "El hielo puede dañar más la piel; ante una quemadura, empieza por enfriar."
+    },
+    {
+      "titulo": "Primero, aleja la fuente de calor",
+      "texto": "Detén el contacto con el calor. Retira anillos o ropa cercana solo si no está pegada a la piel.",
+      "foto": "clinica-dia-vertical.jpg",
+      "locucion": "Aléjate de la fuente de calor y quita objetos cercanos, siempre que no estén adheridos."
+    },
+    {
+      "titulo": "Enfría con agua corriente",
+      "texto": "Mantén la zona bajo agua corriente fresca durante 20 minutos. No uses hielo ni frotes la piel.",
+      "foto": "noche-autopista-trasera.mp4+noche-clinica-las-condes-dron.mp4",
+      "locucion": "El agua corriente fresca ayuda a bajar la temperatura; hazlo sin frotar ni aplicar hielo."
+    },
+    {
+      "titulo": "Cubre; no pongas cremas",
+      "texto": "Cubre sin apretar con gasa limpia no adherente. No revientes ampollas. Consulta si es extensa, profunda o afecta cara, manos o articulaciones.",
+      "foto": "equipo-toldo-ruta-vertical.jpg",
+      "locucion": "No revientes ampollas. Si la lesión es extensa, profunda o está en zonas sensibles, busca evaluación médica."
+    },
+    {
+      "titulo": "Ambulancias AHP: San Antonio y más",
+      "texto": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Traslados programados y cobertura de eventos: +56 9 8748 2705 | www.ambulanciasahp.cl",
+      "foto": "noche-costanera-vertical.jpg",
+      "locucion": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Contáctanos para traslados programados o cobertura de eventos."
+    }
+  ],
+  "descripcion": "¿Te quemaste? Estos primeros minutos pueden marcar una diferencia.\n\nAleja la fuente de calor y enfría la zona con agua corriente fresca durante 20 minutos. No uses hielo, cremas ni remedios caseros, y no revientes las ampollas.\n\nSi la quemadura es extensa, profunda o compromete la cara, manos, articulaciones o una zona sensible, solicita evaluación médica.\n\nAmbulancias AHP realiza traslados programados de pacientes y cobertura de eventos en la Quinta Región y la Región Metropolitana. Contáctanos al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#PrimerosAuxilios",
+    "#Quemaduras",
+    "#Prevencion",
+    "#Salud",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#Santiago",
+    "#RegionMetropolitana"
+  ]
+}
