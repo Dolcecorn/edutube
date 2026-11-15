@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "post",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -594,6 +594,13 @@
       "tipo": "historia",
       "tema": "Primeros auxilios ante un golpe de calor",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-15 09:00",
+      "tipo": "post",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: traslado al alta y a controles tras un accidente",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "fotos": []
     }
   ]
 }
