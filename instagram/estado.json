@@ -601,6 +601,51 @@
       "tipo": "historia",
       "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: cobertura médica para eventos deportivos",
       "foto": "noche-urgencias-centro-medico-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-16 09:00",
+      "tipo": "carrusel",
+      "tema": "Primeros auxilios: qué hacer ante una hemorragia nasal",
+      "foto": "evento-downhill-ninos-4.jpg",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-16 18:30",
+      "tipo": "reel",
+      "tema": "Primeros auxilios: qué hacer ante una quemadura leve",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "clinica-dia-vertical.jpg",
+        "equipo-toldo-ruta-vertical.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "noche-clinica-las-condes-dron.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-16 11:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un atragantamiento",
+      "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-16 15:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante una torcedura de tobillo",
+      "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-16 20:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un golpe de calor",
+      "foto": "clinica-dia-vertical.jpg"
     }
   ]
 }
