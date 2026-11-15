@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "reel",
+  "ultimo_tipo": "carrusel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -617,6 +617,16 @@
         "noche-autopista-trasera.mp4",
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
+      ]
+    },
+    {
+      "fecha": "2026-11-16 09:00",
+      "tipo": "carrusel",
+      "tema": "Primeros auxilios: qué hacer ante una hemorragia nasal",
+      "foto": "evento-downhill-ninos-4.jpg",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "clinica-atardecer-balizas.jpg"
       ]
     }
   ]
