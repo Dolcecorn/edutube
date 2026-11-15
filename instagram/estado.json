@@ -1,5 +1,5 @@
 {
-  "ultimo_tipo": "post",
+  "ultimo_tipo": "reel",
   "historial": [
     {
       "fecha": "2026-11-02",
@@ -601,6 +601,23 @@
       "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: traslado al alta y a controles tras un accidente",
       "foto": "interior-ambulancia-camilla.jpg",
       "fotos": []
+    },
+    {
+      "fecha": "2026-11-15 18:30",
+      "tipo": "reel",
+      "tema": "Día Mundial en Recuerdo de las Víctimas de Accidentes de Tránsito: traslados durante la recuperación",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "clinica-atardecer-balizas.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
