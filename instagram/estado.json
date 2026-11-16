@@ -644,6 +644,49 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-17 09:00",
+      "tipo": "post",
+      "tema": "Traslados programados para personas con movilidad reducida",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "fotos": [],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-17 18:30",
+      "tipo": "reel",
+      "tema": "Traslado a Santiago con ida, vuelta y espera",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "evento-downhill-ninos-3.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-17 11:30",
+      "tipo": "historia",
+      "tema": "Cobertura sanitaria para eventos y actividades masivas",
+      "foto": "puerto-crucero-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-17 15:30",
+      "tipo": "historia",
+      "tema": "Traslados programados para diálisis",
+      "foto": "noche-vespucio-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-17 20:30",
+      "tipo": "historia",
+      "tema": "Cobertura de eventos deportivos y masivos",
+      "foto": "evento-downhill-ninos-3.jpg"
     }
   ]
 }
