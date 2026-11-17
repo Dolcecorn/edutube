@@ -716,6 +716,22 @@
       "tipo": "historia",
       "tema": "Medicamentos y calor: prevención durante días calurosos",
       "foto": "punto-atencion-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-18 18:30",
+      "tipo": "reel",
+      "tema": "Traslado programado a exámenes con ayuno",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "punto-atencion-ruta-vertical.jpg",
+        "noche-clinica-las-condes-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
