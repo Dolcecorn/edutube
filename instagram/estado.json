@@ -687,6 +687,52 @@
       "tipo": "historia",
       "tema": "Cobertura de eventos deportivos y masivos",
       "foto": "evento-downhill-ninos-3.jpg"
+    },
+    {
+      "fecha": "2026-11-18 09:00",
+      "tipo": "carrusel",
+      "tema": "Checklist para preparar un traslado programado",
+      "foto": "evento-downhill-ninos-5.jpg",
+      "fotos": [
+        "equipo-toldo-cerros-vertical.jpg",
+        "clinica-dia-angulo-bajo.jpg",
+        "interior-ambulancia-camilla.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-18 18:30",
+      "tipo": "reel",
+      "tema": "Traslado programado a exámenes con ayuno",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "punto-atencion-ruta-vertical.jpg",
+        "noche-clinica-las-condes-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-18 11:30",
+      "tipo": "historia",
+      "tema": "Deshidratación en personas mayores durante días calurosos",
+      "foto": "equipo-toldo-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-18 15:30",
+      "tipo": "historia",
+      "tema": "Señales de alerta tras un golpe en la cabeza",
+      "foto": "equipo-toldo-cerros-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-18 20:30",
+      "tipo": "historia",
+      "tema": "Medicamentos y calor: prevención durante días calurosos",
+      "foto": "punto-atencion-ruta-vertical.jpg"
     }
   ]
 }

@@ -1,0 +1,50 @@
+{
+  "tema": "Traslado programado a exámenes con ayuno",
+  "laminas": [
+    {
+      "titulo": "¿Tu examen requiere ayuno?",
+      "texto": "Tres preparativos pueden hacer más sencillo el traslado y evitar confusiones antes de llegar al centro de salud.",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "locucion": "Antes de salir, revisa estos detalles. Una buena preparación evita contratiempos durante el viaje."
+    },
+    {
+      "titulo": "Confirma las indicaciones",
+      "texto": "Pregunta al centro de salud cuánto tiempo debes ayunar y qué hacer con tus medicamentos. No cambies tratamientos por tu cuenta.",
+      "foto": "punto-atencion-ruta-vertical.jpg",
+      "locucion": "El ayuno y los medicamentos pueden tener instrucciones específicas. Confírmalas directamente con el centro donde te atenderás."
+    },
+    {
+      "titulo": "Prepara lo necesario",
+      "texto": "Lleva la orden, tu identificación, las indicaciones y una lista de tus medicamentos. Si corresponde, considera un acompañante.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "locucion": "Tener estos documentos a mano facilita la atención y ayuda a que el equipo conozca tus antecedentes."
+    },
+    {
+      "titulo": "Elige un traslado adecuado",
+      "texto": "Ambulancias AHP realiza traslados programados a exámenes, clínicas y hospitales para pacientes no críticos que no viajan cómodos en auto.",
+      "foto": "noche-clinica-las-condes-vertical.jpg",
+      "locucion": "Si viajar en auto resulta difícil, puedes consultar por un traslado programado con conductor y TENS."
+    },
+    {
+      "titulo": "Traslado desde San Antonio",
+      "texto": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Contáctanos para coordinar tu traslado.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": "Ambulancias AHP es de San Antonio, en la Quinta Región, y también trabaja en la Región Metropolitana. Contáctanos o sigue la cuenta."
+    }
+  ],
+  "descripcion": "¿Tu examen requiere ayuno? Prepárate antes de subir a la ambulancia.\n\nConfirma con el centro de salud cuánto tiempo debes ayunar y qué indicaciones existen para tus medicamentos. No modifiques tratamientos por tu cuenta.\n\nLleva la orden, tu identificación, las instrucciones recibidas y una lista actualizada de tus medicamentos. Un acompañante también puede ser útil, según la situación.\n\nAmbulancias AHP realiza traslados programados a exámenes, clínicas y hospitales para pacientes no críticos. Somos de la provincia de San Antonio, Litoral Central, Quinta Región, y trabajamos en la Quinta Región y la Región Metropolitana.\n\nConsulta disponibilidad al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladoProgramado",
+    "#TrasladoDePacientes",
+    "#ExamenesMedicos",
+    "#AyunoMedico",
+    "#SaludPreventiva",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#LitoralCentral",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago"
+  ]
+}
