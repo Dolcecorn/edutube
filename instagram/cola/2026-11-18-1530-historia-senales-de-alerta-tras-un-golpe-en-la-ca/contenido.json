@@ -1,8 +1,8 @@
 {
-  "tema": "Señales de alerta tras un golpe en la cabeza",
-  "etiqueta": "SALUD",
-  "gancho": "Un golpe en la cabeza no siempre avisa",
-  "texto": "Tras un golpe en la cabeza, confusión, vómitos repetidos, somnolencia inusual o debilidad requieren evaluación. Si está estable y necesita traslado no crítico, cotiza con Ambulancias AHP.",
-  "llamado": "Coordina tu servicio con nosotros",
+  "tema": "Traslados programados a sesiones de kinesiología",
+  "etiqueta": "SERVICIO",
+  "gancho": "¿Kinesiología varias veces por semana?",
+  "texto": "Coordinamos el traslado a cada sesión, ida y vuelta con espera, con conductor y TENS. Un familiar puede acompañar.",
+  "llamado": "Cotiza tus traslados",
   "foto": "equipo-toldo-cerros-vertical.jpg"
 }

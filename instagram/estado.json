@@ -700,23 +700,6 @@
       ]
     },
     {
-      "fecha": "2026-11-18 18:30",
-      "tipo": "reel",
-      "tema": "Traslado programado a exámenes con ayuno",
-      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
-      "fotos": [
-        "punto-atencion-ruta-vertical.jpg",
-        "noche-clinica-las-condes-vertical.jpg",
-        "clinica-dia-dos-ambulancias-palmeras.jpg"
-      ],
-      "clips": [
-        "noche-ciudad-frente.mp4",
-        "noche-autopista-trasera.mp4",
-        "noche-clinica-las-condes-dron.mp4"
-      ],
-      "zona": true
-    },
-    {
       "fecha": "2026-11-18 11:30",
       "tipo": "historia",
       "tema": "Deshidratación en personas mayores durante días calurosos",
@@ -725,7 +708,7 @@
     {
       "fecha": "2026-11-18 15:30",
       "tipo": "historia",
-      "tema": "Señales de alerta tras un golpe en la cabeza",
+      "tema": "Traslados programados a sesiones de kinesiología",
       "foto": "equipo-toldo-cerros-vertical.jpg"
     },
     {
