@@ -758,6 +758,22 @@
       "tipo": "historia",
       "tema": "Traslado del alta a domicilio",
       "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-19 18:30",
+      "tipo": "reel",
+      "tema": "Cómo funciona un traslado programado con acompañante",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg",
+        "puerto-crucero-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }

@@ -1,0 +1,49 @@
+{
+  "tema": "Cómo funciona un traslado programado con acompañante",
+  "laminas": [
+    {
+      "titulo": "¿Puede ir alguien contigo?",
+      "texto": "En los traslados programados, puede viajar un acompañante junto al paciente.",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "locucion": "Sí, una persona puede acompañar al paciente durante el traslado programado."
+    },
+    {
+      "titulo": "Dos personas forman el equipo",
+      "texto": "En cada traslado participan un conductor y un TENS, con funciones definidas durante el servicio.",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "locucion": "El conductor realiza el traslado y el TENS acompaña al paciente durante el servicio."
+    },
+    {
+      "titulo": "El apoyo se adapta al traslado",
+      "texto": "La ambulancia cuenta con camilla, silla de ruedas, oxígeno, saturómetro, toma de presión y DEA.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-autopista-frente.mp4",
+      "locucion": "El equipamiento permite realizar traslados de pacientes no críticos según sus necesidades."
+    },
+    {
+      "titulo": "Cuéntanos cómo debe viajar",
+      "texto": "Al solicitar el servicio, informa si necesita camilla, silla de ruedas, oxígeno, acompañante o viaje con espera.",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg",
+      "locucion": "Esa información ayuda a orientar correctamente el servicio disponible para cada paciente."
+    },
+    {
+      "titulo": "Traslados desde San Antonio",
+      "texto": "Ambulancias AHP es de San Antonio, Quinta Región, y trabaja también en la Región Metropolitana. Contacto: +56 9 8748 2705 · www.ambulanciasahp.cl",
+      "foto": "puerto-crucero-vertical.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y también trabajamos en la Región Metropolitana. Contáctanos para coordinar tu traslado."
+    }
+  ],
+  "descripcion": "¿Puede viajar un acompañante en una ambulancia? Sí, en los traslados programados de pacientes no críticos puede ir una persona junto al paciente.\n\nEn Ambulancias AHP, cada servicio cuenta con un conductor y un TENS. Además, las ambulancias disponen de camilla, silla de ruedas, oxígeno, saturómetro, toma de presión y DEA.\n\nCuando solicites una cotización, cuéntanos si el paciente requiere camilla, silla de ruedas, oxígeno, acompañante o un viaje de ida y vuelta con espera.\n\nAmbulancias AHP es una empresa familiar de la provincia de San Antonio, en el Litoral Central, Quinta Región. Trabajamos en la Región de Valparaíso y la Región Metropolitana; otros destinos se pueden solicitar.\n\nPara traslados programados, llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladoProgramado",
+    "#Ambulancia",
+    "#PacienteNoCritico",
+    "#TENS",
+    "#TrasladoDePacientes",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago",
+    "#SaludEnChile"
+  ]
+}
