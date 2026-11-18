@@ -1,8 +1,8 @@
 {
-  "tema": "Quiénes van en un traslado programado",
-  "etiqueta": "TRASLADOS",
-  "gancho": "¿Quiénes van en una ambulancia?",
-  "texto": "En cada traslado de pacientes no críticos de Ambulancias AHP viajan un conductor y un TENS, con equipamiento para el recorrido.",
-  "llamado": "Cotiza tu traslado",
+  "tema": "Traslado del alta a domicilio",
+  "etiqueta": "SERVICIO",
+  "gancho": "¿Le darán el alta pronto?",
+  "texto": "Coordina con anticipación el viaje de la clínica a la casa: en camilla o silla de ruedas, con TENS y un familiar a bordo.",
+  "llamado": "Coordina el traslado del alta",
   "foto": "interior-ambulancia-camilla.jpg"
 }
