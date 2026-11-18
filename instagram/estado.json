@@ -732,6 +732,49 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-19 09:00",
+      "tipo": "post",
+      "tema": "Detrás de escena: equipo y equipamiento en un traslado programado",
+      "foto": "clinica-atardecer-balizas.jpg",
+      "fotos": [],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-19 18:30",
+      "tipo": "reel",
+      "tema": "Cómo funciona un traslado programado con acompañante",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg",
+        "puerto-crucero-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-19 11:30",
+      "tipo": "historia",
+      "tema": "Cobertura sanitaria para eventos",
+      "foto": "evento-ciclistas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-19 15:30",
+      "tipo": "historia",
+      "tema": "Equipamiento y equipo en traslados programados",
+      "foto": "noche-costanera-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-19 20:30",
+      "tipo": "historia",
+      "tema": "Quiénes van en un traslado programado",
+      "foto": "interior-ambulancia-camilla.jpg"
     }
   ]
 }
