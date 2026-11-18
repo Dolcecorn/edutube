@@ -229,7 +229,8 @@ lámina invita a guardar el carrusel y compartirlo con quien lo necesite, y a co
     pedido = f"""Crea la publicación: un {tipo.upper()} con {LAMINAS[tipo]}.{voz}
 {eleccion}
 {guia_fotos}
-No repitas los temas de estas publicaciones recientes:
+No repitas los temas de estas publicaciones recientes (ni el mismo servicio o dato, como el equipo o el
+equipamiento de la ambulancia, en dos piezas del mismo día):
 {recientes}"""
     formato = Contenido
     if tipo == "historia":
@@ -242,12 +243,13 @@ No repitas los temas de estas publicaciones recientes:
         pedido = f"""Crea una HISTORIA de Instagram (formato vertical 9:16, una sola imagen, dura 24 horas).
 Objetivo: ganar seguidores y generar clientes para {m['nombre']}. Alterna entre:
 {ideas}
-El llamado a la acción debe ser concreto (llamar, cotizar, visitar el sitio web o seguir la cuenta).
+El llamado a la acción debe ser concreto (llamar, cotizar o visitar el sitio web; nunca "sigue la cuenta").
 El teléfono y el sitio web ya aparecen en la tarjeta del diseño: no los repitas en el gancho ni en el texto.
 No uses encuestas ni stickers (no se pueden publicar por la API). {('Tema pedido: ' + tema + '.') if tema else planificacion}
 {guia_fotos}
 Usa siempre una foto vertical si hay.
-No repitas los temas de estas publicaciones recientes:
+No repitas los temas de estas publicaciones recientes (ni el mismo servicio o dato, como el equipo o el
+equipamiento de la ambulancia, en dos piezas del mismo día):
 {recientes}"""
 
     if os.environ.get("OPENAI_API_KEY"):
