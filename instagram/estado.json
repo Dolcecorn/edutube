@@ -774,6 +774,51 @@
         "noche-autopista-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-20 09:00",
+      "tipo": "carrusel",
+      "tema": "Fin de semana seguro: planifica el regreso sin alcohol al volante",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias.jpg",
+        "clinica-dia-vertical.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-20 18:30",
+      "tipo": "reel",
+      "tema": "Fin de semana seguro: cuándo un auto no es suficiente para trasladar a un paciente",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "punto-atencion-ruta-vertical.jpg",
+        "puerto-crucero-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-20 11:30",
+      "tipo": "historia",
+      "tema": "Fin de semana seguro: pausas en carretera",
+      "foto": "evento-downhill-ninos-1.jpg"
+    },
+    {
+      "fecha": "2026-11-20 15:30",
+      "tipo": "historia",
+      "tema": "Fin de semana seguro: caídas en bicicleta",
+      "foto": "evento-downhill-ninos-2.jpg"
+    },
+    {
+      "fecha": "2026-11-20 20:30",
+      "tipo": "historia",
+      "tema": "Fin de semana seguro: viaje con una persona con movilidad reducida",
+      "foto": "clinica-dia-vertical.jpg"
     }
   ]
 }
