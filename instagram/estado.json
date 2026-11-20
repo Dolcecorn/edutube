@@ -819,6 +819,48 @@
       "tipo": "historia",
       "tema": "Traslados entre clínicas y a centros de rehabilitación",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-21 09:00",
+      "tipo": "post",
+      "tema": "Diabetes en eventos deportivos: planificar la cobertura sanitaria",
+      "foto": "clinica-dia-angulo-bajo.jpg",
+      "fotos": []
+    },
+    {
+      "fecha": "2026-11-21 18:30",
+      "tipo": "reel",
+      "tema": "Planificación inclusiva para eventos solidarios y masivos",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "evento-ciclistas-vertical.jpg",
+        "equipo-toldo-cerros-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-21 11:30",
+      "tipo": "historia",
+      "tema": "Arriendo de ambulancia para eventos deportivos y masivos",
+      "foto": "urgencias-noche-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-21 15:30",
+      "tipo": "historia",
+      "tema": "Cobertura sanitaria para actividades deportivas infantiles",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-21 20:30",
+      "tipo": "historia",
+      "tema": "Cobertura sanitaria para eventos en puertos y cruceros",
+      "foto": "puerto-crucero-vertical.jpg"
     }
   ]
 }
