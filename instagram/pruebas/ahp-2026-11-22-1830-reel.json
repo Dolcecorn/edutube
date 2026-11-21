@@ -1,0 +1,47 @@
+{
+  "tema": "Traslados programados para niños: cómo preparar el viaje",
+  "laminas": [
+    {
+      "titulo": "¿Tu hijo debe ir a un control en camilla?",
+      "texto": "",
+      "foto": "noche-autopista-trasera.mp4+noche-ciudad-frente.mp4",
+      "locucion": "Si tu hijo no puede viajar sentado a un control o examen, organizar el traslado con tiempo evita improvisar."
+    },
+    {
+      "titulo": "Un adulto viaja con el niño",
+      "texto": "En los traslados programados puede ir un acompañante, además del conductor y el TENS.",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "locucion": "Un adulto de la familia puede viajar con el niño todo el trayecto, junto al conductor y al técnico en enfermería."
+    },
+    {
+      "titulo": "Lleva lo que le da calma",
+      "texto": "Su manta, un juguete o audífonos ayudan a que el viaje sea más tranquilo.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-autopista-trasera.mp4",
+      "locucion": "Un objeto conocido, como su manta o un juguete, ayuda a que el viaje sea más tranquilo."
+    },
+    {
+      "titulo": "Ten a mano sus documentos",
+      "texto": "Cédula, orden médica, carné de controles y la lista de sus medicamentos.",
+      "foto": "noche-frente-balizas-vertical.jpg",
+      "locucion": "Lleva su cédula, la orden médica y la lista de sus medicamentos."
+    },
+    {
+      "titulo": "Cotiza su traslado",
+      "texto": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Ambulancias AHP: +56 9 8748 2705 · www.ambulanciasahp.cl",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y también trabajamos en la Región Metropolitana. Cotiza el traslado con Ambulancias AHP."
+    }
+  ],
+  "descripcion": "¿Tu hijo tiene un control o examen y no puede viajar sentado en auto?\n\nAmbulancias AHP realiza traslados programados de pacientes no críticos a clínicas, hospitales y domicilios. Un adulto de la familia puede viajar con el niño, junto al conductor y al TENS.\n\nPara que el viaje sea más tranquilo, lleva un objeto conocido (su manta o un juguete) y ten a mano su cédula, la orden médica y la lista de sus medicamentos.\n\nSomos de la provincia de San Antonio, Litoral Central, Quinta Región, y trabajamos en la Quinta Región y la Región Metropolitana. Cotiza al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladoDePacientes",
+    "#Pediatria",
+    "#ControlMedico",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago"
+  ]
+}
