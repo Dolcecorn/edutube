@@ -861,6 +861,51 @@
       "tipo": "historia",
       "tema": "Formas de pago y boleta en traslados",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-22 09:00",
+      "tipo": "carrusel",
+      "tema": "Qué preguntar antes de contratar un traslado familiar",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-22 18:30",
+      "tipo": "reel",
+      "tema": "Golpe de calor en niños: señales graves y traslado seguro",
+      "foto": "noche-autopista-trasera.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "evento-downhill-ninos-2.jpg",
+        "noche-frente-balizas-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-22 11:30",
+      "tipo": "historia",
+      "tema": "Información clave para trasladar a un familiar desde casa",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-22 15:30",
+      "tipo": "historia",
+      "tema": "Traslados pediátricos para controles y exámenes",
+      "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-22 20:30",
+      "tipo": "historia",
+      "tema": "Seguridad familiar en días calurosos",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg"
     }
   ]
 }
