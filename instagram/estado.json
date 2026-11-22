@@ -905,6 +905,48 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-23 09:00",
+      "tipo": "post",
+      "tema": "Primeros auxilios ante una quemadura leve",
+      "foto": "noche-clinica-las-condes-vertical.jpg",
+      "fotos": [],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-23 18:30",
+      "tipo": "reel",
+      "tema": "Primeros auxilios: qué hacer ante un sangrado nasal",
+      "foto": "dron-equipo-toldo-evento.mp4+noche-autopista-frente.mp4",
+      "fotos": [
+        "equipo-toldo-dos-ambulancias.jpg",
+        "noche-hospital-puerta-abierta-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-23 11:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante un golpe de calor",
+      "foto": "equipo-toldo-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-23 15:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante una torcedura",
+      "foto": "puerto-crucero-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-23 20:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante una baja de azúcar",
+      "foto": "noche-vespucio-vertical.jpg"
     }
   ]
 }
