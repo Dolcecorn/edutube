@@ -888,7 +888,7 @@
       "fecha": "2026-11-22 20:30",
       "tipo": "historia",
       "tema": "Traslados programados en días de calor",
-      "foto": "noche-urgencias-centro-medico-vertical.jpg"
+      "foto": "noche-clinica-las-condes-vertical.jpg"
     },
     {
       "fecha": "2026-11-22 18:30",
@@ -940,13 +940,13 @@
       "fecha": "2026-11-23 15:30",
       "tipo": "historia",
       "tema": "Primeros auxilios ante una torcedura",
-      "foto": "puerto-crucero-vertical.jpg"
+      "foto": "evento-ciclistas-vertical.jpg"
     },
     {
       "fecha": "2026-11-23 20:30",
       "tipo": "historia",
-      "tema": "Primeros auxilios ante una baja de azúcar",
-      "foto": "noche-vespucio-vertical.jpg"
+      "tema": "Traslados programados para controles de diabetes",
+      "foto": "noche-costanera-vertical.jpg"
     }
   ]
 }
