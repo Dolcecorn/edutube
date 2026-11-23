@@ -952,40 +952,23 @@
       "fecha": "2026-11-24 09:00",
       "tipo": "carrusel",
       "tema": "Guía para planificar un traslado fuera de la ciudad",
-      "foto": "noche-urgencias-centro-medico-vertical.jpg",
+      "foto": "noche-vespucio-vertical.jpg",
       "fotos": [
         "clinica-dia-dos-ambulancias-palmeras.jpg",
         "noche-clinica-las-condes-vertical.jpg"
       ]
     },
     {
-      "fecha": "2026-11-24 18:30",
-      "tipo": "reel",
-      "tema": "Traslados programados para diálisis con ida y vuelta",
-      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
-      "fotos": [
-        "clinica-dia-angulo-bajo.jpg",
-        "evento-downhill-ninos-3.jpg",
-        "clinica-dia-vertical.jpg"
-      ],
-      "clips": [
-        "noche-ciudad-frente.mp4",
-        "noche-autopista-trasera.mp4",
-        "noche-clinica-las-condes-dron.mp4"
-      ],
-      "zona": true
-    },
-    {
       "fecha": "2026-11-24 11:30",
       "tipo": "historia",
-      "tema": "Traslados programados a controles médicos",
-      "foto": "puerto-crucero-vertical.jpg"
+      "tema": "Traslado al domicilio tras el alta",
+      "foto": "clinica-dia-vertical.jpg"
     },
     {
       "fecha": "2026-11-24 15:30",
       "tipo": "historia",
-      "tema": "Traslado programado con espera",
-      "foto": "noche-vespucio-vertical.jpg"
+      "tema": "Formas de pago y boleta para reembolso",
+      "foto": "noche-frente-balizas-vertical.jpg"
     },
     {
       "fecha": "2026-11-24 20:30",
