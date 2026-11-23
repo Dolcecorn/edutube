@@ -975,6 +975,22 @@
       "tipo": "historia",
       "tema": "Cobertura sanitaria para automovilismo, motocross y festivales",
       "foto": "punto-atencion-ruta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-24 18:30",
+      "tipo": "reel",
+      "tema": "Traslados programados para diálisis con ida y vuelta",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "interior-ambulancia-camilla.jpg",
+        "clinica-dia-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
