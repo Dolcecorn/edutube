@@ -947,6 +947,51 @@
       "tipo": "historia",
       "tema": "Traslados programados para controles de diabetes",
       "foto": "noche-costanera-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-24 09:00",
+      "tipo": "carrusel",
+      "tema": "Guía para planificar un traslado fuera de la ciudad",
+      "foto": "noche-urgencias-centro-medico-vertical.jpg",
+      "fotos": [
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "noche-clinica-las-condes-vertical.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-24 18:30",
+      "tipo": "reel",
+      "tema": "Traslados programados para diálisis con ida y vuelta",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "clinica-dia-angulo-bajo.jpg",
+        "evento-downhill-ninos-3.jpg",
+        "clinica-dia-vertical.jpg"
+      ],
+      "clips": [
+        "noche-ciudad-frente.mp4",
+        "noche-autopista-trasera.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-24 11:30",
+      "tipo": "historia",
+      "tema": "Traslados programados a controles médicos",
+      "foto": "puerto-crucero-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-24 15:30",
+      "tipo": "historia",
+      "tema": "Traslado programado con espera",
+      "foto": "noche-vespucio-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-24 20:30",
+      "tipo": "historia",
+      "tema": "Cobertura sanitaria para automovilismo, motocross y festivales",
+      "foto": "punto-atencion-ruta-vertical.jpg"
     }
   ]
 }
