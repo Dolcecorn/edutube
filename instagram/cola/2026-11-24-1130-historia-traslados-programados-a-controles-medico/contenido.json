@@ -1,8 +1,8 @@
 {
-  "tema": "Traslados programados a controles médicos",
+  "tema": "Traslado al domicilio tras el alta",
   "etiqueta": "SERVICIO",
-  "gancho": "¿Tu control queda lejos?",
-  "texto": "Ambulancias AHP realiza traslados programados a clínicas y hospitales, con conductor y TENS. Solicita ida y vuelta con espera, según disponibilidad.",
-  "llamado": "Cotiza tu traslado",
-  "foto": "puerto-crucero-vertical.jpg"
+  "gancho": "¿Te dan el alta y no puedes ir sentado?",
+  "texto": "Te llevamos de la clínica a tu casa en camilla o silla de ruedas, con TENS a bordo. Coordina el retiro según la hora del alta.",
+  "llamado": "Agenda tu traslado",
+  "foto": "clinica-dia-vertical.jpg"
 }
