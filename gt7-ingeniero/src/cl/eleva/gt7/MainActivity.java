@@ -408,6 +408,26 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             engineer.onPacket(t);
             lastPacketAt = System.currentTimeMillis();
         }
+        checkLightsButton(t);
+    }
+
+    // ---- RAD con el botón de luces del volante: la PS5 no avisa qué botón apretas,
+    //      pero el estado de las luces sí viene en la telemetría ----
+    private int prevLights = -1;
+    private long lightsAt;
+
+    private void checkLightsButton(Telemetry t) {
+        int l = t.flags & (Telemetry.FLAG_LIGHTS | Telemetry.FLAG_HIGH_BEAM | Telemetry.FLAG_LOW_BEAM);
+        boolean active = t.onTrack() && !t.paused() && !t.loading();
+        if (!active) { prevLights = -1; return; }
+        if (prevLights >= 0 && l != prevLights) {
+            long now = System.currentTimeMillis();
+            if (now - lightsAt > 1500 && prefs.getBoolean("rad_luces", true)) {
+                lightsAt = now;
+                ui.post(new Runnable() { public void run() { listen(); } });
+            }
+        }
+        prevLights = l;
     }
 
     private void runDemo() {
@@ -526,6 +546,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         final CheckBox mitad = check(box, "Delta a mitad de vuelta", "mitad", true);
         final CheckBox neu = check(box, "Neumáticos y motor", "neumaticos", true);
         final CheckBox cons = check(box, "Consejos por curva (contra tu mejor vuelta)", "consejos", true);
+        final CheckBox luces = check(box, "Botón de luces del volante = RAD (hablarle al ingeniero)", "rad_luces", true);
 
         final int car;
         synchronized (lock) { car = telemetry.carCode; }
@@ -612,7 +633,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                         SharedPreferences.Editor e = prefs.edit().putString("ip", ip.getText().toString().trim())
                             .putBoolean("voz", voz.isChecked()).putBoolean("tiempos", tiempos.isChecked())
                             .putBoolean("combustible", comb.isChecked()).putBoolean("mitad", mitad.isChecked())
-                            .putBoolean("neumaticos", neu.isChecked()).putBoolean("consejos", cons.isChecked())
+                            .putBoolean("neumaticos", neu.isChecked()).putBoolean("consejos", cons.isChecked()).putBoolean("rad_luces", luces.isChecked())
                             .putBoolean("demo", demo.isChecked()).putBoolean("grave", grave.isChecked())
                             .putString("acento", acento).putFloat("rapidez", rate);
                         if (car != 0) e.putString("tcs_" + car, tcs.getText().toString().trim()).putString("bb_" + car, bb.getText().toString().trim());

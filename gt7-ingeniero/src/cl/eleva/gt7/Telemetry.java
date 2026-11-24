@@ -39,7 +39,7 @@ final class Telemetry {
     int carCode;
 
     static final int FLAG_ON_TRACK = 1, FLAG_PAUSED = 2, FLAG_LOADING = 4, FLAG_IN_GEAR = 8,
-            FLAG_TURBO = 16, FLAG_REV_LIMIT = 32, FLAG_HANDBRAKE = 64, FLAG_LIGHTS = 128,
+            FLAG_TURBO = 16, FLAG_REV_LIMIT = 32, FLAG_HANDBRAKE = 64, FLAG_LIGHTS = 128, FLAG_HIGH_BEAM = 256, FLAG_LOW_BEAM = 512,
             FLAG_ASM = 1024, FLAG_TCS = 2048;
 
     boolean onTrack() { return (flags & FLAG_ON_TRACK) != 0; }
