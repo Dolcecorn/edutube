@@ -2,17 +2,6 @@
   "ultimo_tipo": "reel",
   "historial": [
     {
-      "fecha": "2026-11-02",
-      "tipo": "carrusel",
-      "tema": "Presentación de Ambulancias AHP y nuestros servicios"
-    },
-    {
-      "fecha": "2026-11-02 18:35",
-      "tipo": "carrusel",
-      "tema": "Traslados programados en ambulancia: cuándo solicitarlos y cómo coordinarlos",
-      "foto": "clinica-dia-vertical.jpg"
-    },
-    {
       "fecha": "2026-11-02 22:55",
       "tipo": "historia",
       "tema": "Cobertura de eventos",
@@ -991,6 +980,49 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-25 09:00",
+      "tipo": "post",
+      "tema": "Reconocer la deshidratación durante los días de calor",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "fotos": [],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-25 18:30",
+      "tipo": "reel",
+      "tema": "Señales de hipoglucemia y cuándo coordinar un traslado",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "noche-costanera-vertical.jpg",
+        "equipo-toldo-cerros-vertical.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-25 11:30",
+      "tipo": "historia",
+      "tema": "Traslado a exámenes durante días de calor",
+      "foto": "equipo-toldo-cerros-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-25 15:30",
+      "tipo": "historia",
+      "tema": "Prevención al volante durante días de calor",
+      "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-25 20:30",
+      "tipo": "historia",
+      "tema": "Traslado programado de pacientes que usan oxígeno",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
     }
   ]
 }
