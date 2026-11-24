@@ -205,6 +205,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     void listen() {
         if (listening) { if (recognizer != null) recognizer.stopListening(); return; }
+        // Android 6+ pide permiso de micrófono la primera vez
+        if (android.os.Build.VERSION.SDK_INT >= 23
+                && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 7);
+            return;
+        }
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             String s;
             synchronized (lock) { s = engineer.status(telemetry); }
@@ -256,7 +262,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         final String csv;
         synchronized (lock) { csv = engineer.session.csv(); }
         try {
-            java.io.File dir = new java.io.File(android.os.Environment.getExternalStorageDirectory(), "IngenieroGT7");
+            // Android 6+ : carpeta propia de la app (no pide permiso); la tablet (Android 4.1) sigue usando /sdcard/IngenieroGT7
+            java.io.File dir = android.os.Build.VERSION.SDK_INT >= 23 && getExternalFilesDir(null) != null
+                    ? getExternalFilesDir(null)
+                    : new java.io.File(android.os.Environment.getExternalStorageDirectory(), "IngenieroGT7");
             dir.mkdirs();
             String name = "carrera-" + new java.text.SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(new java.util.Date()) + ".csv";
             java.io.File f = new java.io.File(dir, name);
@@ -355,9 +364,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         b.show();
     }
 
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        if (code == 7 && res.length > 0 && res[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) listen();
+        else if (code == 7) show("Sin permiso de micrófono no puedo escucharte. Actívalo en Ajustes > Apps > Ingeniero GT7.");
+    }
+
+    private void hideBars() {
+        if (android.os.Build.VERSION.SDK_INT >= 19)   // pantalla completa de verdad en teléfonos modernos
+            view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        else view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) hideBars();
+    }
+
     @Override protected void onResume() {
         super.onResume();
-        view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
+        hideBars();
         start();
     }
 

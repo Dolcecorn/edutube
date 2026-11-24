@@ -73,6 +73,11 @@ RESUMEN (en puntos), el ingeniero da el resumen hablado (por partes, para que el
 - Sobre y subviraje sólo se comentan cuando se repiten en la misma curva (2 de las últimas 3 vueltas).
 - Velocidad máxima de cada vuelta contra la de tu mejor vuelta.
 
+## Teléfonos modernos (v1.9)
+Funciona desde Android 4.1 (la tablet) hasta Android 15/16: apunta a Android 7 (targetSdk 24), el mínimo que
+aceptan los teléfonos nuevos. En Android 6+ pide permiso de micrófono la primera vez que tocas RAD y guarda los
+CSV en Android/data/cl.eleva.gt7/files. Pantalla completa sin barras y se adapta a pantallas 20:9.
+
 ## Reloj y batería (v1.8)
 Abajo a la derecha: hora y batería de la tablet ("+" y verde = cargando, rojo = 15 % o menos).
 

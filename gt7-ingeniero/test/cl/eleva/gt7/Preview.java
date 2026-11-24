@@ -93,5 +93,8 @@ public class Preview implements Painter {
         shot(a[0] + "/dash-1024x552.png", 300, true);
         W = 1024; H = 600;
         shot(a[0] + "/dash-esperando.png", 0, false);
+        W = 1200; H = 540;   // teléfono moderno 20:9
+        shot(a[0] + "/dash-telefono.png", 300, true);
+        W = 1024; H = 600;
     }
 }
