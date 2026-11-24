@@ -1006,6 +1006,22 @@
       "tipo": "historia",
       "tema": "Traslado programado de pacientes que usan oxígeno",
       "foto": "noche-clinica-las-condes-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-25 18:30",
+      "tipo": "reel",
+      "tema": "Traslado de adultos mayores a controles en días de calor",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "fotos": [
+        "interior-ambulancia-camilla.jpg",
+        "clinica-dia-dos-ambulancias.jpg",
+        "clinica-atardecer-balizas.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
