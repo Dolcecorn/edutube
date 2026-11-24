@@ -1,0 +1,48 @@
+{
+  "tema": "Traslado de adultos mayores a controles en días de calor",
+  "laminas": [
+    {
+      "titulo": "¿Control médico en pleno calor?",
+      "texto": "Un adulto mayor no debería esperar locomoción al sol.",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "locucion": "Si tu papá o tu mamá tiene un control en pleno verano, no tiene por qué esperar micro al sol."
+    },
+    {
+      "titulo": "Lo buscamos en la puerta de su casa",
+      "texto": "Viaja en camilla o silla de ruedas, con TENS a bordo.",
+      "foto": "interior-ambulancia-camilla.jpg",
+      "locucion": "Lo buscamos en la puerta de la casa, y viaja en camilla o silla de ruedas, acompañado por un TENS."
+    },
+    {
+      "titulo": "Agenda temprano",
+      "texto": "Las primeras horas de la mañana son las más frescas para viajar.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "locucion": "Si puedes, agenda el control temprano: son las horas más frescas para viajar."
+    },
+    {
+      "titulo": "Un familiar puede acompañarlo",
+      "texto": "Si lo necesitas, lo esperamos durante la atención y lo traemos de vuelta.",
+      "foto": "clinica-dia-dos-ambulancias.jpg",
+      "locucion": "Un familiar puede ir con él, y si lo necesitas, lo esperamos y lo traemos de vuelta a casa."
+    },
+    {
+      "titulo": "Cotiza su traslado",
+      "texto": "Ambulancias AHP es de San Antonio, Quinta Región, y también trabaja en la Región Metropolitana. +56 9 8748 2705 · www.ambulanciasahp.cl",
+      "foto": "clinica-atardecer-balizas.jpg",
+      "locucion": "Somos de San Antonio, Quinta Región, y también trabajamos en la Región Metropolitana. Cotiza el traslado con Ambulancias AHP."
+    }
+  ],
+  "descripcion": "¿Tu papá o tu mamá tiene un control en pleno verano?\n\nAmbulancias AHP lo busca en la puerta de su casa y lo lleva a su control en camilla o silla de ruedas, con TENS a bordo. Un familiar puede acompañarlo y, si lo necesitas, lo esperamos durante la atención y lo traemos de vuelta.\n\nTip: agenda el control temprano, en las horas más frescas del día.\n\nSomos de la provincia de San Antonio, Litoral Central, Quinta Región, y también trabajamos en la Región Metropolitana.\n\nCotiza al +56 9 8748 2705 o en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladosProgramados",
+    "#AdultosMayores",
+    "#Calor",
+    "#ControlMedico",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago"
+  ]
+}

@@ -990,23 +990,6 @@
       "zona": true
     },
     {
-      "fecha": "2026-11-25 18:30",
-      "tipo": "reel",
-      "tema": "Señales de hipoglucemia y cuándo coordinar un traslado",
-      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
-      "fotos": [
-        "noche-costanera-vertical.jpg",
-        "equipo-toldo-cerros-vertical.jpg",
-        "clinica-atardecer-balizas.jpg"
-      ],
-      "clips": [
-        "noche-autopista-frente.mp4",
-        "dron-equipo-toldo-evento.mp4",
-        "noche-clinica-las-condes-dron.mp4"
-      ],
-      "zona": true
-    },
-    {
       "fecha": "2026-11-25 11:30",
       "tipo": "historia",
       "tema": "Traslado a exámenes durante días de calor",
@@ -1015,14 +998,14 @@
     {
       "fecha": "2026-11-25 15:30",
       "tipo": "historia",
-      "tema": "Prevención al volante durante días de calor",
-      "foto": "interior-ambulancia-camilla.jpg"
+      "tema": "Traslado a controles sin manejar con calor",
+      "foto": "noche-vespucio-vertical.jpg"
     },
     {
       "fecha": "2026-11-25 20:30",
       "tipo": "historia",
       "tema": "Traslado programado de pacientes que usan oxígeno",
-      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+      "foto": "noche-clinica-las-condes-vertical.jpg"
     }
   ]
 }
