@@ -417,7 +417,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private long lightsChangedAt, lightsAt;
 
     /**
-     * Sólo cuenta un "flash": las luces cambian y vuelven a como estaban en menos de 1,5 s.
+     * Sólo cuenta un "flash": las luces cambian y vuelven a como estaban en menos de 0,5 s.
      * Si cambian y se quedan así (túnel, noche, luces prendidas a mano) no se abre la radio.
      */
     private void checkLightsButton(Telemetry t) {
@@ -427,7 +427,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         long now = System.currentTimeMillis();
         if (prevLights < 0) { prevLights = l; stableLights = l; return; }
         if (l != prevLights) {
-            if (l == stableLights && now - lightsChangedAt < 1500) {        // volvió: fue un flash
+            if (l == stableLights && now - lightsChangedAt < 500) {        // volvió: fue un flash
                 if (now - lightsAt > 1500 && prefs.getBoolean("rad_luces", true)) {
                     lightsAt = now;
                     ui.post(new Runnable() { public void run() { listen(); } });
@@ -436,7 +436,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             lightsChangedAt = now;
             prevLights = l;
         }
-        if (l != stableLights && now - lightsChangedAt >= 1500) stableLights = l;   // cambio que se quedó
+        if (l != stableLights && now - lightsChangedAt >= 500) stableLights = l;   // cambio que se quedó
     }
 
     private void runDemo() {
