@@ -22,8 +22,9 @@ por wifi, muestra un dashboard del auto y tiene un ingeniero de carreras que hab
 GT7 no manda el desgaste de neumáticos ni la posición en carrera, así que eso no aparece.
 
 ## Comandos de voz (botón RAD)
-v1.8.2: también se activa con el botón de luces del volante (G923 u otro). La PS5 no le dice a la tablet qué
-botón apretas, pero GT7 manda el estado de las luces: cuando cambia, la app abre la radio. Se puede apagar en SET.
+v1.8.3: también se activa con el flash de luces altas del volante (G923 u otro). La PS5 no le dice a la tablet qué
+botón apretas, pero GT7 manda el estado de las luces: si cambian y vuelven en menos de 1,5 s (flash), la app abre
+la radio. Si las luces cambian y se quedan (túnel, noche) no pasa nada. Se puede apagar en SET.
 Preguntas nuevas (v1.8): "cómo estuvo la curva 2 en esta vuelta", "cómo voy en el sector dos", "dónde pierdo
 más tiempo", "cuál es la vuelta ideal", "cuál es la estrategia", "en qué circuito estamos".
 - "Desactiva/activa los consejos", "los tiempos", "el combustible", "los neumáticos", "el delta".

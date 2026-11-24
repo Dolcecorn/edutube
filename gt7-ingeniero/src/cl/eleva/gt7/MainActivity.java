@@ -413,21 +413,30 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     // ---- RAD con el botón de luces del volante: la PS5 no avisa qué botón apretas,
     //      pero el estado de las luces sí viene en la telemetría ----
-    private int prevLights = -1;
-    private long lightsAt;
+    private int prevLights = -1, stableLights = -1;
+    private long lightsChangedAt, lightsAt;
 
+    /**
+     * Sólo cuenta un "flash": las luces cambian y vuelven a como estaban en menos de 1,5 s.
+     * Si cambian y se quedan así (túnel, noche, luces prendidas a mano) no se abre la radio.
+     */
     private void checkLightsButton(Telemetry t) {
         int l = t.flags & (Telemetry.FLAG_LIGHTS | Telemetry.FLAG_HIGH_BEAM | Telemetry.FLAG_LOW_BEAM);
         boolean active = t.onTrack() && !t.paused() && !t.loading();
-        if (!active) { prevLights = -1; return; }
-        if (prevLights >= 0 && l != prevLights) {
-            long now = System.currentTimeMillis();
-            if (now - lightsAt > 1500 && prefs.getBoolean("rad_luces", true)) {
-                lightsAt = now;
-                ui.post(new Runnable() { public void run() { listen(); } });
+        if (!active) { prevLights = -1; stableLights = -1; return; }
+        long now = System.currentTimeMillis();
+        if (prevLights < 0) { prevLights = l; stableLights = l; return; }
+        if (l != prevLights) {
+            if (l == stableLights && now - lightsChangedAt < 1500) {        // volvió: fue un flash
+                if (now - lightsAt > 1500 && prefs.getBoolean("rad_luces", true)) {
+                    lightsAt = now;
+                    ui.post(new Runnable() { public void run() { listen(); } });
+                }
             }
+            lightsChangedAt = now;
+            prevLights = l;
         }
-        prevLights = l;
+        if (l != stableLights && now - lightsChangedAt >= 1500) stableLights = l;   // cambio que se quedó
     }
 
     private void runDemo() {
@@ -546,7 +555,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         final CheckBox mitad = check(box, "Delta a mitad de vuelta", "mitad", true);
         final CheckBox neu = check(box, "Neumáticos y motor", "neumaticos", true);
         final CheckBox cons = check(box, "Consejos por curva (contra tu mejor vuelta)", "consejos", true);
-        final CheckBox luces = check(box, "Botón de luces del volante = RAD (hablarle al ingeniero)", "rad_luces", true);
+        final CheckBox luces = check(box, "Flash de luces altas del volante = RAD (hablarle al ingeniero)", "rad_luces", true);
 
         final int car;
         synchronized (lock) { car = telemetry.carCode; }
