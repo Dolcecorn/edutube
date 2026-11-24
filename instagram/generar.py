@@ -186,7 +186,9 @@ def _pedir(m, tipo, historial, recientes, sistema, dia, hora, pub):
     usadas = fotos_recientes(historial)[:4]
     aviso_fotos = (f"\nPara variar, NO uses en la portada ni en la historia estas fotos usadas recientemente: "
                    f"{', '.join(usadas)}." if usadas else "")
-    lista_fotos = "\n".join(f"- {f['archivo']}: {f['descripcion']} ({f['orientacion']})" for f in diseno.fotos())
+    lista_fotos = "\n".join(f"- {f['archivo']}: {f['descripcion']} ({f['orientacion']})"
+                            + (" [solo para temas de cobertura de eventos]" if f.get("solo_eventos") else "")
+                            for f in banco_fotos())
     guia_fotos = (f"""Fotos reales de la empresa disponibles (campo "foto" de cada lámina):
 {lista_fotos}
 Usa foto en la portada, en el post y en las escenas del reel (prefiere las verticales en el reel); en las láminas
@@ -279,6 +281,17 @@ equipamiento de la ambulancia, en dos piezas del mismo día):
     return r.parsed_output
 
 
+def banco_fotos():
+    """Fotos usables: sin las marcadas "evitar" (p. ej. letrero de URGENCIAS, servicio que no se presta)."""
+    return [f for f in diseno.fotos() if not f.get("evitar")]
+
+
+def banco_rotacion():
+    """Fotos que entran en la rotación automática: sin las "solo_eventos" (downhill infantil, crucero),
+    que solo se usan si el modelo las elige para un tema de eventos."""
+    return [f for f in banco_fotos() if not f.get("solo_eventos")]
+
+
 def fotos_recientes(historial):
     """Fotos de portada/historia usadas, de la más reciente a la más antigua (sin repetir)."""
     vistas = []
@@ -293,15 +306,16 @@ def rotar_foto(elegida, historial, vertical=False, evitar=None):
     """Si la foto elegida para la portada o la historia se usó en las últimas publicaciones (o viene vacía),
     la cambia por la menos usada recientemente (vertical si se pide). Por defecto evita todas las fotos
     usadas recientemente salvo la más antigua, así las portadas rotan por todo el banco de fotos."""
-    disponibles = diseno.fotos()
+    disponibles = banco_rotacion()
     if not disponibles:
         return elegida
     candidatas = [f["archivo"] for f in disponibles if not vertical or f["orientacion"] == "vertical"] or \
         [f["archivo"] for f in disponibles]
+    permitidas = {f["archivo"] for f in banco_fotos() if not vertical or f["orientacion"] == "vertical"}
     recientes = fotos_recientes(historial)
     if evitar is None:
         evitar = max(1, len(candidatas) - 1)
-    if elegida in candidatas and elegida not in recientes[:evitar]:
+    if (elegida in candidatas or elegida in permitidas) and elegida not in recientes[:evitar]:
         return elegida
     # la menos usada: primero las nunca usadas, luego la que se usó hace más tiempo
     return sorted(candidatas, key=lambda a: (a in recientes, -recientes.index(a) if a in recientes else 0))[0]
@@ -320,7 +334,7 @@ def uso_fotos(historial):
 def refrescar_interiores(laminas, historial, recientes_max=6):
     """Las láminas interiores con una foto muy usada pasan a una foto poco o nunca usada (sin repetir dentro
     de la publicación). Así las fotos nuevas del banco entran rápido en rotación."""
-    banco = [f["archivo"] for f in diseno.fotos()]
+    banco = [f["archivo"] for f in banco_rotacion()]
     uso = uso_fotos(historial)
     recientes = set(uso[:recientes_max])
     en_uso = {l.foto for l in laminas if l.foto}
@@ -386,7 +400,7 @@ def crear(m, estado, tipo, dia, hora, salida, pub=None):
         c = pedir_contenido(m, tipo, estado["historial"], dia, hora, pub, zona)
     if not m.get("rubro"):
         nombre_completo(c)
-    validas = {f["archivo"] for f in diseno.fotos()}
+    validas = {f["archivo"] for f in banco_fotos()}
     if tipo == "historia":
         if c.foto not in validas:
             c.foto = ""
