@@ -2,46 +2,6 @@
   "ultimo_tipo": "reel",
   "historial": [
     {
-      "fecha": "2026-11-02 22:55",
-      "tipo": "historia",
-      "tema": "Cobertura de eventos",
-      "foto": "clinica-dia-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-02 23:30",
-      "tipo": "historia",
-      "tema": "Primeros auxilios ante un desmayo",
-      "foto": "clinica-dia-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 09:00",
-      "tipo": "reel",
-      "tema": "Qué información entregar ante una urgencia para coordinar ayuda",
-      "foto": "noche-frente-balizas-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 12:00",
-      "tipo": "historia",
-      "tema": "Atención de urgencias con apoyo seguro en la Región de Valparaíso",
-      "foto": "urgencias-noche-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-03 18:30",
-      "tipo": "reel",
-      "tema": "Golpe de calor: señales de alerta y qué hacer",
-      "foto": "noche-ciudad-frente.mp4",
-      "fotos": [
-        "noche-clinica-las-condes-vertical.jpg",
-        "noche-urgencias-centro-medico-vertical.jpg",
-        "noche-costanera-vertical.jpg"
-      ],
-      "clips": [
-        "noche-ciudad-frente.mp4",
-        "noche-autopista-frente.mp4",
-        "noche-autopista-trasera.mp4"
-      ]
-    },
-    {
       "fecha": "2026-11-03 20:30",
       "tipo": "historia",
       "tema": "Traslados coordinados para controles y altas médicas",
@@ -1022,6 +982,51 @@
         "noche-ciudad-frente.mp4",
         "noche-clinica-las-condes-dron.mp4"
       ]
+    },
+    {
+      "fecha": "2026-11-26 09:00",
+      "tipo": "carrusel",
+      "tema": "Guía práctica: cómo se prepara un traslado programado",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "fotos": [
+        "noche-hospital-puerta-abierta-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg"
+      ]
+    },
+    {
+      "fecha": "2026-11-26 18:30",
+      "tipo": "reel",
+      "tema": "Detrás de escena: qué revisar en un traslado seguro",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "clinica-dia-angulo-bajo.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-frente.mp4",
+        "dron-equipo-toldo-evento.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-26 11:30",
+      "tipo": "historia",
+      "tema": "Viajes de ida y vuelta con espera",
+      "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-26 15:30",
+      "tipo": "historia",
+      "tema": "Datos para cotizar una cobertura de evento",
+      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-26 20:30",
+      "tipo": "historia",
+      "tema": "Permisos sanitarios al día para traslados programados",
+      "foto": "clinica-dia-vertical.jpg"
     }
   ]
 }
