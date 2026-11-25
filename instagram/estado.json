@@ -989,26 +989,9 @@
       "tema": "Guía práctica: cómo se prepara un traslado programado",
       "foto": "equipo-toldo-dos-ambulancias.jpg",
       "fotos": [
-        "noche-hospital-puerta-abierta-vertical.jpg",
+        "clinica-atardecer-balizas.jpg",
         "clinica-dia-dos-ambulancias-palmeras.jpg"
       ]
-    },
-    {
-      "fecha": "2026-11-26 18:30",
-      "tipo": "reel",
-      "tema": "Detrás de escena: qué revisar en un traslado seguro",
-      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
-      "fotos": [
-        "equipo-toldo-ruta-vertical.jpg",
-        "clinica-dia-angulo-bajo.jpg",
-        "noche-costanera-vertical.jpg"
-      ],
-      "clips": [
-        "noche-autopista-frente.mp4",
-        "dron-equipo-toldo-evento.mp4",
-        "noche-clinica-las-condes-dron.mp4"
-      ],
-      "zona": true
     },
     {
       "fecha": "2026-11-26 11:30",
@@ -1020,12 +1003,12 @@
       "fecha": "2026-11-26 15:30",
       "tipo": "historia",
       "tema": "Datos para cotizar una cobertura de evento",
-      "foto": "noche-hospital-puerta-abierta-vertical.jpg"
+      "foto": "punto-atencion-ruta-vertical.jpg"
     },
     {
       "fecha": "2026-11-26 20:30",
       "tipo": "historia",
-      "tema": "Permisos sanitarios al día para traslados programados",
+      "tema": "Traslados a sesiones de kinesiología",
       "foto": "clinica-dia-vertical.jpg"
     }
   ]
