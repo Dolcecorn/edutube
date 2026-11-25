@@ -1010,6 +1010,22 @@
       "tipo": "historia",
       "tema": "Traslados a sesiones de kinesiología",
       "foto": "clinica-dia-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-26 18:30",
+      "tipo": "reel",
+      "tema": "Detrás de escena: qué revisar en un traslado seguro",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "fotos": [
+        "equipo-toldo-ruta-vertical.jpg",
+        "clinica-dia-angulo-bajo.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "dron-equipo-toldo-evento.mp4",
+        "noche-autopista-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ]
     }
   ]
 }
