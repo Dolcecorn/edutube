@@ -1,8 +1,8 @@
 {
-  "tema": "Permisos sanitarios al día para traslados programados",
-  "etiqueta": "DATO CLAVE",
-  "gancho": "¿Qué respalda un traslado programado?",
-  "texto": "Ambulancias AHP cuenta con todos sus permisos sanitarios al día para trasladar pacientes no críticos, según disponibilidad.",
-  "llamado": "Cotiza tu traslado",
+  "tema": "Traslados a sesiones de kinesiología",
+  "etiqueta": "SERVICIO",
+  "gancho": "¿Kinesiología después de una cirugía?",
+  "texto": "Te llevamos a tus sesiones en silla de ruedas o camilla, con TENS a bordo. Si son varias, coordínalas con anticipación.",
+  "llamado": "Agenda tus traslados",
   "foto": "clinica-dia-vertical.jpg"
 }
