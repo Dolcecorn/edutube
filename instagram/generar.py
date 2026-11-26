@@ -35,7 +35,7 @@ ZONA = ZoneInfo("America/Santiago")
 ORDEN = ["post", "reel", "carrusel"]
 LAMINAS = {"post": "exactamente 1 lámina", "carrusel": "entre 5 y 7 láminas (la primera es la portada)",
            "historia": "1 imagen vertical",
-           "reel": "entre 4 y 6 escenas (la primera es el gancho; la última invita a seguir la cuenta o a contactar)"}
+           "reel": "entre 4 y 6 escenas (la primera es el gancho; la última invita a contactar: llamar o cotizar; nunca «sigue la cuenta»)"}
 
 
 class Lamina(BaseModel):
@@ -211,7 +211,7 @@ La ÚLTIMA escena es el llamado a la acción, en el texto y en la locución: inv
 Locución (campo "locucion" de cada escena): la voz en off de un locutor chileno, tono cercano, sereno y
 profesional (español neutro de Chile, sin modismos ni garabatos). Complementa el texto de pantalla sin leerlo
 palabra por palabra; frases cortas y fáciles de decir. No dictes números de teléfono ni direcciones web
-(aparecen en pantalla); en la última escena invita a seguir la cuenta o a contactar. Cuando corresponda,
+(aparecen en pantalla); en la última escena invita a contactar (llamar o cotizar; nunca "sigue la cuenta"). Cuando corresponda,
 si (y solo si) hay riesgo vital, nombra el 131 como se dice en Chile: "uno tres uno" (nunca "ciento treinta y uno"). Evita repetir la misma
 palabra en una frase o entre frases seguidas (por ejemplo, no "con este calor, un golpe de calor"); usa
 sinónimos."""
@@ -238,7 +238,7 @@ equipamiento de la ambulancia, en dos piezas del mismo día):
     if tipo == "historia":
         formato = Historia
         ideas = m.get("ideas_historias") or [
-            'dato útil o "¿sabías que?" de primeros auxilios que invite a seguir la cuenta para aprender más',
+            'dato útil o "¿sabías que?" de primeros auxilios ligado a un servicio real de traslado o cobertura, con llamado a cotizar',
             f"servicio de la empresa ({', '.join(m['servicios'])}) con un beneficio claro y un llamado a cotizar o llamar",
             "recordatorio práctico de la temporada o del día a día en Chile"]
         ideas = "\n".join(f"- {x}," for x in ideas)
