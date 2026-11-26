@@ -1,0 +1,49 @@
+{
+  "tema": "Fin de semana seguro: evita que un paciente viaje en auto",
+  "laminas": [
+    {
+      "titulo": "¿Viaje largo? No ignores el cansancio",
+      "texto": "Una ruta de fin de semana exige atención constante. Si estás fatigado, no te pongas al volante.",
+      "foto": "noche-ciudad-frente.mp4+noche-autopista-trasera.mp4",
+      "locucion": "El cansancio puede reducir tu atención tanto como otras distracciones. Antes de salir, evalúa si realmente estás en condiciones de conducir."
+    },
+    {
+      "titulo": "El cansancio también aumenta el riesgo",
+      "texto": "Bostezos frecuentes, dificultad para concentrarte o párpados pesados: señales para detener el viaje y buscar otra alternativa.",
+      "foto": "noche-vespucio-vertical.jpg",
+      "locucion": "Si aparecen estas señales, no fuerces el trayecto. Detenerse y reorganizar el viaje es más seguro que continuar."
+    },
+    {
+      "titulo": "¿Paciente sin condiciones para viajar?",
+      "texto": "Después de un alta, examen o procedimiento, un familiar puede necesitar traslado en ambulancia en vez de viajar sentado en un auto.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
+      "locucion": "Para algunos pacientes, el regreso en auto puede ser incómodo o poco adecuado. Un traslado programado permite viajar con asistencia TENS."
+    },
+    {
+      "titulo": "Traslados programados para tu regreso",
+      "texto": "Ambulancias AHP realiza traslados a domicilios, hospitales y clínicas, además de viajes a Santiago y otras regiones a pedido.",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": "Ambulancias AHP realiza servicios coordinados según disponibilidad, para controles, exámenes, altas y viajes fuera de la ciudad."
+    },
+    {
+      "titulo": "Cotiza tu traslado para este fin de semana",
+      "texto": "Somos de San Antonio, Quinta Región, y trabajamos en la Región Metropolitana. Llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl.",
+      "foto": "noche-frente-balizas-vertical.jpg",
+      "locucion": "Ambulancias AHP es de San Antonio, en la Quinta Región, y también trabaja en la Región Metropolitana. Llámanos o cotiza en nuestro sitio web."
+    }
+  ],
+  "descripcion": "Un viaje de fin de semana no siempre es adecuado en auto.\n\nSi un paciente vuelve de un alta, examen o procedimiento, considera su comodidad y sus condiciones para trasladarse sentado durante varias horas.\n\nAmbulancias AHP realiza traslados programados a domicilios, hospitales y clínicas, además de viajes a Santiago y otras regiones a pedido, según disponibilidad.\n\nSomos de la provincia de San Antonio, Litoral Central, Quinta Región, y trabajamos en la Quinta Región y la Región Metropolitana.\n\nLlama al +56 9 8748 2705 o cotiza en www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#TrasladoDePacientes",
+    "#TrasladoProgramado",
+    "#FinDeSemanaSeguro",
+    "#SeguridadVial",
+    "#ViajesSeguros",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#RegionMetropolitana",
+    "#Santiago",
+    "#Valparaiso"
+  ]
+}
