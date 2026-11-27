@@ -1,0 +1,48 @@
+{
+  "tema": "Acceso despejado para ambulancias en eventos",
+  "laminas": [
+    {
+      "titulo": "¿La ambulancia puede salir del evento?",
+      "texto": "Un acceso bloqueado puede dificultar un traslado. Planifica la entrada y salida antes de comenzar la actividad.",
+      "foto": "noche-autopista-frente.mp4+dron-equipo-toldo-evento.mp4",
+      "locucion": "En un evento, no basta con tener una ambulancia presente: también debe existir una salida despejada."
+    },
+    {
+      "titulo": "Define un acceso exclusivo",
+      "texto": "Acordona una ruta libre de vehículos, vallas y asistentes. Debe conectar el punto de atención con la salida del recinto.",
+      "foto": "noche-clinica-las-condes-vertical.jpg",
+      "locucion": "Deja una ruta clara entre el punto de atención y la salida, sin autos ni estructuras que obstaculicen."
+    },
+    {
+      "titulo": "Comunícalo a todo el equipo",
+      "texto": "Producción, seguridad y organizadores deben conocer la ubicación del acceso y mantenerlo disponible durante toda la actividad.",
+      "foto": "noche-clinica-las-condes-dron.mp4+noche-autopista-frente.mp4",
+      "locucion": "Producción y seguridad deben saber dónde está ese acceso y evitar que se ocupe durante la jornada."
+    },
+    {
+      "titulo": "Cobertura sanitaria para tu actividad",
+      "texto": "Ambulancias AHP realiza coberturas para eventos deportivos y masivos, con planificación acorde al lugar y la actividad.",
+      "foto": "equipo-toldo-dos-ambulancias.jpg",
+      "locucion": "Ambulancias AHP entrega cobertura sanitaria para actividades deportivas y masivas, según las características del evento."
+    },
+    {
+      "titulo": "Cotiza tu cobertura con Ambulancias AHP",
+      "texto": "Somos de San Antonio, en la Quinta Región, y también trabajamos en la Región Metropolitana. Llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl",
+      "foto": "clinica-dia-dos-ambulancias-palmeras.jpg",
+      "locucion": "Somos de San Antonio, en la Quinta Región, y también trabajamos en la Región Metropolitana. Llámanos o cotiza en nuestro sitio web."
+    }
+  ],
+  "descripcion": "¿Tu evento tiene una salida despejada para la ambulancia?\n\nAntes de comenzar una carrera, festival o actividad masiva, define una ruta libre desde el punto de atención hasta el exterior. También es importante que producción y seguridad conozcan ese acceso y lo mantengan disponible.\n\nAmbulancias AHP realiza coberturas sanitarias para eventos deportivos y masivos, en la Quinta Región y la Región Metropolitana.\n\nSomos de la provincia de San Antonio, Litoral Central, Quinta Región. Para cotizar, llama al +56 9 8748 2705 o visita www.ambulanciasahp.cl.",
+  "hashtags": [
+    "#CoberturaSanitaria",
+    "#EventosDeportivos",
+    "#EventosMasivos",
+    "#SeguridadEnEventos",
+    "#AmbulanciasAHP",
+    "#SanAntonio",
+    "#QuintaRegion",
+    "#Valparaiso",
+    "#RegionMetropolitana",
+    "#Santiago"
+  ]
+}
