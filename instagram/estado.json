@@ -2,34 +2,6 @@
   "ultimo_tipo": "reel",
   "historial": [
     {
-      "fecha": "2026-11-05 20:30",
-      "tipo": "historia",
-      "tema": "Coordinación de llegada para traslados",
-      "foto": "noche-urgencias-centro-medico-vertical.jpg"
-    },
-    {
-      "fecha": "2026-11-05 18:30",
-      "tipo": "reel",
-      "tema": "Traslados programados a terapias, diálisis y controles médicos",
-      "foto": "noche-clinica-las-condes-dron.mp4+noche-ciudad-frente.mp4",
-      "fotos": [
-        "clinica-dia-angulo-bajo.jpg",
-        "clinica-atardecer-balizas.jpg",
-        "urgencias-noche-vertical.jpg"
-      ],
-      "clips": [
-        "noche-clinica-las-condes-dron.mp4",
-        "noche-ciudad-frente.mp4",
-        "noche-autopista-frente.mp4"
-      ]
-    },
-    {
-      "fecha": "2026-11-05 15:35",
-      "tipo": "historia",
-      "tema": "Cobertura médica de eventos deportivos",
-      "foto": "equipo-toldo-ruta-vertical.jpg"
-    },
-    {
       "fecha": "2026-11-05 20:35",
       "tipo": "historia",
       "tema": "Preparar la casa antes del traslado tras el alta médica",
@@ -1031,6 +1003,41 @@
       "tipo": "historia",
       "tema": "Traslado de pacientes postrados a controles",
       "foto": "noche-frente-balizas-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-29 18:30",
+      "tipo": "reel",
+      "tema": "Prevención de caídas en el hogar para adultos mayores",
+      "foto": "noche-autopista-trasera.mp4+noche-ciudad-frente.mp4",
+      "fotos": [
+        "equipo-toldo-cerros-vertical.jpg",
+        "clinica-dia-dos-ambulancias-palmeras.jpg",
+        "noche-costanera-vertical.jpg"
+      ],
+      "clips": [
+        "noche-autopista-trasera.mp4",
+        "noche-ciudad-frente.mp4",
+        "noche-clinica-las-condes-dron.mp4"
+      ],
+      "zona": true
+    },
+    {
+      "fecha": "2026-11-29 11:30",
+      "tipo": "historia",
+      "tema": "Traslados programados para familias",
+      "foto": "equipo-toldo-cerros-vertical.jpg"
+    },
+    {
+      "fecha": "2026-11-29 15:30",
+      "tipo": "historia",
+      "tema": "Primeros auxilios ante quemaduras domésticas",
+      "foto": "interior-ambulancia-camilla.jpg"
+    },
+    {
+      "fecha": "2026-11-29 20:30",
+      "tipo": "historia",
+      "tema": "Traslado infantil a controles y exámenes",
+      "foto": "noche-vespucio-vertical.jpg"
     }
   ]
 }
